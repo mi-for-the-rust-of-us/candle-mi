@@ -27,3 +27,61 @@
 2026-09-15 16:25:53 ### patching controls start (K=60, DRY_RUN=1) ###
 2026-09-15 16:25:53 ### controls done ###  analyse with:
 2026-09-15 16:25:53   python <Figure-13>/scripts/patch_stats.py docs/experiments/figure13-patching/samerime_*.json docs/experiments/figure13-patching/midline_*.json
+2026-09-15 16:33:24 ### patching grid start (K=60, DRY_RUN=0) ###
+2026-09-15 16:33:24 skip (exists) docs/experiments/figure13-patching/patch_gemma-2-2b_p1-a-to-b_s1.json
+2026-09-15 16:38:20 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p1-a-to-b_s2.json  (296 s)
+2026-09-15 16:43:20 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p1-a-to-b_s3.json  (300 s)
+2026-09-15 16:48:09 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p1-b-to-a_s1.json  (289 s)
+2026-09-15 16:53:01 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p1-b-to-a_s2.json  (291 s)
+2026-09-15 16:57:43 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p1-b-to-a_s3.json  (282 s)
+2026-09-15 17:02:52 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p2-b-to-a_s1.json  (308 s)
+2026-09-15 17:07:59 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p2-b-to-a_s2.json  (307 s)
+2026-09-15 17:13:07 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p2-b-to-a_s3.json  (308 s)
+2026-09-15 17:18:37 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p3-a-to-b_s1.json  (330 s)
+2026-09-15 17:24:13 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p3-a-to-b_s2.json  (336 s)
+2026-09-15 17:29:49 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p3-a-to-b_s3.json  (336 s)
+2026-09-15 17:35:18 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p3-b-to-a_s1.json  (329 s)
+2026-09-15 17:40:52 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p3-b-to-a_s2.json  (334 s)
+2026-09-15 17:46:22 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p3-b-to-a_s3.json  (329 s)
+2026-09-15 17:51:40 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p4-a-to-b_s1.json  (318 s)
+2026-09-15 17:56:53 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p4-a-to-b_s2.json  (313 s)
+2026-09-15 18:02:07 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p4-a-to-b_s3.json  (314 s)
+2026-09-15 18:07:20 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p4-b-to-a_s1.json  (313 s)
+2026-09-15 18:12:24 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p4-b-to-a_s2.json  (304 s)
+2026-09-15 18:17:46 done  docs/experiments/figure13-patching/patch_gemma-2-2b_p4-b-to-a_s3.json  (321 s)
+2026-09-15 18:17:46 ### grid done ###  analyse with:
+2026-09-15 18:17:46   python <Figure-13>/scripts/patch_stats.py docs/experiments/figure13-patching/patch_*.json
+2026-09-15 18:17:46 ### patching controls start (K=60, DRY_RUN=0) ###
+2026-09-15 18:22:55 done  docs/experiments/figure13-patching/samerime_gemma-2-2b_p1-a-to-b.json  (309 s)
+2026-09-15 18:27:52 done  docs/experiments/figure13-patching/samerime_gemma-2-2b_p1-b-to-a.json  (297 s)
+2026-09-15 18:33:21 done  docs/experiments/figure13-patching/samerime_gemma-2-2b_p2-b-to-a.json  (328 s)
+2026-09-15 18:39:04 done  docs/experiments/figure13-patching/samerime_gemma-2-2b_p3-a-to-b.json  (343 s)
+2026-09-15 18:45:02 done  docs/experiments/figure13-patching/samerime_gemma-2-2b_p3-b-to-a.json  (358 s)
+2026-09-15 18:50:28 done  docs/experiments/figure13-patching/samerime_gemma-2-2b_p4-a-to-b.json  (326 s)
+2026-09-15 18:55:48 done  docs/experiments/figure13-patching/samerime_gemma-2-2b_p4-b-to-a.json  (320 s)
+2026-09-15 19:00:11 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p1-a-to-b.json  (262 s)
+2026-09-15 19:04:40 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p1-b-to-a.json  (269 s)
+2026-09-15 19:09:36 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p2-b-to-a.json  (296 s)
+2026-09-15 19:14:49 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p3-a-to-b.json  (313 s)
+2026-09-15 19:20:00 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p3-b-to-a.json  (311 s)
+2026-09-15 19:25:01 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p4-a-to-b.json  (301 s)
+2026-09-15 19:29:50 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p4-b-to-a.json  (289 s)
+2026-09-15 19:29:50 ### controls done ###  analyse with:
+2026-09-15 19:29:50   python <Figure-13>/scripts/patch_stats.py docs/experiments/figure13-patching/samerime_*.json docs/experiments/figure13-patching/midline_*.json
+2026-09-15 19:52:11 ### patching controls start (K=60, DRY_RUN=0) ###
+2026-09-15 19:52:11 skip (exists) docs/experiments/figure13-patching/samerime_gemma-2-2b_p1-a-to-b.json
+2026-09-15 19:52:12 skip (exists) docs/experiments/figure13-patching/samerime_gemma-2-2b_p1-b-to-a.json
+2026-09-15 19:52:12 skip (exists) docs/experiments/figure13-patching/samerime_gemma-2-2b_p2-b-to-a.json
+2026-09-15 19:52:12 skip (exists) docs/experiments/figure13-patching/samerime_gemma-2-2b_p3-a-to-b.json
+2026-09-15 19:52:12 skip (exists) docs/experiments/figure13-patching/samerime_gemma-2-2b_p3-b-to-a.json
+2026-09-15 19:52:12 skip (exists) docs/experiments/figure13-patching/samerime_gemma-2-2b_p4-a-to-b.json
+2026-09-15 19:52:12 skip (exists) docs/experiments/figure13-patching/samerime_gemma-2-2b_p4-b-to-a.json
+2026-09-15 19:57:18 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p1-a-to-b.json  (306 s)
+2026-09-15 20:02:06 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p1-b-to-a.json  (288 s)
+2026-09-15 20:07:23 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p2-b-to-a.json  (317 s)
+2026-09-15 20:12:48 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p3-a-to-b.json  (325 s)
+2026-09-15 20:18:28 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p3-b-to-a.json  (340 s)
+2026-09-15 20:23:54 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p4-a-to-b.json  (326 s)
+2026-09-15 20:29:13 done  docs/experiments/figure13-patching/midline_gemma-2-2b_p4-b-to-a.json  (319 s)
+2026-09-15 20:29:13 ### controls done ###  analyse with:
+2026-09-15 20:29:13   python <Figure-13>/scripts/patch_stats.py docs/experiments/figure13-patching/samerime_*.json docs/experiments/figure13-patching/midline_*.json

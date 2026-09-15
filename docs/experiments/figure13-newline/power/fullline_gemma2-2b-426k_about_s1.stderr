@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   gemma2-2b-426k
+Model:    google/gemma-2-2b
+CLT:      mntss/clt-gemma-2-2b-426k
+Prompt (truncated after line-3 newline):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark about,
+
+
+Suppress: "about" [CltFeatureId { layer: 16, index: 13725 }, CltFeatureId { layer: 25, index: 9385 }]
+Inject:   "around" L22:10243
+Strength: 25
+
+Prompt tokens (26); steering site = newline @ 25
+Baseline greedy line: "Her heart was filled with doubt."
+Final-word slot (predicts the rhyme word): position 31
+
+  [baseline       ] greedy="Her heart was filled with doubt."  P(inject)=8.9534e-7  P(natural)=1.5004e-4
+  [suppress-only  ] greedy="A smile on her face, a heart full of doubt."  P(inject)=9.1578e-7  P(natural)=1.4537e-4
+  [inject-only    ] greedy="Around the town, she went about."  P(inject)=9.1981e-7  P(natural)=1.5287e-4
+  [suppress+inject] greedy="Around the town, she went about."  P(inject)=9.3301e-7  P(natural)=1.4785e-4
+
+m4 position sweep (suppress+inject at strength 25):
+  best P(inject)=8.0978e-1 at position 30 (" with")
+
+Output written to docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_about_s1.json
+
+Total elapsed: 376.20s

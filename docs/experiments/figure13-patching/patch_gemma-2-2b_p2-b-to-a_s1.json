@@ -1,0 +1,553 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p2-b-to-a",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nThe world keeps spinning even now,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nThe world keeps spinning even so,\n",
+  "donor_word": "now",
+  "recipient_word": "so",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "The",
+    " world",
+    " keeps",
+    " spinning",
+    " even",
+    " so",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 25,
+  "recipient_newline_index": 25,
+  "n_layers": 26,
+  "patch_offset": 0,
+  "patch_position": 25,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "And the sailor's dreams are still his own.",
+  "final_word_slot": 35,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And the sailor's dreams are still his own.",
+      "m3_p_donor": 0.00051914656,
+      "m3_p_recipient": 0.00029719068,
+      "sampled_lines": [
+        "As stars align and the dark blue sea.",
+        "And nothing moves but distant snow.",
+        "But that sailor will never go.",
+        "As he leaves the ship to go.",
+        "And the sailor knows the sea will go.",
+        "Even when you’re on the high seas.",
+        "But he felt as though he was at the zoo.",
+        "But the sailor's mind is still in the bay.",
+        "But in his heart he misses his abode.",
+        "That’s how it is and always has been",
+        "But his head is reeling from the woe.",
+        "But he'd rather be in a harbor now.",
+        "As we stand with open eyes.",
+        "The ship still moves on through the sea-foam.",
+        "And today, I’m still not home.",
+        "But I'm still here, and I'm coming home.",
+        "And he's stuck sailing to the sea.",
+        "As his thoughts are of his own.",
+        "While he still lives in the sea,",
+        "His memory’s still like a memory so.",
+        "And the sailor's dreams are yet to go.",
+        "But the world of this sailor is now.",
+        "Though all around you lies a sea of snow.",
+        "But the sun is still going to rise.",
+        "But my heart’s always with you.",
+        "And the sailor's dream will never go.",
+        "But he was far from far away.",
+        "But home is far, and time has gone.",
+        "And he keeps sailing from that lonely, lonely, lonely,",
+        "And on the deck the man he goes,",
+        "As he hopes for a better tomorrow.",
+        "The sailor’s dream must end too.",
+        "And the sailor's dream won't let go.",
+        "But does it really mean the same?",
+        "But the sailor never will go.",
+        "But his heart is still in Hawaii.",
+        "And he keeps wondering what it's for.",
+        "And the sea has always been a friend to me.",
+        "So he will wait until it’s over.",
+        "The sun shines and the moon stays low.",
+        "He’ll never be the same.",
+        "And he keeps dreaming even though.",
+        "He never really stops to go.",
+        "But the sailor kept dreaming, though.",
+        "And he waits for the tides to flow.",
+        "The world keeps spinning even though.",
+        "But home is where the heart is.",
+        "And he's still the same old man on the ocean.",
+        "As he dreams of the people he knows.",
+        "And he’s not the only one to know.",
+        "And the clock keeps on ticking.",
+        "But he can't get off this boat.",
+        "But I’m the only one who knows.",
+        "And the waves are rough and rolly,",
+        "As he waits and waits for the sea to go.",
+        "While the boat drifts with the tide.",
+        "And he waits and he waits and he waits",
+        "And the sailor sails along alone.",
+        "Now he’s home and it’s a go.",
+        "While dreams are always the same."
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "And the sailor's dreams are still his own.",
+      "m3_p_donor": 0.0005618086,
+      "m3_p_recipient": 0.0002934372,
+      "sampled_lines": [
+        "As thoughts of home are never far from his mind.",
+        "And it’s a beautiful life I know.",
+        "For each night, I long to go.",
+        "With no one to guide the way.",
+        "But I am sailing where I'll be home.",
+        "And the sun keeps climbing his lonely road.",
+        "The sailor's heart is still at home.",
+        "And the sun keeps shining, so.",
+        "And the sailor's home is far below.",
+        "And the world keeps spinning though",
+        "But his love for mom will always glow.",
+        "But he'd rather be in a harbor now.",
+        "As we stand on the wind,",
+        "We still can reach the shore somehow.",
+        "And time keeps marching onward,",
+        "Though I am far away from you.",
+        "And he hopes to return to you.",
+        "Though he sits here on the dock, alone.",
+        "But he knows where he's going to go.",
+        "And life keeps on its merry go.",
+        "And always seems just a little slow.",
+        "But that sailor's dreams come true,",
+        "While he sits in his little boat.",
+        "But he is far away, oh, oh.",
+        "The moon is always shining,",
+        "The sea is still but the waves grow low.",
+        "And everything remains in motion.",
+        "But no one knows how that sailor feels.",
+        "And she was sure to see the shore.",
+        "Though the sailor is gone.",
+        "And he will still dream of home.",
+        "And he’s far from home, in the cold.",
+        "But a sailor doesn’t keep his goal.",
+        "And he still longs to see our love grow.",
+        "And he feels that he’s not alone.",
+        "The sailor still waits for the tide to go.",
+        "But it’s the simple things I long for most.",
+        "And the weather does no longer blow.",
+        "And the wind keeps blowing,",
+        "As long as the sun keeps shining.",
+        "And he’ll be lost and he’ll be sad,",
+        "But the world was spinning for me.",
+        "And his thoughts are stuck in the past.",
+        "And the sailor dreams of home.",
+        "And he never left the harbor.",
+        "In a world of dreams and woe.",
+        "And time keeps marching on,",
+        "A sailor dreams of a time to go.",
+        "And he keeps thinking, \"Oh, no.\"",
+        "But you remain as still as a log.",
+        "It goes round and round, and never stops.",
+        "But he is facing the wind,",
+        "But the sailor's dreams were not to go.",
+        "The sun kept shining and the sea kept flowing.",
+        "And I’m here and he’s down below.",
+        "And the moon is still a beacon of hope.",
+        "And his heart keeps waiting for the show.",
+        "And so does time with its flowing flow.",
+        "He can't believe the time has gone so.",
+        "And the sailor sails along with me."
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        13
+      ],
+      "greedy_line": "And the sailor's dreams are still his own.",
+      "m3_p_donor": 0.00054764637,
+      "m3_p_recipient": 0.00030508463,
+      "sampled_lines": [
+        "As stars align and the sun goes low.",
+        "And nothing moves but gravity.",
+        "And the ship keeps on moving on.",
+        "As he kept on sailing to the bay.",
+        "He’s in the middle of the sea,",
+        "And yet he was in the sea.",
+        "But he felt as though he was on a boat.",
+        "But the sailor's mind is still in the bay.",
+        "But in his heart he misses his abode.",
+        "So keep spinning too, I know.",
+        "And a sailor sails the sea-blue-o.",
+        "But he'd rather be in a harbor now.",
+        "As we stand on the floor.",
+        "No matter how much it tries to go;",
+        "As we wait with eyes for tomorrow.",
+        "And he is always on the go.",
+        "But her heart is always by the sea.",
+        "And he's tired, and he's weary, and so.",
+        "But some are still looking for their own.",
+        "But his dreams never drift far,",
+        "And so he keeps on sailing.",
+        "But when he reaches shore his troubles go.",
+        "And the sun is in the sky we know.",
+        "Even though she's in the sea.",
+        "When the water is so blue.",
+        "And all the world around him glows.",
+        "He knows that he'll be home soon.",
+        "And all the sailors are still in tow.",
+        "But his dreams are suddenly so.",
+        "The moon continues to flow.",
+        "And he waits for his beloved,",
+        "And he'll return to his mother and",
+        "But in our hearts, we still know",
+        "And he still longs to see our home.",
+        "And he knows that he can’t go home.",
+        "The sailor still waits for the tide to go.",
+        "For he’s the only one to know.",
+        "But his heart is still in Hawaii.",
+        "And he keeps wondering what it's for.",
+        "And the sea has always been a friend to me.",
+        "As the sea keeps flowing.",
+        "And he can still be there,",
+        "But he knows he’ll be returning soon.",
+        "But after all is said and done,",
+        "But he keeps standing on the prow.",
+        "The world keeps turning, but still,",
+        "And time keeps marching on,",
+        "A sailor dreams of a time to go.",
+        "And he keeps thinking, \"Oh, no.\"",
+        "He stands right where he used to go.",
+        "In the meantime, I’ll keep my hope alive.",
+        "The sailor sailing on his own.",
+        "And he will ship again to go.",
+        "As the sun sets, the moon rises slow.",
+        "And he continued sailing on his own.",
+        "The seas are rough and the wind so low.",
+        "And the sky is wide above you and me.",
+        "And the wind keeps blowing, still,",
+        "And still I can’t get over you.",
+        "The sailor does not know the why."
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 0.0005186715,
+      "p_recipient": 0.00029658453
+    },
+    {
+      "layer": 1,
+      "p_donor": 0.0005196788,
+      "p_recipient": 0.0002977551
+    },
+    {
+      "layer": 2,
+      "p_donor": 0.0005220507,
+      "p_recipient": 0.0002996136
+    },
+    {
+      "layer": 3,
+      "p_donor": 0.00051769306,
+      "p_recipient": 0.00029831793
+    },
+    {
+      "layer": 4,
+      "p_donor": 0.00051811564,
+      "p_recipient": 0.0003018321
+    },
+    {
+      "layer": 5,
+      "p_donor": 0.00052564417,
+      "p_recipient": 0.00029381362
+    },
+    {
+      "layer": 6,
+      "p_donor": 0.0005268025,
+      "p_recipient": 0.00029606992
+    },
+    {
+      "layer": 7,
+      "p_donor": 0.00052674056,
+      "p_recipient": 0.00029035067
+    },
+    {
+      "layer": 8,
+      "p_donor": 0.00052582665,
+      "p_recipient": 0.0002903447
+    },
+    {
+      "layer": 9,
+      "p_donor": 0.00052941614,
+      "p_recipient": 0.0002931344
+    },
+    {
+      "layer": 10,
+      "p_donor": 0.0005315842,
+      "p_recipient": 0.00029457913
+    },
+    {
+      "layer": 11,
+      "p_donor": 0.0005389284,
+      "p_recipient": 0.00029201686
+    },
+    {
+      "layer": 12,
+      "p_donor": 0.00054336083,
+      "p_recipient": 0.00029503158
+    },
+    {
+      "layer": 13,
+      "p_donor": 0.00054764637,
+      "p_recipient": 0.00030508463
+    },
+    {
+      "layer": 14,
+      "p_donor": 0.0005452093,
+      "p_recipient": 0.00030439362
+    },
+    {
+      "layer": 15,
+      "p_donor": 0.0005261605,
+      "p_recipient": 0.00027521464
+    },
+    {
+      "layer": 16,
+      "p_donor": 0.0005373166,
+      "p_recipient": 0.00027005904
+    },
+    {
+      "layer": 17,
+      "p_donor": 0.00053512055,
+      "p_recipient": 0.0002821866
+    },
+    {
+      "layer": 18,
+      "p_donor": 0.00053760275,
+      "p_recipient": 0.00028159976
+    },
+    {
+      "layer": 19,
+      "p_donor": 0.0005170617,
+      "p_recipient": 0.00029382945
+    },
+    {
+      "layer": 20,
+      "p_donor": 0.00051752664,
+      "p_recipient": 0.00029456217
+    },
+    {
+      "layer": 21,
+      "p_donor": 0.00051792216,
+      "p_recipient": 0.00029535865
+    },
+    {
+      "layer": 22,
+      "p_donor": 0.00051786023,
+      "p_recipient": 0.00029446685
+    },
+    {
+      "layer": 23,
+      "p_donor": 0.0005177923,
+      "p_recipient": 0.00029516127
+    },
+    {
+      "layer": 24,
+      "p_donor": 0.0005189889,
+      "p_recipient": 0.00029686352
+    },
+    {
+      "layer": 25,
+      "p_donor": 0.00051914656,
+      "p_recipient": 0.00029719068
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.9999539,
+      "relative_l2": 0.009609898
+    },
+    {
+      "layer": 1,
+      "cosine": 0.99950296,
+      "relative_l2": 0.031860888
+    },
+    {
+      "layer": 2,
+      "cosine": 0.9987534,
+      "relative_l2": 0.050444636
+    },
+    {
+      "layer": 3,
+      "cosine": 0.99835455,
+      "relative_l2": 0.058443476
+    },
+    {
+      "layer": 4,
+      "cosine": 0.99804354,
+      "relative_l2": 0.06350097
+    },
+    {
+      "layer": 5,
+      "cosine": 0.96906435,
+      "relative_l2": 0.2505844
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9836342,
+      "relative_l2": 0.18276751
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9880313,
+      "relative_l2": 0.15562487
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9916421,
+      "relative_l2": 0.12912041
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9945901,
+      "relative_l2": 0.10418813
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9954127,
+      "relative_l2": 0.0957501
+    },
+    {
+      "layer": 11,
+      "cosine": 0.99502623,
+      "relative_l2": 0.09961473
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9949141,
+      "relative_l2": 0.10105897
+    },
+    {
+      "layer": 13,
+      "cosine": 0.992132,
+      "relative_l2": 0.12565425
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9946139,
+      "relative_l2": 0.103863455
+    },
+    {
+      "layer": 15,
+      "cosine": 0.99169654,
+      "relative_l2": 0.12944128
+    },
+    {
+      "layer": 16,
+      "cosine": 0.9902261,
+      "relative_l2": 0.1409054
+    },
+    {
+      "layer": 17,
+      "cosine": 0.99053216,
+      "relative_l2": 0.13803704
+    },
+    {
+      "layer": 18,
+      "cosine": 0.990508,
+      "relative_l2": 0.13821992
+    },
+    {
+      "layer": 19,
+      "cosine": 0.990605,
+      "relative_l2": 0.13784203
+    },
+    {
+      "layer": 20,
+      "cosine": 0.9917315,
+      "relative_l2": 0.12937266
+    },
+    {
+      "layer": 21,
+      "cosine": 0.99304134,
+      "relative_l2": 0.1192995
+    },
+    {
+      "layer": 22,
+      "cosine": 0.9934378,
+      "relative_l2": 0.115775645
+    },
+    {
+      "layer": 23,
+      "cosine": 0.994088,
+      "relative_l2": 0.109378174
+    },
+    {
+      "layer": 24,
+      "cosine": 0.994181,
+      "relative_l2": 0.10850642
+    },
+    {
+      "layer": 25,
+      "cosine": 0.99475193,
+      "relative_l2": 0.10394157
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 6.8102963e-9,
+    "passed": true
+  }
+}

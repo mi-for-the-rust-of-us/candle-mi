@@ -1,0 +1,555 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p4-b-to-a",
+  "donor_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers when,\n",
+  "recipient_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers who,\n",
+  "donor_word": "when",
+  "recipient_word": "who",
+  "tokens": [
+    "<bos>",
+    "The",
+    " sun",
+    " goes",
+    " up",
+    ",",
+    " the",
+    " sun",
+    " goes",
+    " down",
+    ",",
+    "\n",
+    "The",
+    " moon",
+    " shines",
+    " bright",
+    " above",
+    " the",
+    " town",
+    ".",
+    "\n",
+    "Nobody",
+    " knows",
+    " or",
+    " remembers",
+    " who",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 27,
+  "recipient_newline_index": 27,
+  "n_layers": 26,
+  "patch_offset": 6,
+  "patch_position": 21,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "The sun and the moon are for.",
+  "final_word_slot": 34,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "The sun and the moon are for.",
+      "m3_p_donor": 0.00039272246,
+      "m3_p_recipient": 0.008743932,
+      "sampled_lines": [
+        "Who's been at the bar for how long.",
+        "Who did whatever.",
+        "Is the one who made the world.",
+        "Who made the sun and the moon,",
+        "What he does or who he is.",
+        "The moon is round, the sun is blue.",
+        "The one who makes the stars so clear.",
+        "Built this house and this path that goes by.",
+        "The one who knows, is the one who just does.",
+        "The sun king said, \"I am a lover.\"",
+        "The first person to see those stars.",
+        "Who the people are, where they come from.",
+        "The people they serve, the people they are.",
+        "The sun is so far away from me!",
+        "Who built this monument.",
+        "Saw the sun go down and who saw it rise.",
+        "The sun is for, that’s what they say.",
+        "Who sings, who plays, who dances, who.",
+        "The sun and the moon belong to you.",
+        "The sun belongs to, or whose it is.",
+        "It is in the sky that time returns to you.",
+        "But I do, and I do I do.",
+        "Or where, they came from.",
+        "The sun and moon truly are.",
+        "The first man was who lived long ago.",
+        "They’re just so busy with the radio.",
+        "Who was the first to ever see the sun.",
+        "What is life and how did it begin.",
+        "Who is the sun and who is the moon.",
+        "Or where, when, or why,",
+        "You are or who you are from.",
+        "That lives and dies and is alive too.",
+        "The sun, the moon, or the stars are for.",
+        "Just the hours run in a blur.",
+        "Who is going to be the first to die.",
+        "The sun and the moon are actually us.",
+        "The sun is, but people still prefer the moon.",
+        "The king of all those days is you.",
+        "The man was named,",
+        "The sun and the moon were made by.",
+        "The man in the moon is really.",
+        "Who built this house, and who is in it.",
+        "Where they came from, or where they go.",
+        "Got to the top of the mountain.",
+        "Went before.",
+        "Who ever created this wonderful world?",
+        "The man in the sky who decides who.",
+        "But the moon is the only one that gives us light.",
+        "Who did the work that made the world.",
+        "The sun is who, the sun is you and me.",
+        "Who made the sun or who made the moon.",
+        "The sun goes up and the sun goes down.",
+        "Who is on the top and who is on the bottom.",
+        "The sun is one of the most beautiful things we have.",
+        "These lines were written by a little girl.",
+        "But us, we're the ones who do.",
+        "The sun or the moon is truly you.",
+        "The sun and moon are, and what they do.",
+        "The sun and the moon was with the moon.",
+        "Whose face is in the mirror smiling at you."
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "The sun and the moon are for.",
+      "m3_p_donor": 0.00039272042,
+      "m3_p_recipient": 0.0087439865,
+      "sampled_lines": [
+        "Who's been at the bar for how long.",
+        "Who did whatever.",
+        "Is the one who made the world.",
+        "Who made the sun and the moon,",
+        "What he does or who he is.",
+        "The moon is round, the sun is blue.",
+        "The one who makes the stars so clear.",
+        "Built this house and this path that goes by.",
+        "The one who knows, is the one who just does.",
+        "The sun king said, \"I am a lover.\"",
+        "The first person to see those stars.",
+        "Who the people are, where they come from.",
+        "The people they serve, the people they are.",
+        "The sun is so far away from me!",
+        "Who built this monument.",
+        "Saw the sun go down and who saw it rise.",
+        "The sun is for, that’s what they say.",
+        "Who sings, who plays, who dances, who.",
+        "The sun and the moon belong to you.",
+        "The sun belongs to, or whose it is.",
+        "It is in the sky that time returns to you.",
+        "But I do, and I do I do.",
+        "Or where, they came from.",
+        "The sun and moon truly are.",
+        "The first man was who lived long ago.",
+        "They’re just so busy with the radio.",
+        "Who was the first to ever see the sun.",
+        "What is life and how did it begin.",
+        "Who is the sun and who is the moon.",
+        "Or where, when, or why,",
+        "You are or who you are from.",
+        "That lives and dies and is alive too.",
+        "The sun, the moon, or the stars are for.",
+        "Just the hours run in a blur.",
+        "Who is going to be the first to die.",
+        "The sun and the moon are actually us.",
+        "The sun is, but people still prefer the moon.",
+        "The king of all those days is you.",
+        "The man was named,",
+        "The sun and the moon were made by.",
+        "The man in the moon is really.",
+        "Who built this house, and who is in it.",
+        "Where they came from, or where they go.",
+        "Got to the top of the mountain.",
+        "Went before.",
+        "Who ever created this wonderful world?",
+        "The man in the sky who decides who.",
+        "But the moon is the only one that gives us light.",
+        "Who did the work that made the world.",
+        "The sun is who, the sun is you and me.",
+        "Who made the sun or who made the moon.",
+        "The sun goes up and the sun goes down.",
+        "Who is on the top and who is on the bottom.",
+        "The sun is one of the most beautiful things we have.",
+        "These lines were written by a little girl.",
+        "But us, we're the ones who do.",
+        "The sun or the moon is truly you.",
+        "The sun and moon are, and what they do.",
+        "The sun and the moon was with the moon.",
+        "Whose face is in the mirror smiling at you."
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        13
+      ],
+      "greedy_line": "The sun and the moon are for.",
+      "m3_p_donor": 0.00039272365,
+      "m3_p_recipient": 0.008744043,
+      "sampled_lines": [
+        "Who's been at the bar for how long.",
+        "Who did whatever.",
+        "Is the one who made the world.",
+        "Who made the sun and the moon,",
+        "What he does or who he is.",
+        "The moon is round, the sun is blue.",
+        "The one who makes the stars so clear.",
+        "Built this house and this path that goes by.",
+        "The one who knows, is the one who just does.",
+        "The sun king said, \"I am a lover.\"",
+        "The first person to see those stars.",
+        "Who the people are, where they come from.",
+        "The people they serve, the people they are.",
+        "The sun is so far away from me!",
+        "Who built this monument.",
+        "Saw the sun go down and who saw it rise.",
+        "The sun is for, that’s what they say.",
+        "Who sings, who plays, who dances, who.",
+        "The sun and the moon belong to you.",
+        "The sun belongs to, or whose it is.",
+        "It is in the sky that time returns to you.",
+        "But I do, and I do I do.",
+        "Or where, they came from.",
+        "The sun and moon truly are.",
+        "The first man was who lived long ago.",
+        "They’re just so busy with the radio.",
+        "Who was the first to ever see the sun.",
+        "What is life and how did it begin.",
+        "Who is the sun and who is the moon.",
+        "Or where, when, or why,",
+        "You are or who you are from.",
+        "That lives and dies and is alive too.",
+        "The sun, the moon, or the stars are for.",
+        "Just the hours run in a blur.",
+        "Who is going to be the first to die.",
+        "The sun and the moon are actually us.",
+        "The sun is, but people still prefer the moon.",
+        "The king of all those days is you.",
+        "The man was named,",
+        "The sun and the moon were made by.",
+        "The man in the moon is really.",
+        "Who built this house, and who is in it.",
+        "Where they came from, or where they go.",
+        "Got to the top of the mountain.",
+        "Went before.",
+        "Who ever created this wonderful world?",
+        "The man in the sky who decides who.",
+        "But the moon is the only one that gives us light.",
+        "Who did the work that made the world.",
+        "The sun is who, the sun is you and me.",
+        "Who made the sun or who made the moon.",
+        "The sun goes up and the sun goes down.",
+        "Who is on the top and who is on the bottom.",
+        "The sun is one of the most beautiful things we have.",
+        "These lines were written by a little girl.",
+        "But us, we're the ones who do.",
+        "The sun or the moon is truly you.",
+        "The sun and moon are, and what they do.",
+        "The sun and the moon was with the moon.",
+        "Whose face is in the mirror smiling at you."
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 0.00039272124,
+      "p_recipient": 0.008743922
+    },
+    {
+      "layer": 1,
+      "p_donor": 0.00039271842,
+      "p_recipient": 0.008743991
+    },
+    {
+      "layer": 2,
+      "p_donor": 0.0003927218,
+      "p_recipient": 0.008743968
+    },
+    {
+      "layer": 3,
+      "p_donor": 0.00039271958,
+      "p_recipient": 0.008743902
+    },
+    {
+      "layer": 4,
+      "p_donor": 0.00039272103,
+      "p_recipient": 0.008743934
+    },
+    {
+      "layer": 5,
+      "p_donor": 0.0003927181,
+      "p_recipient": 0.008743951
+    },
+    {
+      "layer": 6,
+      "p_donor": 0.0003927212,
+      "p_recipient": 0.008744003
+    },
+    {
+      "layer": 7,
+      "p_donor": 0.00039272333,
+      "p_recipient": 0.0087439185
+    },
+    {
+      "layer": 8,
+      "p_donor": 0.00039271888,
+      "p_recipient": 0.0087439185
+    },
+    {
+      "layer": 9,
+      "p_donor": 0.00039271795,
+      "p_recipient": 0.008743915
+    },
+    {
+      "layer": 10,
+      "p_donor": 0.00039272266,
+      "p_recipient": 0.00874397
+    },
+    {
+      "layer": 11,
+      "p_donor": 0.00039272066,
+      "p_recipient": 0.008744009
+    },
+    {
+      "layer": 12,
+      "p_donor": 0.00039272054,
+      "p_recipient": 0.0087439725
+    },
+    {
+      "layer": 13,
+      "p_donor": 0.00039272365,
+      "p_recipient": 0.008744043
+    },
+    {
+      "layer": 14,
+      "p_donor": 0.0003927172,
+      "p_recipient": 0.008743965
+    },
+    {
+      "layer": 15,
+      "p_donor": 0.00039272074,
+      "p_recipient": 0.008743977
+    },
+    {
+      "layer": 16,
+      "p_donor": 0.00039272066,
+      "p_recipient": 0.0087439595
+    },
+    {
+      "layer": 17,
+      "p_donor": 0.00039272112,
+      "p_recipient": 0.008743986
+    },
+    {
+      "layer": 18,
+      "p_donor": 0.00039272077,
+      "p_recipient": 0.008743945
+    },
+    {
+      "layer": 19,
+      "p_donor": 0.00039272232,
+      "p_recipient": 0.008743929
+    },
+    {
+      "layer": 20,
+      "p_donor": 0.00039272083,
+      "p_recipient": 0.008743963
+    },
+    {
+      "layer": 21,
+      "p_donor": 0.00039272234,
+      "p_recipient": 0.008743913
+    },
+    {
+      "layer": 22,
+      "p_donor": 0.0003927189,
+      "p_recipient": 0.008743903
+    },
+    {
+      "layer": 23,
+      "p_donor": 0.00039272077,
+      "p_recipient": 0.008743928
+    },
+    {
+      "layer": 24,
+      "p_donor": 0.00039272246,
+      "p_recipient": 0.0087439325
+    },
+    {
+      "layer": 25,
+      "p_donor": 0.00039272246,
+      "p_recipient": 0.008743932
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.28366944,
+      "relative_l2": 1.5059085
+    },
+    {
+      "layer": 1,
+      "cosine": 0.37387216,
+      "relative_l2": 1.4351109
+    },
+    {
+      "layer": 2,
+      "cosine": 0.29643834,
+      "relative_l2": 1.708047
+    },
+    {
+      "layer": 3,
+      "cosine": 0.3302718,
+      "relative_l2": 1.4078009
+    },
+    {
+      "layer": 4,
+      "cosine": 0.2990044,
+      "relative_l2": 1.4671761
+    },
+    {
+      "layer": 5,
+      "cosine": 0.42007542,
+      "relative_l2": 1.2234274
+    },
+    {
+      "layer": 6,
+      "cosine": 0.35539785,
+      "relative_l2": 1.1929134
+    },
+    {
+      "layer": 7,
+      "cosine": 0.4108318,
+      "relative_l2": 1.2284131
+    },
+    {
+      "layer": 8,
+      "cosine": 0.35787758,
+      "relative_l2": 1.146633
+    },
+    {
+      "layer": 9,
+      "cosine": 0.399851,
+      "relative_l2": 1.0597456
+    },
+    {
+      "layer": 10,
+      "cosine": 0.47695804,
+      "relative_l2": 0.95845693
+    },
+    {
+      "layer": 11,
+      "cosine": 0.49136198,
+      "relative_l2": 0.9844946
+    },
+    {
+      "layer": 12,
+      "cosine": 0.5197125,
+      "relative_l2": 0.95654964
+    },
+    {
+      "layer": 13,
+      "cosine": 0.55528134,
+      "relative_l2": 1.0340769
+    },
+    {
+      "layer": 14,
+      "cosine": 0.5693336,
+      "relative_l2": 0.96779186
+    },
+    {
+      "layer": 15,
+      "cosine": 0.5263804,
+      "relative_l2": 1.1887705
+    },
+    {
+      "layer": 16,
+      "cosine": 0.5565269,
+      "relative_l2": 1.0845814
+    },
+    {
+      "layer": 17,
+      "cosine": 0.5690024,
+      "relative_l2": 1.1325916
+    },
+    {
+      "layer": 18,
+      "cosine": 0.5558419,
+      "relative_l2": 1.2080703
+    },
+    {
+      "layer": 19,
+      "cosine": 0.53660315,
+      "relative_l2": 1.2471471
+    },
+    {
+      "layer": 20,
+      "cosine": 0.56369656,
+      "relative_l2": 1.2013716
+    },
+    {
+      "layer": 21,
+      "cosine": 0.5631976,
+      "relative_l2": 1.127558
+    },
+    {
+      "layer": 22,
+      "cosine": 0.5945241,
+      "relative_l2": 1.1220075
+    },
+    {
+      "layer": 23,
+      "cosine": 0.56009,
+      "relative_l2": 1.1008583
+    },
+    {
+      "layer": 24,
+      "cosine": 0.39060253,
+      "relative_l2": 1.1980746
+    },
+    {
+      "layer": 25,
+      "cosine": 0.23288226,
+      "relative_l2": 1.3026297
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 1.5832484e-8,
+    "passed": true
+  }
+}

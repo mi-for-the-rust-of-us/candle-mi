@@ -1,0 +1,553 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p1-b-to-a",
+  "donor_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark alone,\n",
+  "recipient_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\n",
+  "donor_word": "alone",
+  "recipient_word": "about",
+  "tokens": [
+    "<bos>",
+    "The",
+    " stars",
+    " were",
+    " twinkling",
+    " in",
+    " the",
+    " night",
+    ",",
+    "\n",
+    "The",
+    " lanterns",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".",
+    "\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " about",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 25,
+  "recipient_newline_index": 25,
+  "n_layers": 26,
+  "patch_offset": 0,
+  "patch_position": 25,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "Her heart was filled with doubt.",
+  "final_word_slot": 31,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "Her heart was filled with doubt.",
+      "m3_p_donor": 1.5382157e-7,
+      "m3_p_recipient": 0.00015003544,
+      "sampled_lines": [
+        "Searching for her Prince about.",
+        "For she was lost, her mind, her heart,",
+        "She wanted to find a beautiful pout.",
+        "To find the one who mattered most.",
+        "Seeking the one she loved so much.",
+        "Looking for someone to be with.",
+        "Her heart was filled with doubt.",
+        "The wind was howling, the sky was loud.",
+        "But the stars were so bright, she could not find her way out.",
+        "A light to guide her feet back home.",
+        "Afraid of a strange ghost to shout,",
+        "Searching for him in the crowd.",
+        "Her eyes were so sharp and so bright.",
+        "With a smile and a song in her mouth.",
+        "Looking for a lantern or two.",
+        "Wondering where to sit and shout.",
+        "The moon was high above.",
+        "As she looked for her lost lover,",
+        "Looking for the perfect moon-struck bout.",
+        "Her dreams came true, and her heart a bout.",
+        "Searching for a place to sleep.",
+        "Wondering how love would start.",
+        "She was looking for her love.",
+        "Her father was nowhere to be found.",
+        "And the only thing she could find was,",
+        "Searching for the path of love.",
+        "Afraid of the dark and the sounds —",
+        "Trying to find her way.",
+        "Seeking the end of a bright new route.",
+        "She felt her heart was somehow out.",
+        "She was hoping to find someone to shout.",
+        "Searching for the love of her youth.",
+        "Her eyes wide open, searching for her love.",
+        "Her heart was heavy and a doubt.",
+        "Looking for her heart's true love.",
+        "The moon's reflection cast a doubt.",
+        "She was alone, and she thought of the boy she loved.",
+        "Hoping to find a place to shout.",
+        "To find the man of her dreams about.",
+        "In search of someone she loved.",
+        "Her heart was heavy with doubt.",
+        "Wondering into the night.",
+        "As the stars twinkled in the sky above.",
+        "Waiting for someone to come out.",
+        "With music in her heart and song to shout.",
+        "In search of a dear friend of her heart.",
+        "Searching for the right way to get back home.",
+        "The wind was blowing from above.",
+        "Her feet were sore, her heart full of doubt.",
+        "The air was crisp and cool enough.",
+        "Wondering if he will come and find her out.",
+        "Feeling all the way around.",
+        "And wondered why it all was not about.",
+        "And met a handsome fellow there,",
+        "And he sat by the fireplace,",
+        "Her heart was filled with love and doubt.",
+        "And found no one to hold her out.",
+        "As she kept the promise of her heart.",
+        "Her heart was full of love and doubt.",
+        "Searching for her way back home."
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "Her heart was filled with doubt.",
+      "m3_p_donor": 1.6336597e-7,
+      "m3_p_recipient": 0.00017018519,
+      "sampled_lines": [
+        "Searching for her missing love.",
+        "And felt a presence, something out,",
+        "The moon was full and the sky was blue.",
+        "Her heart was heavy and her soul was out.",
+        "With a smile on her face and heart full of doubt.",
+        "In search of the one who she loved.",
+        "Her mind was a whirlwind with doubt.",
+        "Her eyes were full of wonder and doubt.",
+        "Seeking the one she loved so much.",
+        "In search of something good to shout.",
+        "Afraid of a strange monster or a werewolf.",
+        "Afraid of the shadows lurking,",
+        "Lost in a maze of love and doubt.",
+        "She felt a shadow by her foot.",
+        "In search of a glimmer of hope.",
+        "Afraid of taking a wrong route.",
+        "Lost in the silent sounds of the town.",
+        "Feeling lost, yet full of doubt.",
+        "Searching for someone to make her shout.",
+        "Searching for a place to be found.",
+        "Searching for a place to hide.",
+        "Scared and uneasy about what she found.",
+        "Her eyes fixed on the streets below.",
+        "Wondering what was in store for her out of sight.",
+        "Her eyes, searching for someone to shout.",
+        "With her beloved, as a love song.",
+        "With the moon to guide her way,",
+        "Seeking the very one who loved her.",
+        "On a quest for love she sought out.",
+        "Her mind filled with thoughts untold.",
+        "To find her true love, I think.",
+        "Her heart full of doubt.",
+        "Lost in her thoughts and her doubt.",
+        "The only light was shining not far about.",
+        "The stars were her companions for the night.",
+        "Gazing at the stars with a pout.",
+        "Her eyes on a distant star,",
+        "In search of a place to be found.",
+        "Anxious to be with him.",
+        "Feeling lost and alone.",
+        "Searching for her lost love.",
+        "Her heart filled with anxiety.",
+        "But he was nowhere to be found.",
+        "The night sky was a sight to behold.",
+        "Her heart so full of joy and doubt.",
+        "Trying to find the meaning of life.",
+        "Seeking for a special someone.",
+        "Searching for the right place to shout.",
+        "As the night time had turned to twilight.",
+        "Her feet were sore like an old hound.",
+        "The only one in sight.",
+        "Her heart was full of love and doubt.",
+        "As if she were lost, but it was all about.",
+        "Afraid of what she might come out about.",
+        "The moon was bright, the sky was blue.",
+        "Searching for a place to land.",
+        "But she couldn't help but wonder about.",
+        "She walked as if she felt no doubt.",
+        "Lost in the middle of a crowd.",
+        "The stars were twinkling in her heart."
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        16
+      ],
+      "greedy_line": "Her heart was filled with doubt.",
+      "m3_p_donor": 1.7180692e-7,
+      "m3_p_recipient": 0.00012706903,
+      "sampled_lines": [
+        "Wandering around by the river mouth.",
+        "With no trace of her, there was doubt.",
+        "Looking for the one she loves.",
+        "But all she could see were her thoughts.",
+        "She was lost but she was not afraid.",
+        "Afraid of the unknown and the doubt.",
+        "Her heart filled with a sense of doubt.",
+        "With a smile on her face and a heart full of doubt.",
+        "As she searched for her beloved’s house.",
+        "Hoping to find a man she loved.",
+        "As she had no clue where she ought.",
+        "But could not find her way out.",
+        "And when she turned, there was a face without a doubt.",
+        "She was lost in a daze, she turned around,",
+        "With moonlit eyes that sparkled like a star.",
+        "Looking for love and for her truth.",
+        "Her eyes were filled with tears and pout.",
+        "Looking for someone who could take her out.",
+        "Anxious thoughts consumed her mind.",
+        "Searching for her beloved.",
+        "She felt her heart was all about to shout.",
+        "Searching for her love's soft light.",
+        "As the world was soon to come out.",
+        "Searching for the path of love.",
+        "Afraid of the dark and the noise and the crowd.",
+        "Searching for someone she loved.",
+        "As the moon high up above made it out.",
+        "Her steps were slow and light as a cloud.",
+        "As she thought about her only love.",
+        "With nothing but her thoughts to shout.",
+        "Afraid to let her light go out.",
+        "The only light was moonlight.",
+        "Waiting for the man she loved.",
+        "The moon's reflection cast a doubt.",
+        "Her heart filled with love and doubt.",
+        "Searching for her lover so loud.",
+        "With a mind that never found a doubt.",
+        "In search of a happy heart to shout.",
+        "Wishing she could find her way out.",
+        "Seeking a friend, or a place to shout.",
+        "Her heart longing to be complete.",
+        "Looking for the boy she loved so much.",
+        "Wondering if he would come around.",
+        "She stumbled and fell to the ground.",
+        "Searching for the love she found.",
+        "She had a tale to tell to the town.",
+        "She wandered lost, she wandered out.",
+        "Searching for someone to love.",
+        "The air was crisp and cool yet sweet.",
+        "To find the one who would be her tout.",
+        "Her mind in a spin and out of control.",
+        "Her heart filled with love and doubt.",
+        "Her heart filled with love and doubt.",
+        "Wishing that the night would last.",
+        "And found him in the middle of the town.",
+        "She walked with a boy, but it wasn't about.",
+        "Her heart was full of love and doubt.",
+        "Searching for her way back home.",
+        "Her eyes filled with sorrow and doubt.",
+        "The moon was not her guide."
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 1.5343429e-7,
+      "p_recipient": 0.00014886311
+    },
+    {
+      "layer": 1,
+      "p_donor": 1.5296726e-7,
+      "p_recipient": 0.00015094709
+    },
+    {
+      "layer": 2,
+      "p_donor": 1.5234998e-7,
+      "p_recipient": 0.00014792943
+    },
+    {
+      "layer": 3,
+      "p_donor": 1.5275026e-7,
+      "p_recipient": 0.00015916412
+    },
+    {
+      "layer": 4,
+      "p_donor": 1.4882099e-7,
+      "p_recipient": 0.0001509434
+    },
+    {
+      "layer": 5,
+      "p_donor": 1.5127425e-7,
+      "p_recipient": 0.00016698266
+    },
+    {
+      "layer": 6,
+      "p_donor": 1.5024078e-7,
+      "p_recipient": 0.00016583504
+    },
+    {
+      "layer": 7,
+      "p_donor": 1.5512065e-7,
+      "p_recipient": 0.00018098614
+    },
+    {
+      "layer": 8,
+      "p_donor": 1.5799304e-7,
+      "p_recipient": 0.00018356158
+    },
+    {
+      "layer": 9,
+      "p_donor": 1.5900757e-7,
+      "p_recipient": 0.00018118661
+    },
+    {
+      "layer": 10,
+      "p_donor": 1.5204678e-7,
+      "p_recipient": 0.00017182385
+    },
+    {
+      "layer": 11,
+      "p_donor": 1.5912589e-7,
+      "p_recipient": 0.00017360157
+    },
+    {
+      "layer": 12,
+      "p_donor": 1.6101205e-7,
+      "p_recipient": 0.00016203096
+    },
+    {
+      "layer": 13,
+      "p_donor": 1.6734073e-7,
+      "p_recipient": 0.00017799193
+    },
+    {
+      "layer": 14,
+      "p_donor": 1.6781553e-7,
+      "p_recipient": 0.00017399296
+    },
+    {
+      "layer": 15,
+      "p_donor": 1.6975244e-7,
+      "p_recipient": 0.00013280896
+    },
+    {
+      "layer": 16,
+      "p_donor": 1.7180692e-7,
+      "p_recipient": 0.00012706903
+    },
+    {
+      "layer": 17,
+      "p_donor": 1.6395254e-7,
+      "p_recipient": 0.00013455118
+    },
+    {
+      "layer": 18,
+      "p_donor": 1.6410961e-7,
+      "p_recipient": 0.00013480718
+    },
+    {
+      "layer": 19,
+      "p_donor": 1.6096344e-7,
+      "p_recipient": 0.00014613189
+    },
+    {
+      "layer": 20,
+      "p_donor": 1.5644319e-7,
+      "p_recipient": 0.0001468266
+    },
+    {
+      "layer": 21,
+      "p_donor": 1.5741624e-7,
+      "p_recipient": 0.00014778295
+    },
+    {
+      "layer": 22,
+      "p_donor": 1.511409e-7,
+      "p_recipient": 0.00014849227
+    },
+    {
+      "layer": 23,
+      "p_donor": 1.5087417e-7,
+      "p_recipient": 0.00014828636
+    },
+    {
+      "layer": 24,
+      "p_donor": 1.5325895e-7,
+      "p_recipient": 0.00014904467
+    },
+    {
+      "layer": 25,
+      "p_donor": 1.5382157e-7,
+      "p_recipient": 0.00015003544
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.999958,
+      "relative_l2": 0.009184919
+    },
+    {
+      "layer": 1,
+      "cosine": 0.9975745,
+      "relative_l2": 0.07048031
+    },
+    {
+      "layer": 2,
+      "cosine": 0.99473935,
+      "relative_l2": 0.1031948
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9904502,
+      "relative_l2": 0.13912258
+    },
+    {
+      "layer": 4,
+      "cosine": 0.99190295,
+      "relative_l2": 0.12788557
+    },
+    {
+      "layer": 5,
+      "cosine": 0.92502177,
+      "relative_l2": 0.3832786
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9613786,
+      "relative_l2": 0.27535456
+    },
+    {
+      "layer": 7,
+      "cosine": 0.97083765,
+      "relative_l2": 0.23977906
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9799207,
+      "relative_l2": 0.19941685
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9859015,
+      "relative_l2": 0.16752926
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9881925,
+      "relative_l2": 0.15333743
+    },
+    {
+      "layer": 11,
+      "cosine": 0.98871684,
+      "relative_l2": 0.15027137
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9893526,
+      "relative_l2": 0.14719865
+    },
+    {
+      "layer": 13,
+      "cosine": 0.9830603,
+      "relative_l2": 0.18371457
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9837048,
+      "relative_l2": 0.18102536
+    },
+    {
+      "layer": 15,
+      "cosine": 0.98086274,
+      "relative_l2": 0.20417623
+    },
+    {
+      "layer": 16,
+      "cosine": 0.98010737,
+      "relative_l2": 0.20517318
+    },
+    {
+      "layer": 17,
+      "cosine": 0.97911304,
+      "relative_l2": 0.20808145
+    },
+    {
+      "layer": 18,
+      "cosine": 0.9797537,
+      "relative_l2": 0.20252915
+    },
+    {
+      "layer": 19,
+      "cosine": 0.97847897,
+      "relative_l2": 0.20974556
+    },
+    {
+      "layer": 20,
+      "cosine": 0.97849673,
+      "relative_l2": 0.20913401
+    },
+    {
+      "layer": 21,
+      "cosine": 0.9781808,
+      "relative_l2": 0.20824926
+    },
+    {
+      "layer": 22,
+      "cosine": 0.97758687,
+      "relative_l2": 0.21147989
+    },
+    {
+      "layer": 23,
+      "cosine": 0.9781748,
+      "relative_l2": 0.20813292
+    },
+    {
+      "layer": 24,
+      "cosine": 0.97945154,
+      "relative_l2": 0.20322324
+    },
+    {
+      "layer": 25,
+      "cosine": 0.9766197,
+      "relative_l2": 0.21615565
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 0.0,
+    "passed": true
+  }
+}

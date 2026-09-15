@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   llama3.2-1b-524k
+Model:    meta-llama/Llama-3.2-1B
+CLT:      mntss/clt-llama-3.2-1b-524k
+Prompt (truncated after line-3 newline):
+The birds were singing in the tree,
+And everything was wild and free.
+The river ran down to the sea,
+
+
+Suppress: "free" [CltFeatureId { layer: 13, index: 30985 }, CltFeatureId { layer: 9, index: 5488 }, CltFeatureId { layer: 14, index: 27874 }, CltFeatureId { layer: 13, index: 32049 }]
+Inject:   "that" L14:13043
+Strength: 25
+
+Prompt tokens (24); steering site = newline @ 23
+Baseline greedy line: "And the sun was shining bright"
+Final-word slot (predicts the rhyme word): position 29
+
+  [baseline       ] greedy="And the sun was shining bright"  P(inject)=1.0819e-3  P(natural)=2.6781e-3
+  [suppress-only  ] greedy="Our hearts were filled with joy"  P(inject)=9.8491e-4  P(natural)=2.7784e-3
+  [inject-only    ] greedy="That was the way to go"  P(inject)=1.0707e-3  P(natural)=2.6961e-3
+  [suppress+inject] greedy="That's where the birds were singing in the tree"  P(inject)=9.3795e-4  P(natural)=2.7879e-3
+
+m4 position sweep (suppress+inject at strength 25):
+  best P(inject)=9.9835e-1 at position 28 (" shining")
+
+Output written to docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_free_s2.json
+
+Total elapsed: 90.03s

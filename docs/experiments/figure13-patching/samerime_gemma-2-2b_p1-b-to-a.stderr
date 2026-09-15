@@ -1,0 +1,27 @@
+Model: google/gemma-2-2b
+Pair:  p1-b-to-a
+Donor     ("without"):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark without,
+
+Recipient ("about"):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark about,
+
+Donor newline @ 25 (26 tokens); recipient newline @ 25 (26 tokens); 26 layers
+Newline rows differ least at cosine 0.9333 (layer 5); most at relative L2 0.3592
+
+Baseline greedy line: "Her heart was filled with doubt." (final-word slot 31)
+Identity control: greedy identical, max |dP| 0.000e0 -> pass
+
+Layer trace (single-layer patch at the newline):
+  best P(donor) at layer 11
+  [baseline    ] greedy="Her heart was filled with doubt."  P(donor)=1.7560e-6  P(recipient)=1.5004e-4
+  [all-layer   ] greedy="The moon was shining bright."  P(donor)=3.1909e-6  P(recipient)=2.3804e-4
+  [single-layer] greedy="Her heart was filled with doubt."  P(donor)=2.6599e-6  P(recipient)=2.2388e-4
+
+Wrote docs/experiments/figure13-patching/samerime_gemma-2-2b_p1-b-to-a.json
+
+Total elapsed: 297.40s

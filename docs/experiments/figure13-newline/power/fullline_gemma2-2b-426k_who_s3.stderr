@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   gemma2-2b-426k
+Model:    google/gemma-2-2b
+CLT:      mntss/clt-gemma-2-2b-426k
+Prompt (truncated after line-3 newline):
+The sun goes up, the sun goes down,
+The moon shines bright above the town.
+Nobody knows or remembers who,
+
+
+Suppress: "who" [CltFeatureId { layer: 25, index: 10073 }, CltFeatureId { layer: 23, index: 1548 }, CltFeatureId { layer: 25, index: 14014 }, CltFeatureId { layer: 18, index: 7484 }, CltFeatureId { layer: 19, index: 5076 }, CltFeatureId { layer: 23, index: 3304 }, CltFeatureId { layer: 25, index: 5927 }]
+Inject:   "around" L22:10243
+Strength: 25
+
+Prompt tokens (28); steering site = newline @ 27
+Baseline greedy line: "The sun and the moon are for."
+Final-word slot (predicts the rhyme word): position 34
+
+  [baseline       ] greedy="The sun and the moon are for."  P(inject)=1.2242e-4  P(natural)=8.7439e-3
+  [suppress-only  ] greedy="The sun and the moon are for."  P(inject)=1.2545e-4  P(natural)=9.7365e-3
+  [inject-only    ] greedy="Around the world, the sun is born."  P(inject)=1.3051e-4  P(natural)=8.9190e-3
+  [suppress+inject] greedy="Around the world, the sun is born."  P(inject)=1.3370e-4  P(natural)=9.6211e-3
+
+m4 position sweep (suppress+inject at strength 25):
+  best P(inject)=4.7614e-1 at position 33 (" are")
+
+Output written to docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_who_s3.json
+
+Total elapsed: 379.36s

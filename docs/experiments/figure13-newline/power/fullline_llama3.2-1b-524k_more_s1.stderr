@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   llama3.2-1b-524k
+Model:    meta-llama/Llama-3.2-1B
+CLT:      mntss/clt-llama-3.2-1b-524k
+Prompt (truncated after line-3 newline):
+The waves came crashing on the shore,
+The wind was howling more and more.
+She asked what all the fuss was for,
+
+
+Suppress: "more" [CltFeatureId { layer: 1, index: 5297 }, CltFeatureId { layer: 3, index: 22663 }, CltFeatureId { layer: 10, index: 18203 }]
+Inject:   "that" L14:13043
+Strength: 25
+
+Prompt tokens (27); steering site = newline @ 26
+Baseline greedy line: "She was just a little girl"
+Final-word slot (predicts the rhyme word): position 32
+
+  [baseline       ] greedy="She was just a little girl"  P(inject)=1.3530e-4  P(natural)=1.7474e-3
+  [suppress-only  ] greedy="but he just smiled and said"  P(inject)=1.1972e-4  P(natural)=1.2050e-3
+  [inject-only    ] greedy="That the waves were crashing on the shore"  P(inject)=1.3717e-4  P(natural)=1.7373e-3
+  [suppress+inject] greedy=" that she was so scared"  P(inject)=1.1931e-4  P(natural)=1.2001e-3
+
+m4 position sweep (suppress+inject at strength 25):
+  best P(inject)=9.9872e-1 at position 31 (" little")
+
+Output written to docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_more_s1.json
+
+Total elapsed: 98.06s

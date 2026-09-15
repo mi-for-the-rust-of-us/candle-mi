@@ -1,0 +1,555 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p4-a-to-b",
+  "donor_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers who,\n",
+  "recipient_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers when,\n",
+  "donor_word": "who",
+  "recipient_word": "when",
+  "tokens": [
+    "<bos>",
+    "The",
+    " sun",
+    " goes",
+    " up",
+    ",",
+    " the",
+    " sun",
+    " goes",
+    " down",
+    ",",
+    "\n",
+    "The",
+    " moon",
+    " shines",
+    " bright",
+    " above",
+    " the",
+    " town",
+    ".",
+    "\n",
+    "Nobody",
+    " knows",
+    " or",
+    " remembers",
+    " when",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 27,
+  "recipient_newline_index": 27,
+  "n_layers": 26,
+  "patch_offset": 0,
+  "patch_position": 27,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 3,
+  "baseline_greedy_line": "The sun will rise or when it will set.",
+  "final_word_slot": 36,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "The sun will rise or when it will set.",
+      "m3_p_donor": 3.693769e-7,
+      "m3_p_recipient": 0.00013693125,
+      "sampled_lines": [
+        "The nightingale sang in the evening.",
+        "The sun will start to lighten up the sky again.",
+        "The sun came down,",
+        "That our world was once a desert plain.",
+        "Or why or how these things began.",
+        "A time the sun never shines again.",
+        "The sun and moon will go together again.",
+        "The sun goes up, the sun goes down.",
+        "The sun will rise again.",
+        "Or why, or where.",
+        "The earth revolves around the sun.",
+        "When they used to play ball on the green.",
+        "Or why, I feel I've been here before.",
+        "The birds sang in the morning,",
+        "The sun's light can't shine, or when",
+        "A day will come that you will not burn.",
+        "The sun went down, and when did it come back up again?",
+        "The sun goes up tomorrow again.",
+        "That the sun will disappear in the sky.",
+        "How long the sun shall shine or when.",
+        "The sun and moon will meet again.",
+        "The sun seems to stand still and then.",
+        "That the sun shines brightest at noon.",
+        "The sun comes up, the sun goes down.",
+        "The sun first came up in the sky,",
+        "It sometimes shines, sometimes it doesn't.",
+        "The sun went out or out of sight.",
+        "The sun went out, and nobody cares.",
+        "How the night is made by day to spring.",
+        "How night turns to day,",
+        "The sun will go back to where it came from.",
+        "Its sun, moon or stars, the same old sin.",
+        "The sun went up the next morning.",
+        "The first night of the first day of Spring.",
+        "The light of the sun is set to dim.",
+        "The world began, and when it’ll end.",
+        "The world was filled with love and song.",
+        "Or where the sun and moon began.",
+        "The spring comes back and the summer returns.",
+        "Or how, or where, or when.",
+        "The sun did shine in the sky.",
+        "But I know how I will die.",
+        "The sun goes up, and when it comes to bed.",
+        "The sun goes up, the sun goes down.",
+        "It goes up and it goes down in the end.",
+        "The sun will come back to shine again.",
+        "The sun and the moon got together.",
+        "The sun goes up, the sun goes down.",
+        "The moon and sun will meet again.",
+        "The sun was made, the moon, and the rain",
+        "The night becomes and day again.",
+        "The sun went out or when it came.",
+        "But I know that the sun goes up and down.",
+        "The sun goes up and when it goes to sleep.",
+        "The sun goes down, the moon shines up.",
+        "The sun first came up and set again.",
+        "The sun goes up, the sun goes down.",
+        "We'll be living in this world again.",
+        "The sun will get around to shining again.",
+        "The sun's first ray first saw the dawn."
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "The sun goes up, the sun goes down.",
+      "m3_p_donor": 4.2089178e-7,
+      "m3_p_recipient": 0.00014371228,
+      "sampled_lines": [
+        "That the moon was the sun, and the sun was the moon. (",
+        "That a star was born and called in.",
+        "Was the moon once a man?",
+        "Who has done it, why or what for.",
+        "The sun's a-gonna rise again.",
+        "Or where the stars above the horizon.",
+        "Who made the sun and moon,",
+        "The sun is king and the moon is queen.",
+        "Who sung these songs, or when they began.",
+        "Was the world created? They say,",
+        "Who started it all or what it meant.",
+        "But the sun and the moon must meet.",
+        "I’ll ever get back to the spring,",
+        "Or how, that there’s a man,",
+        "The sun will come out again.",
+        "Or even how, it happens.",
+        "Built that big old house on the hill.",
+        "Just who it is who makes them all appear.",
+        "The sun goes up, the sun goes down,",
+        "The sun goes up, the sun goes down.",
+        "But everyone knows that it's the best time to go bowling.",
+        "Built this town, or where it came from.",
+        "Or where they came from.",
+        "That the sun will go down on earth again.",
+        "Who gave it all to us for free,",
+        "Who put the stars in the sky.",
+        "Or why, the sun goes down.",
+        "The sun will set and the moon will come.",
+        "Who changed his heart to a devil's grin.",
+        "To the stars, and to the moon,",
+        "Came the day or night.",
+        "The sun goes up and when it goes in.",
+        "This night will be our last on earth.",
+        "Made the sun and the moon in the first place.",
+        "Who first saw the moon, the moon that shines so clear.",
+        "Or who or why.",
+        "Who lit the fires, who made the men.",
+        "The sun will shine again.",
+        "The sun will shine or when the moon will burn.",
+        "The sun will set for all mankind.",
+        "Just how long this world has been.",
+        "The sun will set and we will all leave.",
+        "The day they were born, or when they died.",
+        "Who built this ancient temple.",
+        "The time of day the sun always shines.",
+        "Like a dream, a shadow, or a memory,",
+        "The sun goes up and when it goes down.",
+        "The sun and moon will stop from spinning.",
+        "Or where, or why, or when.",
+        "The sun’s first day the moon was born.",
+        "The sun was born and when it fell in sleep.",
+        "At least not me,",
+        "The earth was so dark and so cold.",
+        "As the sun goes up and when it goes down.",
+        "Who built the bridge, and who it is for.",
+        "Who first called the sun and the moon,",
+        "I think.",
+        "Got the power to turn anything in.",
+        "Who first came to this old land.",
+        "Who or why or how it all began,"
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        10
+      ],
+      "greedy_line": "The sun goes up, the sun goes down.",
+      "m3_p_donor": 4.2193966e-7,
+      "m3_p_recipient": 0.00015354584,
+      "sampled_lines": [
+        "The nightingale sang in the evening.",
+        "The sun will return to whence it came.",
+        "They think it's something left to pretend.",
+        "The sun went down and the moon began.",
+        "The sun will shine and the moon will be gone.",
+        "It happened, but it is known that",
+        "Or why, or how, or what, or when.",
+        "The sun will go out, or the moon will burn.",
+        "They just know that life begins after eleven.",
+        "The stars shine bright above the glen.",
+        "The sun will shine, or the moon will burn.",
+        "The sun sets, the moon shines over again.",
+        "The world began, but we have begun.",
+        "Where, or who, and how it all began.",
+        "Nobody knows or remembers why,",
+        "Nor where, nor how or why the sun began.",
+        "The sun will set and never return.",
+        "The sun shines in the sky.",
+        "But they do know she’s always been.",
+        "The world's history first began.",
+        "The sun went down and the sun went in.",
+        "The moon rises.",
+        "The sun goes up, the sun goes down.",
+        "The sun will rise or set again.",
+        "The moon was born, nor when it will be gone.",
+        "Nobody knows or remembers where,",
+        "The sun will rise again.",
+        "The sun first greeted us with a grin.",
+        "The sun goes down and when it's begun.",
+        "The stars do come out to play.",
+        "The sun went down and the moon went up.",
+        "But they know it's right to do so.",
+        "The sun goes up, the sun goes down.",
+        "The sun starts to rise and the sun goes in.",
+        "The sun goes up, the sun goes down.",
+        "That the sun went out without a sign.",
+        "The sun went out, but all the world",
+        "The sun will come up, or when it will go down.",
+        "Or how, or where, or who.",
+        "The sun came here to stay.",
+        "The sun came up, and the sun went down.",
+        "The sun will shine again.",
+        "The sun will ever rise again.",
+        "The stars went out, on that distant day.",
+        "The sun went in and the moon went in.",
+        "The sun and moon began to burn.",
+        "The night comes, the day begins.",
+        "Or how but the earth is round.",
+        "The moon and sun will meet again.",
+        "The sun was made, the moon, and the earth",
+        "The night becomes again the day.",
+        "The sun went out for the last time,",
+        "It will all be over and gone.",
+        "The sun and moon were born.",
+        "The sun went up, and when it went down.",
+        "The sun sets and the moon comes on.",
+        "The sun will set on the last of men.",
+        "The stars in the sky will shine again.",
+        "The night sky was just a dark black pen.",
+        "Or who, or where they came from,"
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 3.6914975e-7,
+      "p_recipient": 0.00013677358
+    },
+    {
+      "layer": 1,
+      "p_donor": 3.660337e-7,
+      "p_recipient": 0.00013492655
+    },
+    {
+      "layer": 2,
+      "p_donor": 3.6489794e-7,
+      "p_recipient": 0.00013391505
+    },
+    {
+      "layer": 3,
+      "p_donor": 3.7068608e-7,
+      "p_recipient": 0.00013736954
+    },
+    {
+      "layer": 4,
+      "p_donor": 3.6952153e-7,
+      "p_recipient": 0.00013687086
+    },
+    {
+      "layer": 5,
+      "p_donor": 4.182408e-7,
+      "p_recipient": 0.00015207409
+    },
+    {
+      "layer": 6,
+      "p_donor": 4.205521e-7,
+      "p_recipient": 0.00015153723
+    },
+    {
+      "layer": 7,
+      "p_donor": 4.1807382e-7,
+      "p_recipient": 0.00015349453
+    },
+    {
+      "layer": 8,
+      "p_donor": 4.176831e-7,
+      "p_recipient": 0.00015342333
+    },
+    {
+      "layer": 9,
+      "p_donor": 4.155593e-7,
+      "p_recipient": 0.00015356623
+    },
+    {
+      "layer": 10,
+      "p_donor": 4.2193966e-7,
+      "p_recipient": 0.00015354584
+    },
+    {
+      "layer": 11,
+      "p_donor": 4.1898556e-7,
+      "p_recipient": 0.00015495175
+    },
+    {
+      "layer": 12,
+      "p_donor": 4.195258e-7,
+      "p_recipient": 0.00015238086
+    },
+    {
+      "layer": 13,
+      "p_donor": 3.9624075e-7,
+      "p_recipient": 0.00014461712
+    },
+    {
+      "layer": 14,
+      "p_donor": 3.9186992e-7,
+      "p_recipient": 0.0001408974
+    },
+    {
+      "layer": 15,
+      "p_donor": 3.5615727e-7,
+      "p_recipient": 0.00013160458
+    },
+    {
+      "layer": 16,
+      "p_donor": 3.6931726e-7,
+      "p_recipient": 0.00012675219
+    },
+    {
+      "layer": 17,
+      "p_donor": 3.7439392e-7,
+      "p_recipient": 0.00013696408
+    },
+    {
+      "layer": 18,
+      "p_donor": 3.7439574e-7,
+      "p_recipient": 0.00013694071
+    },
+    {
+      "layer": 19,
+      "p_donor": 3.7238058e-7,
+      "p_recipient": 0.00013953178
+    },
+    {
+      "layer": 20,
+      "p_donor": 3.7385627e-7,
+      "p_recipient": 0.00013831636
+    },
+    {
+      "layer": 21,
+      "p_donor": 3.7023364e-7,
+      "p_recipient": 0.00013785333
+    },
+    {
+      "layer": 22,
+      "p_donor": 3.7372018e-7,
+      "p_recipient": 0.00013748628
+    },
+    {
+      "layer": 23,
+      "p_donor": 3.7542497e-7,
+      "p_recipient": 0.00013777996
+    },
+    {
+      "layer": 24,
+      "p_donor": 3.7008067e-7,
+      "p_recipient": 0.0001368768
+    },
+    {
+      "layer": 25,
+      "p_donor": 3.693769e-7,
+      "p_recipient": 0.00013693125
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.9999747,
+      "relative_l2": 0.0070927753
+    },
+    {
+      "layer": 1,
+      "cosine": 0.99932766,
+      "relative_l2": 0.036753144
+    },
+    {
+      "layer": 2,
+      "cosine": 0.99681705,
+      "relative_l2": 0.08014561
+    },
+    {
+      "layer": 3,
+      "cosine": 0.99468327,
+      "relative_l2": 0.10441946
+    },
+    {
+      "layer": 4,
+      "cosine": 0.9951678,
+      "relative_l2": 0.09833129
+    },
+    {
+      "layer": 5,
+      "cosine": 0.9345248,
+      "relative_l2": 0.3634032
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9629989,
+      "relative_l2": 0.26995492
+    },
+    {
+      "layer": 7,
+      "cosine": 0.97514445,
+      "relative_l2": 0.22295882
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9831715,
+      "relative_l2": 0.182972
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9891338,
+      "relative_l2": 0.14712197
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9898888,
+      "relative_l2": 0.14226662
+    },
+    {
+      "layer": 11,
+      "cosine": 0.9891596,
+      "relative_l2": 0.14821061
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9892006,
+      "relative_l2": 0.14986452
+    },
+    {
+      "layer": 13,
+      "cosine": 0.98097223,
+      "relative_l2": 0.19779563
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9842198,
+      "relative_l2": 0.18130086
+    },
+    {
+      "layer": 15,
+      "cosine": 0.9670435,
+      "relative_l2": 0.2598934
+    },
+    {
+      "layer": 16,
+      "cosine": 0.9564977,
+      "relative_l2": 0.29845002
+    },
+    {
+      "layer": 17,
+      "cosine": 0.9446789,
+      "relative_l2": 0.33352208
+    },
+    {
+      "layer": 18,
+      "cosine": 0.93212944,
+      "relative_l2": 0.3659408
+    },
+    {
+      "layer": 19,
+      "cosine": 0.8953836,
+      "relative_l2": 0.45727018
+    },
+    {
+      "layer": 20,
+      "cosine": 0.89815736,
+      "relative_l2": 0.45107257
+    },
+    {
+      "layer": 21,
+      "cosine": 0.89500344,
+      "relative_l2": 0.45974356
+    },
+    {
+      "layer": 22,
+      "cosine": 0.8762983,
+      "relative_l2": 0.49571344
+    },
+    {
+      "layer": 23,
+      "cosine": 0.8576498,
+      "relative_l2": 0.534193
+    },
+    {
+      "layer": 24,
+      "cosine": 0.85859376,
+      "relative_l2": 0.5449423
+    },
+    {
+      "layer": 25,
+      "cosine": 0.8670353,
+      "relative_l2": 0.5111734
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 6.548362e-10,
+    "passed": true
+  }
+}

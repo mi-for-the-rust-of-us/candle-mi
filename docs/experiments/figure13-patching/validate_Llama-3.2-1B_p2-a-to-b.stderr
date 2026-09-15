@@ -1,0 +1,24 @@
+Model: meta-llama/Llama-3.2-1B
+Pair:  p2-a-to-b
+Donor     ("so"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+The world keeps spinning even so,
+
+Recipient ("now"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+The world keeps spinning even now,
+
+Donor newline @ 22 (23 tokens); recipient newline @ 22 (23 tokens); 16 layers
+Newline rows differ least at cosine 0.9414 (layer 4); most at relative L2 0.3509
+
+Baseline greedy line: "And the sun keeps shining bright" (final-word slot 28)
+Identity control: greedy identical, max |dP| 0.000e0 -> pass
+
+Baseline only: skipping the layer trace and both patch conditions.
+  [baseline    ] greedy="And the sun keeps shining bright"  P(donor)=6.8311e-3  P(recipient)=2.4508e-3
+
+Wrote docs/experiments/figure13-patching/validate_Llama-3.2-1B_p2-a-to-b.json
+
+Total elapsed: 25.46s

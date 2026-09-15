@@ -1,0 +1,24 @@
+Model: meta-llama/Llama-3.2-1B
+Pair:  p4-a-to-b
+Donor     ("who"):
+The sun goes up, the sun goes down,
+The moon shines bright above the town.
+Nobody knows or remembers who,
+
+Recipient ("when"):
+The sun goes up, the sun goes down,
+The moon shines bright above the town.
+Nobody knows or remembers when,
+
+Donor newline @ 24 (25 tokens); recipient newline @ 24 (25 tokens); 16 layers
+Newline rows differ least at cosine 0.8724 (layer 14); most at relative L2 0.5047
+
+Baseline greedy line: "But the sun goes up, the sun goes down" (final-word slot 34)
+Identity control: greedy identical, max |dP| 4.206e-12 -> pass
+
+Baseline only: skipping the layer trace and both patch conditions.
+  [baseline    ] greedy="But the sun goes up, the sun goes down"  P(donor)=6.5569e-8  P(recipient)=8.9329e-7
+
+Wrote docs/experiments/figure13-patching/validate_Llama-3.2-1B_p4-a-to-b.json
+
+Total elapsed: 27.11s

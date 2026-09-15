@@ -1,0 +1,555 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p3-b-to-a",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a sigh,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a shout,\n",
+  "donor_word": "sigh",
+  "recipient_word": "shout",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "He",
+    " raised",
+    " his",
+    " voice",
+    " and",
+    " gave",
+    " a",
+    " shout",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 27,
+  "recipient_newline_index": 27,
+  "n_layers": 26,
+  "patch_offset": 6,
+  "patch_position": 21,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "And called to his wife, “I’m coming out!”",
+  "final_word_slot": 39,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And called to his wife, “I’m coming out!”",
+      "m3_p_donor": 5.750785e-9,
+      "m3_p_recipient": 0.00017824324,
+      "sampled_lines": [
+        "\"O'er the sea I hear my mother's shout.\"",
+        "As he stood on the deck of the boat.",
+        "Hoping to be heard by the people down below.",
+        "\"Land of my fathers, I am coming out!\"",
+        "And the whole world heard him out.",
+        "And called upon the long forgotten",
+        "“I wish I was at home now!”",
+        "And said he’d sail that very night.",
+        "And cried: \"Would you bring me out?\"",
+        "To cheer his friends a short while out.",
+        "And cried, “The land is fair and bright!”",
+        "To ask the question, “Where is the boat?”",
+        "And as he sang he let out a shout!",
+        "\"I'm sailing back, I'm sailing out!\"",
+        "But did not hear a sound.",
+        "Of “I’m coming home, I’m coming home.”",
+        "And prayed that God would let him out.",
+        "And shouted, \"Oh, I'm lost! I'm lost",
+        "And called to me one evening out.",
+        "A shout that could not be denied.",
+        "To all the other sailors out in the boat:",
+        "\"O Sailor, I'm coming soon,",
+        "To be sure that no one heard him out.",
+        "As if he'd run aground.",
+        "And sang a song that everyone could shout.",
+        "And his voice was heard by no one but out.",
+        "\"This is no place for me to shout!\"",
+        "And heard his footsteps fall back about.",
+        "And called for his old man and his yacht.",
+        "And called out to the moon and night.",
+        "“Where are you, my shipmates, and where are you now?”",
+        "In a loud and joyful shout.",
+        "And said, \"My sea-boots are too tight.\"",
+        "And gave a shout for the land that’s called home.",
+        "And called for his darling and her gent.",
+        "To people on the other side of town.",
+        "\"Oh, don't cry, my love, I'm not",
+        "For he was tired and wanted out.",
+        "And all the sailors heard his shout.",
+        "As he thought of his wife and his boat.",
+        "To the land I love so much,",
+        "And cried, “I’m homeward bound!”",
+        "The people of the bay heard it out.",
+        "“Don’t you know I’m coming home tonight?”",
+        "To call the people to his boat.",
+        "And called his old home on the",
+        "His voice was loud and through the night.",
+        "\"I need a drink by me in the cold,",
+        "And said, “Oh, what a lovely boat!”",
+        "\"I am the captain of the boat!\"",
+        "To let the folks on shore know what he thought about.",
+        "And called to all the boats about.",
+        "To see if there was anyone about.",
+        "And heard a girl's soft voice in the night.",
+        "“Sailor, sailor, where’s your home now?”",
+        "To a ship that sailed beyond the coast.",
+        "\"God bless you, God bless you all!\"",
+        "To know if all his friends were about.",
+        "And called out all the people about.",
+        "For he wanted to get to town."
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "And called to his wife, “I’m coming out!”",
+      "m3_p_donor": 5.7507856e-9,
+      "m3_p_recipient": 0.00017824341,
+      "sampled_lines": [
+        "\"O'er the sea I hear my mother's shout.\"",
+        "As he stood on the deck of the boat.",
+        "Hoping to be heard by the people down below.",
+        "\"Land of my fathers, I am coming out!\"",
+        "And the whole world heard him out.",
+        "And called upon the long forgotten",
+        "“I wish I was at home now!”",
+        "And said he’d sail that very night.",
+        "And cried: \"Would you bring me out?\"",
+        "To cheer his friends a short while out.",
+        "And cried, “The land is fair and bright!”",
+        "To ask the question, “Where is the boat?”",
+        "And as he sang he let out a shout!",
+        "\"I'm sailing back, I'm sailing out!\"",
+        "But did not hear a sound.",
+        "Of “I’m coming home, I’m coming home.”",
+        "And prayed that God would let him out.",
+        "And shouted, \"Oh, I'm lost! I'm lost",
+        "And called to me one evening out.",
+        "A shout that could not be denied.",
+        "To all the other sailors out in the boat:",
+        "\"O Sailor, I'm coming soon,",
+        "To be sure that no one heard him out.",
+        "As if he'd run aground.",
+        "And sang a song that everyone could shout.",
+        "And his voice was heard by no one but out.",
+        "\"This is no place for me to shout!\"",
+        "And heard his footsteps fall back about.",
+        "And called for his old man and his yacht.",
+        "And called out to the moon and night.",
+        "“Where are you, my shipmates, and where are you now?”",
+        "In a loud and joyful shout.",
+        "And said, \"My sea-boots are too tight.\"",
+        "And gave a shout for the land that’s called home.",
+        "And called for his darling and her gent.",
+        "To people on the other side of town.",
+        "\"Oh, don't cry, my love, I'm not",
+        "For he was tired and wanted out.",
+        "And all the sailors heard his shout.",
+        "As he thought of his wife and his boat.",
+        "To the land I love so much,",
+        "And cried, “I’m homeward bound!”",
+        "The people of the bay heard it out.",
+        "“Don’t you know I’m coming home tonight?”",
+        "To call the people to his boat.",
+        "And called his old home on the",
+        "His voice was loud and through the night.",
+        "\"I need a drink by me in the cold,",
+        "And said, “Oh, what a lovely boat!”",
+        "\"I am the captain of the boat!\"",
+        "To let the folks on shore know what he thought about.",
+        "And called to all the boats about.",
+        "To see if there was anyone about.",
+        "And heard a girl's soft voice in the night.",
+        "“Sailor, sailor, where’s your home now?”",
+        "To a ship that sailed beyond the coast.",
+        "\"God bless you, God bless you all!\"",
+        "To know if all his friends were about.",
+        "And called out all the people about.",
+        "For he wanted to get to town."
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        9
+      ],
+      "greedy_line": "And called to his wife, “I’m coming out!”",
+      "m3_p_donor": 5.7508043e-9,
+      "m3_p_recipient": 0.00017824298,
+      "sampled_lines": [
+        "\"O'er the sea I hear my mother's shout.\"",
+        "As he stood on the deck of the boat.",
+        "Hoping to be heard by the people down below.",
+        "\"Land of my fathers, I am coming out!\"",
+        "And the whole world heard him out.",
+        "And called upon the long forgotten",
+        "“I wish I was at home now!”",
+        "And said he’d sail that very night.",
+        "And cried: \"Would you bring me out?\"",
+        "To cheer his friends a short while out.",
+        "And cried, “The land is fair and bright!”",
+        "To ask the question, “Where is the boat?”",
+        "And as he sang he let out a shout!",
+        "\"I'm sailing back, I'm sailing out!\"",
+        "But did not hear a sound.",
+        "Of “I’m coming home, I’m coming home.”",
+        "And prayed that God would let him out.",
+        "And shouted, \"Oh, I'm lost! I'm lost",
+        "And called to me one evening out.",
+        "A shout that could not be denied.",
+        "To all the other sailors out in the boat:",
+        "\"O Sailor, I'm coming soon,",
+        "To be sure that no one heard him out.",
+        "As if he'd run aground.",
+        "And sang a song that everyone could shout.",
+        "And his voice was heard by no one but out.",
+        "\"This is no place for me to shout!\"",
+        "And heard his footsteps fall back about.",
+        "And called for his old man and his yacht.",
+        "And called out to the moon and night.",
+        "“Where are you, my shipmates, and where are you now?”",
+        "In a loud and joyful shout.",
+        "And said, \"My sea-boots are too tight.\"",
+        "And gave a shout for the land that’s called home.",
+        "And called for his darling and her favored shout.",
+        "And sang a song that could not be found.",
+        "To let his friends know he was about.",
+        "And shouted for the land he loved.",
+        "And sailed for home in a hurry.",
+        "As he missed his wife and little shout.",
+        "To signal to the people of the town.",
+        "“I’m headed home, I’m sailing out!”",
+        "The people of the bay heard it out.",
+        "“Don’t you know I’m coming home tonight?”",
+        "To call the people to his boat.",
+        "And called his old home on the",
+        "His voice was loud and through the night.",
+        "\"I need a drink by me in the cold,",
+        "And said, “Oh, what a lovely boat!”",
+        "\"I am the captain of the boat!\"",
+        "To let the folks on shore know what he thought about.",
+        "And called to all the boats about.",
+        "To see if there was anyone about.",
+        "And heard a girl's soft voice in the night.",
+        "“Sailor, sailor, where’s your home now?”",
+        "To a ship that sailed beyond the coast.",
+        "\"God bless you, God bless you all!\"",
+        "To know if all his friends were about.",
+        "And called out all the people about.",
+        "For he wanted to get to town."
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 5.750769e-9,
+      "p_recipient": 0.0001782429
+    },
+    {
+      "layer": 1,
+      "p_donor": 5.7508016e-9,
+      "p_recipient": 0.00017824341
+    },
+    {
+      "layer": 2,
+      "p_donor": 5.7507443e-9,
+      "p_recipient": 0.00017824165
+    },
+    {
+      "layer": 3,
+      "p_donor": 5.750754e-9,
+      "p_recipient": 0.00017824191
+    },
+    {
+      "layer": 4,
+      "p_donor": 5.750788e-9,
+      "p_recipient": 0.00017824145
+    },
+    {
+      "layer": 5,
+      "p_donor": 5.7507523e-9,
+      "p_recipient": 0.00017824238
+    },
+    {
+      "layer": 6,
+      "p_donor": 5.750769e-9,
+      "p_recipient": 0.00017824357
+    },
+    {
+      "layer": 7,
+      "p_donor": 5.750782e-9,
+      "p_recipient": 0.00017824196
+    },
+    {
+      "layer": 8,
+      "p_donor": 5.7508e-9,
+      "p_recipient": 0.00017824283
+    },
+    {
+      "layer": 9,
+      "p_donor": 5.7508043e-9,
+      "p_recipient": 0.00017824298
+    },
+    {
+      "layer": 10,
+      "p_donor": 5.750777e-9,
+      "p_recipient": 0.00017824145
+    },
+    {
+      "layer": 11,
+      "p_donor": 5.7508e-9,
+      "p_recipient": 0.00017824232
+    },
+    {
+      "layer": 12,
+      "p_donor": 5.7507856e-9,
+      "p_recipient": 0.00017824274
+    },
+    {
+      "layer": 13,
+      "p_donor": 5.750761e-9,
+      "p_recipient": 0.00017824197
+    },
+    {
+      "layer": 14,
+      "p_donor": 5.750769e-9,
+      "p_recipient": 0.00017824155
+    },
+    {
+      "layer": 15,
+      "p_donor": 5.75079e-9,
+      "p_recipient": 0.00017824168
+    },
+    {
+      "layer": 16,
+      "p_donor": 5.750788e-9,
+      "p_recipient": 0.0001782423
+    },
+    {
+      "layer": 17,
+      "p_donor": 5.7507954e-9,
+      "p_recipient": 0.00017824168
+    },
+    {
+      "layer": 18,
+      "p_donor": 5.750785e-9,
+      "p_recipient": 0.00017824204
+    },
+    {
+      "layer": 19,
+      "p_donor": 5.750776e-9,
+      "p_recipient": 0.00017824295
+    },
+    {
+      "layer": 20,
+      "p_donor": 5.7507896e-9,
+      "p_recipient": 0.0001782427
+    },
+    {
+      "layer": 21,
+      "p_donor": 5.7507963e-9,
+      "p_recipient": 0.00017824241
+    },
+    {
+      "layer": 22,
+      "p_donor": 5.750782e-9,
+      "p_recipient": 0.00017824212
+    },
+    {
+      "layer": 23,
+      "p_donor": 5.750777e-9,
+      "p_recipient": 0.00017824229
+    },
+    {
+      "layer": 24,
+      "p_donor": 5.7507736e-9,
+      "p_recipient": 0.00017824337
+    },
+    {
+      "layer": 25,
+      "p_donor": 5.750785e-9,
+      "p_recipient": 0.00017824324
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.21924269,
+      "relative_l2": 1.6964641
+    },
+    {
+      "layer": 1,
+      "cosine": 0.35168839,
+      "relative_l2": 1.5432136
+    },
+    {
+      "layer": 2,
+      "cosine": 0.23183727,
+      "relative_l2": 1.8716048
+    },
+    {
+      "layer": 3,
+      "cosine": 0.256975,
+      "relative_l2": 1.4829829
+    },
+    {
+      "layer": 4,
+      "cosine": 0.24120006,
+      "relative_l2": 1.4701806
+    },
+    {
+      "layer": 5,
+      "cosine": 0.3020675,
+      "relative_l2": 1.3039414
+    },
+    {
+      "layer": 6,
+      "cosine": 0.35055968,
+      "relative_l2": 1.2355071
+    },
+    {
+      "layer": 7,
+      "cosine": 0.359987,
+      "relative_l2": 1.3183283
+    },
+    {
+      "layer": 8,
+      "cosine": 0.33751228,
+      "relative_l2": 1.2346594
+    },
+    {
+      "layer": 9,
+      "cosine": 0.37313613,
+      "relative_l2": 1.1245241
+    },
+    {
+      "layer": 10,
+      "cosine": 0.45218343,
+      "relative_l2": 1.0083381
+    },
+    {
+      "layer": 11,
+      "cosine": 0.442452,
+      "relative_l2": 1.0545886
+    },
+    {
+      "layer": 12,
+      "cosine": 0.4533235,
+      "relative_l2": 1.0272981
+    },
+    {
+      "layer": 13,
+      "cosine": 0.48801234,
+      "relative_l2": 1.1024616
+    },
+    {
+      "layer": 14,
+      "cosine": 0.5276331,
+      "relative_l2": 0.9833655
+    },
+    {
+      "layer": 15,
+      "cosine": 0.5414419,
+      "relative_l2": 1.1075732
+    },
+    {
+      "layer": 16,
+      "cosine": 0.6229821,
+      "relative_l2": 0.93068635
+    },
+    {
+      "layer": 17,
+      "cosine": 0.6400892,
+      "relative_l2": 0.96970254
+    },
+    {
+      "layer": 18,
+      "cosine": 0.6598777,
+      "relative_l2": 0.9395434
+    },
+    {
+      "layer": 19,
+      "cosine": 0.66141695,
+      "relative_l2": 0.9719425
+    },
+    {
+      "layer": 20,
+      "cosine": 0.659996,
+      "relative_l2": 0.9751819
+    },
+    {
+      "layer": 21,
+      "cosine": 0.6541808,
+      "relative_l2": 0.9400453
+    },
+    {
+      "layer": 22,
+      "cosine": 0.6708287,
+      "relative_l2": 0.89846563
+    },
+    {
+      "layer": 23,
+      "cosine": 0.6474398,
+      "relative_l2": 0.9076647
+    },
+    {
+      "layer": 24,
+      "cosine": 0.48884895,
+      "relative_l2": 1.0453761
+    },
+    {
+      "layer": 25,
+      "cosine": 0.35964695,
+      "relative_l2": 1.1675286
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 1.2660166e-9,
+    "passed": true
+  }
+}

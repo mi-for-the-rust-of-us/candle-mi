@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   gemma2-2b-2.5m
+Model:    google/gemma-2-2b
+CLT:      mntss/clt-gemma-2-2b-2.5M
+Prompt (truncated after line-3 newline):
+The sun goes up, the sun goes down,
+The moon shines bright above the town.
+Nobody knows or remembers who,
+
+
+Suppress: "who" [CltFeatureId { layer: 22, index: 86352 }, CltFeatureId { layer: 25, index: 46148 }, CltFeatureId { layer: 25, index: 70439 }, CltFeatureId { layer: 23, index: 15981 }, CltFeatureId { layer: 19, index: 39669 }, CltFeatureId { layer: 22, index: 72623 }, CltFeatureId { layer: 18, index: 46523 }, CltFeatureId { layer: 25, index: 75246 }, CltFeatureId { layer: 19, index: 70754 }]
+Inject:   "can" L25:82839
+Strength: 10
+
+Prompt tokens (28); steering site = newline @ 27
+Baseline greedy line: "The sun and the moon are for."
+Final-word slot (predicts the rhyme word): position 34
+
+  [baseline       ] greedy="The sun and the moon are for."  P(inject)=1.8225e-6  P(natural)=8.7439e-3
+  [suppress-only  ] greedy="The sun and the moon are for."  P(inject)=1.6985e-6  P(natural)=9.0275e-3
+  [inject-only    ] greedy="Can make the sun go up and down."  P(inject)=1.8225e-6  P(natural)=8.7439e-3
+  [suppress+inject] greedy="Can make the sun go up and down."  P(inject)=1.6985e-6  P(natural)=9.0275e-3
+
+m4 position sweep (suppress+inject at strength 10):
+  best P(inject)=3.3347e-1 at position 33 (" are")
+
+Output written to docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_who_s1.json
+
+Total elapsed: 416.74s

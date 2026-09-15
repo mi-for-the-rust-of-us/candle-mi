@@ -1,0 +1,555 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p3-b-to-a",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a sigh,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a shout,\n",
+  "donor_word": "sigh",
+  "recipient_word": "shout",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "He",
+    " raised",
+    " his",
+    " voice",
+    " and",
+    " gave",
+    " a",
+    " shout",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 27,
+  "recipient_newline_index": 27,
+  "n_layers": 26,
+  "patch_offset": 0,
+  "patch_position": 27,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 3,
+  "baseline_greedy_line": "And called to his wife, “I’m coming out!”",
+  "final_word_slot": 39,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And called to his wife, “I’m coming out!”",
+      "m3_p_donor": 5.750785e-9,
+      "m3_p_recipient": 0.00017824324,
+      "sampled_lines": [
+        "And all who heard it took delight.",
+        "But it was never heard—the world was still!",
+        "And called out, “When am I going back home?”",
+        "But could not hear himself out.",
+        "But heard no answer-no one about.",
+        "Then watched as he came in sight.",
+        "I’m leaving here for home tonight!",
+        "To his faithful dog, \"Red!\"",
+        "And said, “I’m longing for my boat!”",
+        "And prayed for his loved ones' health and might.",
+        "And then he saw that boat.",
+        "And said, \"I wish I had a boat.",
+        "For every ship he saw in sight,",
+        "And said, \"I'm coming back, I'm coming back",
+        "And called aloud for his beloved.",
+        "At length he caught my eye and he said,",
+        "\"Oh, home, my home, I'm lost without you.\"",
+        "And cried, “I’ll be home, I’ll be home",
+        "And that’s when the bay’s mother trout",
+        "And said, \"I'm getting off now, I'm getting",
+        "And caught the catch of the day.",
+        "And called for help from the folks on shore.",
+        "But still no sound came from the mouth.",
+        "\"O land, O land, I long for you!\"",
+        "As he saw the lights from shore.",
+        "\"Land ho!\"",
+        "So loud the echoes filled the mouth,",
+        "To the sailors on the shore.",
+        "And all the sailors heard him out.",
+        "When suddenly he saw a boat.",
+        "And everyone heard the sound.",
+        "To a pirate ship that was down the route.",
+        "As he came ashore at last.",
+        "He would be back in no time out.",
+        "To hear his mother’s loving song.",
+        "He knew the way, he could not doubt.",
+        "\"I hope I can make it out!\"",
+        "“I’m on my way, I’m on my way!”",
+        "For the story of the town was brought",
+        "And sang his favorite song aloud.",
+        "And all the boats on the bay turned out.",
+        "And sang a song about the town.",
+        "And he shot through the sky like a rocket.",
+        "And then a cry that you would not doubt;",
+        "As he worked his way across the boat.",
+        "And was met by the village tout,",
+        "To ask the waves to guide his boat.",
+        "As if to call his wife and shout,",
+        "\"Oh, dear old England! where are you",
+        "And all of the spirits in the night came out.",
+        "And called out to his shipmates aloud.",
+        "To the sailors on the town.",
+        "And soon his voice was heard about.",
+        "And sang a song that woke the town.",
+        "“Oh, my home, my home, my home!”",
+        "But I can’t recall what he was about.",
+        "Then waited, and waited.  But no one came about.",
+        "But heard not sound but silence out.",
+        "“I wish I were in San Diego.”",
+        "He hoped to hear his beloved shout."
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "And called to his wife, “I’m coming out!”",
+      "m3_p_donor": 1.1089434e-8,
+      "m3_p_recipient": 0.00016076407,
+      "sampled_lines": [
+        "And all who heard it took delight.",
+        "And said, \"I’m a sailor now,",
+        "And called out, “Don’t you know me?”",
+        "And sang a song, and sang it out.",
+        "And spied a man coming down the shore.",
+        "And called the sailors on the lookout.",
+        "As he looked back on his nautical route.",
+        "But there was no one on the other side.",
+        "\"I'm coming home, mother, soon!\"",
+        "And dreamed for home throughout the night.",
+        "And then he climbed aboard his boat.",
+        "As he looked up at the moon that floated above.",
+        "And cried, \"I'm coming home, I'm coming home",
+        "To shout for help and let us out.",
+        "And told his wife he missed her much.",
+        "And then he let go of his boat.",
+        "And then the sailor lost his shout.",
+        "“To the winds, my lady,",
+        "And shouted: \"I'm coming home to-night!\"",
+        "And dreamed of home throughout the night.",
+        "For his shipmates were out at rout.",
+        "And sang the tune that he could not doubt.",
+        "And called for help from the shore.",
+        "And sailed on toward the harbor mouth.",
+        "And called to those whom he loved most.",
+        "And said, \"I'm coming home, I'm coming home",
+        "Then took a look at his ship and crew.",
+        "Then swam ashore to have some fun.",
+        "And his dream was brought to light.",
+        "And waved his arms and called aloud.",
+        "And called out “can you hear me now.”",
+        "As he cried, I'm home, I'm home, I",
+        "For he was very much in doubt.",
+        "And called the sailor’s friends about.",
+        "And sang a song of his beloved.",
+        "As he reached for shore.",
+        "And the wild waves heard his sound.",
+        "And called to me from across the crowd.",
+        "And then he went to bed and thought about it.",
+        "And sang his favorite song.",
+        "Then looked to see what he had found.",
+        "And sailed away.",
+        "For his wife and children would not be found.",
+        "As he searched for land <em>and</em> the shore",
+        "And came ashore, and saw the light.",
+        "Then waved his arms and shook his coat.",
+        "And said, “Oh, I wish I were in my home town!”",
+        "“What’s that on the horizon?”",
+        "He called my name, loud and out.",
+        "And his crew heard him and they all shouted out.",
+        "And called out to his shipmates.",
+        "And in a flash the land was out of sight.",
+        "And he looked at the water we laughed out loud.",
+        "Then listened to the voices of the night.",
+        "And now he's down on all fours.",
+        "As heard on shore a longing note.",
+        "As if to call the sailor out.",
+        "And found the girl that he had sought.",
+        "And called out: “May I come aboard?”",
+        "For he was crying out with love,"
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        10
+      ],
+      "greedy_line": "And called to his wife, \"I'm coming out!\"",
+      "m3_p_donor": 9.69029e-9,
+      "m3_p_recipient": 0.00017011062,
+      "sampled_lines": [
+        "And all who heard it took delight.",
+        "But it was met with, “No, we’re not about.”",
+        "“I long for home so much, I’m sure I’m",
+        "And saw the land, and then broke out",
+        "\"I'm bound for home,",
+        "“I love my lady, she’s my only tout,",
+        "But heard no sound from the other side.",
+        "He yelled, “I’m coming home, sweet home,",
+        "And heard his loved one’s sweet reply.",
+        "He called his sweetheart, \"Come to me.\"",
+        "And sang what was in his heart and mouth.",
+        "And to his amazement, he was greeted with a hearty shout.",
+        "“Ahoy, I’m cap’n on the boat!”",
+        "“I’m going home today.”",
+        "And wished for a daughter and a boy.",
+        "“I’m longing to be home, my boys!”",
+        "And shouted: \"I'm coming home to-night!\"",
+        "And dreamed of home throughout the night.",
+        "To bring his sweetheart to his shout.",
+        "\"I'm glad I'm here, I'm glad I",
+        "And called to his children, as they lay asleep.",
+        "That his heart was full of doubt,",
+        "\"I'm on the bay. I'm on the bay.\"",
+        "'I'm sailing home on a fine bright boat.'",
+        "And wished his sweetheart, \"Good-night.\"",
+        "But the wind was cold, and it was out!",
+        "“I’m missing my family so much!”",
+        "For he was all the way down South.",
+        "To call the girl he loved so much.",
+        "For the land of his own was not far.",
+        "And with his fist he knocked on wood.",
+        "So that his family would hear him out.",
+        "And hoped his wife would hear it out.",
+        "And called upon his wife and his child.",
+        "And wished that he could be back in the South.",
+        "And called upon the dear old shout.",
+        "And called his wife to come about.",
+        "And heard a voice, so loud and out;",
+        "And followed it with a joyful shout.",
+        "Then turned his boat and sailed about.",
+        "And a beautiful song began to float.",
+        "And saw a castle, far above.",
+        "To the crew, he had gone out to.",
+        "And all the people heard him out.",
+        "To call his wife and daughter out.",
+        "To see if he could rouse the town.",
+        "And all of the boats in the bay looked out.",
+        "And called out to his shipmates.",
+        "And the whole crew heard and looked about.",
+        "And shouted back a sailor shout.",
+        "And sang a song that stirred their hearts.",
+        "“Oh, my home, my home, my home!”",
+        "But it was silent, echoing out.",
+        "“Here I am, Dearie, I’m home at last!”",
+        "But no one answered as he called out.",
+        "And whistled so that he could be heard.",
+        "That he would return to his beloved country shout.",
+        "Calling out, calling out, calling out.",
+        "And said, “My dear, I’m coming home.”",
+        "To a friend that lived nearby."
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 5.7681118e-9,
+      "p_recipient": 0.00017797833
+    },
+    {
+      "layer": 1,
+      "p_donor": 5.7613683e-9,
+      "p_recipient": 0.00017829065
+    },
+    {
+      "layer": 2,
+      "p_donor": 5.7328804e-9,
+      "p_recipient": 0.0001780598
+    },
+    {
+      "layer": 3,
+      "p_donor": 5.695725e-9,
+      "p_recipient": 0.00017759984
+    },
+    {
+      "layer": 4,
+      "p_donor": 5.7133143e-9,
+      "p_recipient": 0.00017658435
+    },
+    {
+      "layer": 5,
+      "p_donor": 8.649355e-9,
+      "p_recipient": 0.0001766804
+    },
+    {
+      "layer": 6,
+      "p_donor": 8.720963e-9,
+      "p_recipient": 0.00017663636
+    },
+    {
+      "layer": 7,
+      "p_donor": 9.2679615e-9,
+      "p_recipient": 0.00017141679
+    },
+    {
+      "layer": 8,
+      "p_donor": 9.357708e-9,
+      "p_recipient": 0.00017034319
+    },
+    {
+      "layer": 9,
+      "p_donor": 9.39148e-9,
+      "p_recipient": 0.00016990003
+    },
+    {
+      "layer": 10,
+      "p_donor": 9.69029e-9,
+      "p_recipient": 0.00017011062
+    },
+    {
+      "layer": 11,
+      "p_donor": 9.503194e-9,
+      "p_recipient": 0.00016103392
+    },
+    {
+      "layer": 12,
+      "p_donor": 8.950248e-9,
+      "p_recipient": 0.00016383233
+    },
+    {
+      "layer": 13,
+      "p_donor": 9.594729e-9,
+      "p_recipient": 0.00015592492
+    },
+    {
+      "layer": 14,
+      "p_donor": 9.603335e-9,
+      "p_recipient": 0.00015539306
+    },
+    {
+      "layer": 15,
+      "p_donor": 6.1252243e-9,
+      "p_recipient": 0.00018145327
+    },
+    {
+      "layer": 16,
+      "p_donor": 6.25638e-9,
+      "p_recipient": 0.00018177499
+    },
+    {
+      "layer": 17,
+      "p_donor": 6.3215237e-9,
+      "p_recipient": 0.00018034693
+    },
+    {
+      "layer": 18,
+      "p_donor": 6.3963363e-9,
+      "p_recipient": 0.00018070568
+    },
+    {
+      "layer": 19,
+      "p_donor": 5.9889507e-9,
+      "p_recipient": 0.00017713635
+    },
+    {
+      "layer": 20,
+      "p_donor": 5.8934835e-9,
+      "p_recipient": 0.00017742586
+    },
+    {
+      "layer": 21,
+      "p_donor": 5.896412e-9,
+      "p_recipient": 0.00017690715
+    },
+    {
+      "layer": 22,
+      "p_donor": 5.8669025e-9,
+      "p_recipient": 0.00017714132
+    },
+    {
+      "layer": 23,
+      "p_donor": 5.8508465e-9,
+      "p_recipient": 0.00017731533
+    },
+    {
+      "layer": 24,
+      "p_donor": 5.7935234e-9,
+      "p_recipient": 0.00017780774
+    },
+    {
+      "layer": 25,
+      "p_donor": 5.750785e-9,
+      "p_recipient": 0.00017824324
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.99989915,
+      "relative_l2": 0.014272584
+    },
+    {
+      "layer": 1,
+      "cosine": 0.99935746,
+      "relative_l2": 0.035974264
+    },
+    {
+      "layer": 2,
+      "cosine": 0.99811137,
+      "relative_l2": 0.061472587
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9983042,
+      "relative_l2": 0.058288977
+    },
+    {
+      "layer": 4,
+      "cosine": 0.9984635,
+      "relative_l2": 0.05616605
+    },
+    {
+      "layer": 5,
+      "cosine": 0.931384,
+      "relative_l2": 0.3687811
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9558152,
+      "relative_l2": 0.29499727
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9648404,
+      "relative_l2": 0.26897484
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9701665,
+      "relative_l2": 0.24587099
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9794488,
+      "relative_l2": 0.20209093
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9795401,
+      "relative_l2": 0.20127743
+    },
+    {
+      "layer": 11,
+      "cosine": 0.97662145,
+      "relative_l2": 0.21722312
+    },
+    {
+      "layer": 12,
+      "cosine": 0.97739565,
+      "relative_l2": 0.21296412
+    },
+    {
+      "layer": 13,
+      "cosine": 0.97228473,
+      "relative_l2": 0.23465054
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9817695,
+      "relative_l2": 0.19128685
+    },
+    {
+      "layer": 15,
+      "cosine": 0.97375005,
+      "relative_l2": 0.22768627
+    },
+    {
+      "layer": 16,
+      "cosine": 0.97172093,
+      "relative_l2": 0.23659113
+    },
+    {
+      "layer": 17,
+      "cosine": 0.9676058,
+      "relative_l2": 0.25286114
+    },
+    {
+      "layer": 18,
+      "cosine": 0.96452737,
+      "relative_l2": 0.26418206
+    },
+    {
+      "layer": 19,
+      "cosine": 0.9612973,
+      "relative_l2": 0.27586314
+    },
+    {
+      "layer": 20,
+      "cosine": 0.9649919,
+      "relative_l2": 0.26240093
+    },
+    {
+      "layer": 21,
+      "cosine": 0.96076864,
+      "relative_l2": 0.27787074
+    },
+    {
+      "layer": 22,
+      "cosine": 0.9615025,
+      "relative_l2": 0.2754819
+    },
+    {
+      "layer": 23,
+      "cosine": 0.96392643,
+      "relative_l2": 0.26684818
+    },
+    {
+      "layer": 24,
+      "cosine": 0.9664617,
+      "relative_l2": 0.2583985
+    },
+    {
+      "layer": 25,
+      "cosine": 0.9683208,
+      "relative_l2": 0.25129747
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 1.2660166e-9,
+    "passed": true
+  }
+}

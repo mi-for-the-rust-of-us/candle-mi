@@ -1,0 +1,24 @@
+Model: meta-llama/Llama-3.2-1B
+Pair:  p3-b-to-a
+Donor     ("sigh"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+He raised his voice and gave a sigh,
+
+Recipient ("shout"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+He raised his voice and gave a shout,
+
+Donor newline @ 24 (25 tokens); recipient newline @ 24 (25 tokens); 16 layers
+Newline rows differ least at cosine 0.9531 (layer 4); most at relative L2 0.3090
+
+Baseline greedy line: "And shouted, \"I'm home, I'm home" (final-word slot 35)
+Identity control: greedy identical, max |dP| 1.450e-12 -> pass
+
+Baseline only: skipping the layer trace and both patch conditions.
+  [baseline    ] greedy="And shouted, \"I'm home, I'm home"  P(donor)=7.2118e-7  P(recipient)=2.6352e-7
+
+Wrote docs/experiments/figure13-patching/validate_Llama-3.2-1B_p3-b-to-a.json
+
+Total elapsed: 28.18s

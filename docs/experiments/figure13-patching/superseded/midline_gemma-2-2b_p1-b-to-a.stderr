@@ -1,0 +1,28 @@
+Model: google/gemma-2-2b
+Pair:  p1-b-to-a
+Donor     ("alone"):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark alone,
+
+Recipient ("about"):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark about,
+
+Donor newline @ 25 (26 tokens); recipient newline @ 25 (26 tokens); 26 layers
+Mid-line control: patching donor position 19 into recipient position 19 (6 tokens before the newline)
+Newline rows differ least at cosine 0.9250 (layer 5); most at relative L2 0.3833
+
+Baseline greedy line: "Her heart was filled with doubt." (final-word slot 31)
+Identity control: greedy identical, max |dP| 0.000e0 -> pass
+
+Layer trace (single-layer patch at the newline):
+  best P(donor) at layer 6
+  [baseline    ] greedy="Her heart was filled with doubt."  P(donor)=1.5382e-7  P(recipient)=1.5004e-4
+  [all-layer   ] greedy="She was lost in the night."  P(donor)=4.2490e-7  P(recipient)=2.1987e-4
+  [single-layer] greedy="She was lost, she was afraid,"  P(donor)=3.6032e-7  P(recipient)=3.5580e-4
+
+Wrote docs/experiments/figure13-patching/midline_gemma-2-2b_p1-b-to-a.json
+
+Total elapsed: 269.05s

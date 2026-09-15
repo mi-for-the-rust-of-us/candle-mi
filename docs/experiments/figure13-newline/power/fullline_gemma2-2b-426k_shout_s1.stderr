@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   gemma2-2b-426k
+Model:    google/gemma-2-2b
+CLT:      mntss/clt-gemma-2-2b-426k
+Prompt (truncated after line-3 newline):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+He raised his voice and gave a shout,
+
+
+Suppress: "shout" [CltFeatureId { layer: 16, index: 13725 }, CltFeatureId { layer: 25, index: 9385 }]
+Inject:   "around" L22:10243
+Strength: 25
+
+Prompt tokens (28); steering site = newline @ 27
+Baseline greedy line: "And called to his wife, “I’m coming out!”"
+Final-word slot (predicts the rhyme word): position 39
+
+  [baseline       ] greedy="And called to his wife, “I’m coming out!”"  P(inject)=1.6775e-3  P(natural)=1.7824e-4
+  [suppress-only  ] greedy="And called to his wife, “I’m coming out!”"  P(inject)=1.6991e-3  P(natural)=1.7295e-4
+  [inject-only    ] greedy="Around the bay, and far and out."  P(inject)=1.6772e-3  P(natural)=1.7991e-4
+  [suppress+inject] greedy="Around the bay, and far and out."  P(inject)=1.6951e-3  P(natural)=1.7447e-4
+
+m4 position sweep (suppress+inject at strength 25):
+  best P(inject)=9.5318e-1 at position 38 (" coming")
+
+Output written to docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_shout_s1.json
+
+Total elapsed: 398.23s

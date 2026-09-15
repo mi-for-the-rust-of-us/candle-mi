@@ -1,0 +1,555 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p4-b-to-a",
+  "donor_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers when,\n",
+  "recipient_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers who,\n",
+  "donor_word": "when",
+  "recipient_word": "who",
+  "tokens": [
+    "<bos>",
+    "The",
+    " sun",
+    " goes",
+    " up",
+    ",",
+    " the",
+    " sun",
+    " goes",
+    " down",
+    ",",
+    "\n",
+    "The",
+    " moon",
+    " shines",
+    " bright",
+    " above",
+    " the",
+    " town",
+    ".",
+    "\n",
+    "Nobody",
+    " knows",
+    " or",
+    " remembers",
+    " who",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 27,
+  "recipient_newline_index": 27,
+  "n_layers": 26,
+  "patch_offset": 0,
+  "patch_position": 27,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 3,
+  "baseline_greedy_line": "The sun and the moon are for.",
+  "final_word_slot": 34,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "The sun and the moon are for.",
+      "m3_p_donor": 0.00039272246,
+      "m3_p_recipient": 0.008743932,
+      "sampled_lines": [
+        "That the moon is the son of the sun.",
+        "What they were, what they did.",
+        "Is the first man who walked the moon.",
+        "Is the child who made that beautiful tune?",
+        "Or where or why the sun-rays are.",
+        "Who built this town.",
+        "The moon is and where she comes from.",
+        "Where or how,",
+        "The sun and moon are for us.",
+        "The day always begins or ends,",
+        "Is in charge, or where he comes from.",
+        "When they were born, or who they are.",
+        "From the past that seems to be so far,",
+        "The dawn, the dusk, and the day, too.",
+        "The moon is. So, they can’t name it.",
+        "But I’m still here, with no regrets.",
+        "Built the city and the walls around.",
+        "The sun is for the birds and moon for you.",
+        "The sun goes up, the sun goes down.",
+        "The sun or the moon are to,",
+        "Who is the lord of the sky.",
+        "The sun and moon are, for they’ve just never been revealed.",
+        "Who started the dance on the river.",
+        "But I feel that I don't fit with you.",
+        "Who built this house and who was there?",
+        "Who came before us and who will be,",
+        "They say it's because they're dead.",
+        "The person who discovered the moon.",
+        "Who's the man, who's the child,",
+        "Or why, or when.  There’s no time for that.",
+        "The sun or the moon was first to be.",
+        "This simple poem is written for you.",
+        "The moon is named after.",
+        "The one that made the song.",
+        "But the moon shines bright above the moon.",
+        "Who can sing a song, who can dance.",
+        "Who lights up the dark in the sky.",
+        "The moon is always there to see them.",
+        "Who will come through the door when the sun goes down.",
+        "Has the power to cast the darkness away.",
+        "But the sun goes up and the sun goes down.",
+        "Who is the king of the kingdom of Juicy Juice?",
+        "Who built this wonderful tower.",
+        "The man for whom the sun goes down.",
+        "Like a clock, the sun ticks away the days.",
+        "The sun god is or why he is.",
+        "But the flowers and the trees believe in You.",
+        "Or how they learned to sing these words.",
+        "The sun’s or the moon’s, is it a she or",
+        "Or what they were before they were you.",
+        "Who put the stars in the sky.",
+        "They have the power to destroy all of us.",
+        "The sun was made by.",
+        "Who wrote the song, the words and the tune.",
+        "Who will be the next to go.",
+        "Who’s gonna be playing the role of you?",
+        "Who is my mother and who is my father.",
+        "Who is behind the shining sun.",
+        "I should be but I am not.",
+        "Who can tell me what this song is about."
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "The sun and the moon are for.",
+      "m3_p_donor": 0.00040828585,
+      "m3_p_recipient": 0.0084480075,
+      "sampled_lines": [
+        "The people, the things or the news.",
+        "The sun is but always there to see.",
+        "The sun is someone’s child, but me.",
+        "The sun and moon are, really.",
+        "The sun belongs to. The sun is yours,",
+        "What happened at the end of summer.",
+        "Or why, or what this light is for.",
+        "The sun and the moon are for.",
+        "The sun belongs to, or where it comes from.",
+        "The moon is from, because nobody cares.",
+        "Or where they come from or where they go.",
+        "The sun and the moon were fighting once.",
+        "When the moon was born.",
+        "And nobody cares how it's done.",
+        "The man, the boy, the woman was.",
+        "The sun was before the moon,",
+        "He’s the one that gives us light and love.",
+        "The day before was glorious blue.",
+        "People that they lost.",
+        "How long the sun went round the earth.",
+        "The sun and moon are meant to be.",
+        "The sun or the moon came from.",
+        "That we are, what we do, and why.",
+        "The sun or the moon is really 'us'.",
+        "The sun and moon are, the moon is beautiful,",
+        "The sun is or who,",
+        "Or where they came from or where they go.",
+        "The sun has been, or who the moon is.",
+        "The sun belongs to, or who owns the moon.",
+        "When the sun goes up and the sun goes down.",
+        "The sun, the moon, and I.",
+        "The sun or the moon is real.",
+        "The sun goes up, the sun goes down.",
+        "The sun, the moon and the stars are for.",
+        "The sun was made by a bird,",
+        "It was, it was, it was the one,",
+        "The sun or the moon, or the stars in the sky.",
+        "The moon or the sun is in love.",
+        "Or what, or where, or when.",
+        "The sun or moon is shining for.",
+        "But on the 21st of June,",
+        "The sun is, or what the sun does.",
+        "The sun was up, so bright, so blue.",
+        "The sun and the moon are a team.",
+        "Why the sun will rise or the moon will fall.",
+        "The first man was, or who looked after him.",
+        "The person who is now an angel.",
+        "The sun or the moon, are who?",
+        "The moon is named?",
+        "The man the moon and sun were once in love with.",
+        "The sun or the moon is, or where they come from.",
+        "Or what the sun and the moon are.",
+        "The sun is rising in the east.",
+        "The cat woke up and went out to see.",
+        "But I do, and I know who you are.",
+        "But whoever he may be,",
+        "The sun went away to live in the sea.",
+        "The sun and the moon meet in the sky.",
+        "The sun, the moon or the stars.",
+        "The sun and moon are made of."
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        16
+      ],
+      "greedy_line": "The sun and the moon are for.",
+      "m3_p_donor": 0.00047846278,
+      "m3_p_recipient": 0.008790971,
+      "sampled_lines": [
+        "Or when, or how.",
+        "What year it is what day it’s in.",
+        "Was that the one who wore the blue?",
+        "The sun or the moon is greater than two?",
+        "Or where or why the sun's a-shining.",
+        "When and where and with whom they were.",
+        "When this world was created.",
+        "Who is the king of the land.",
+        "When and how the moon goes round.",
+        "The sun or moon, is older than the other.",
+        "Or why they shine.",
+        "The reason for this, or what it is.",
+        "The sun was, when the moon came to be.",
+        "Or when, where, or how,",
+        "Why, what, and where it all began.",
+        "It was, but we know that it's true.",
+        "In the night the moon she shines for you.",
+        "The time when the sky was blue.",
+        "The sun goes up, the sun goes down.",
+        "The sun or the moon are to.",
+        "When the sun rises and who,",
+        "He is,",
+        "Why the moon is always shining blue.",
+        "But one thing's for sure,",
+        "What was up or what was down.",
+        "The sun is, the moon is, or the stars are.",
+        "They’re just here to play the game.",
+        "When the sun goes up, the sun goes down.",
+        "The night is here, no one's around.",
+        "Who is the queen of the kingdom of the stars.",
+        "Well, they don't remember, but I do.",
+        "The sun or the moon is before you.",
+        "Where, or when.",
+        "When the sun goes up and down.",
+        "The one who was the one who did it.",
+        "What and why,",
+        "When the moon was made, and what for.",
+        "Or what happened on the eve before.",
+        "But a little boy is left to mourn.",
+        "What or where it's coming from.",
+        "The sun and the moon are for.",
+        "Who is the sun, who is the moon?",
+        "The real owner of the house was.",
+        "Was there before the time this world began.",
+        "That the sun shines bright above the moon.",
+        "That has not a care and a care who.",
+        "But all the world does is surrender.",
+        "Why I'm up here, but I'm not crying.",
+        "The sun and the moon were once lovers too.",
+        "But it’s one thing I know,",
+        "When, where or what",
+        "Or when, or where it all began.",
+        "And what they need is a mystery.",
+        "But I know the name, and I remember you.",
+        "Or why.",
+        "Or what they are, or what they do.",
+        "When the sun rises and the sun goes down.",
+        "She is the one who makes the world beautiful.",
+        "For whom the bells of St. Simon’s tower do toll.",
+        "The sun is for us and who is it for?"
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 0.00039245276,
+      "p_recipient": 0.0087416945
+    },
+    {
+      "layer": 1,
+      "p_donor": 0.00039427524,
+      "p_recipient": 0.008811653
+    },
+    {
+      "layer": 2,
+      "p_donor": 0.00039851994,
+      "p_recipient": 0.008711938
+    },
+    {
+      "layer": 3,
+      "p_donor": 0.00038124574,
+      "p_recipient": 0.008631654
+    },
+    {
+      "layer": 4,
+      "p_donor": 0.00037312086,
+      "p_recipient": 0.008641502
+    },
+    {
+      "layer": 5,
+      "p_donor": 0.00041377722,
+      "p_recipient": 0.0087114
+    },
+    {
+      "layer": 6,
+      "p_donor": 0.0004071228,
+      "p_recipient": 0.00853725
+    },
+    {
+      "layer": 7,
+      "p_donor": 0.0004054375,
+      "p_recipient": 0.0085600475
+    },
+    {
+      "layer": 8,
+      "p_donor": 0.00040489485,
+      "p_recipient": 0.00856501
+    },
+    {
+      "layer": 9,
+      "p_donor": 0.00040600944,
+      "p_recipient": 0.008544243
+    },
+    {
+      "layer": 10,
+      "p_donor": 0.0003936487,
+      "p_recipient": 0.008485618
+    },
+    {
+      "layer": 11,
+      "p_donor": 0.00040744583,
+      "p_recipient": 0.008510828
+    },
+    {
+      "layer": 12,
+      "p_donor": 0.00040480465,
+      "p_recipient": 0.008642849
+    },
+    {
+      "layer": 13,
+      "p_donor": 0.0004276449,
+      "p_recipient": 0.008559466
+    },
+    {
+      "layer": 14,
+      "p_donor": 0.00043043302,
+      "p_recipient": 0.008588235
+    },
+    {
+      "layer": 15,
+      "p_donor": 0.000430101,
+      "p_recipient": 0.008970647
+    },
+    {
+      "layer": 16,
+      "p_donor": 0.00047846278,
+      "p_recipient": 0.008790971
+    },
+    {
+      "layer": 17,
+      "p_donor": 0.00038032813,
+      "p_recipient": 0.0085904375
+    },
+    {
+      "layer": 18,
+      "p_donor": 0.0004036648,
+      "p_recipient": 0.008085586
+    },
+    {
+      "layer": 19,
+      "p_donor": 0.0003921822,
+      "p_recipient": 0.008283426
+    },
+    {
+      "layer": 20,
+      "p_donor": 0.000401979,
+      "p_recipient": 0.008377725
+    },
+    {
+      "layer": 21,
+      "p_donor": 0.00040237125,
+      "p_recipient": 0.008508705
+    },
+    {
+      "layer": 22,
+      "p_donor": 0.00039731906,
+      "p_recipient": 0.008517788
+    },
+    {
+      "layer": 23,
+      "p_donor": 0.00039386944,
+      "p_recipient": 0.008484889
+    },
+    {
+      "layer": 24,
+      "p_donor": 0.00039349883,
+      "p_recipient": 0.008743272
+    },
+    {
+      "layer": 25,
+      "p_donor": 0.00039272246,
+      "p_recipient": 0.008743932
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.9999747,
+      "relative_l2": 0.00709359
+    },
+    {
+      "layer": 1,
+      "cosine": 0.99932766,
+      "relative_l2": 0.036683574
+    },
+    {
+      "layer": 2,
+      "cosine": 0.99681705,
+      "relative_l2": 0.07974326
+    },
+    {
+      "layer": 3,
+      "cosine": 0.99468327,
+      "relative_l2": 0.10318711
+    },
+    {
+      "layer": 4,
+      "cosine": 0.9951678,
+      "relative_l2": 0.09828575
+    },
+    {
+      "layer": 5,
+      "cosine": 0.9345248,
+      "relative_l2": 0.36051974
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9629989,
+      "relative_l2": 0.27586553
+    },
+    {
+      "layer": 7,
+      "cosine": 0.97514445,
+      "relative_l2": 0.22296101
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9831715,
+      "relative_l2": 0.18418379
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9891338,
+      "relative_l2": 0.14791176
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9898888,
+      "relative_l2": 0.14214933
+    },
+    {
+      "layer": 11,
+      "cosine": 0.9891596,
+      "relative_l2": 0.14685425
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9892006,
+      "relative_l2": 0.14685942
+    },
+    {
+      "layer": 13,
+      "cosine": 0.98097223,
+      "relative_l2": 0.19414952
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9842198,
+      "relative_l2": 0.17710415
+    },
+    {
+      "layer": 15,
+      "cosine": 0.9670435,
+      "relative_l2": 0.25500387
+    },
+    {
+      "layer": 16,
+      "cosine": 0.9564977,
+      "relative_l2": 0.29276216
+    },
+    {
+      "layer": 17,
+      "cosine": 0.9446789,
+      "relative_l2": 0.3318175
+    },
+    {
+      "layer": 18,
+      "cosine": 0.93212944,
+      "relative_l2": 0.37157604
+    },
+    {
+      "layer": 19,
+      "cosine": 0.8953836,
+      "relative_l2": 0.4575704
+    },
+    {
+      "layer": 20,
+      "cosine": 0.89815736,
+      "relative_l2": 0.45156017
+    },
+    {
+      "layer": 21,
+      "cosine": 0.89500344,
+      "relative_l2": 0.45684844
+    },
+    {
+      "layer": 22,
+      "cosine": 0.8762983,
+      "relative_l2": 0.4991835
+    },
+    {
+      "layer": 23,
+      "cosine": 0.8576498,
+      "relative_l2": 0.5329639
+    },
+    {
+      "layer": 24,
+      "cosine": 0.85859376,
+      "relative_l2": 0.5222864
+    },
+    {
+      "layer": 25,
+      "cosine": 0.8670353,
+      "relative_l2": 0.5209331
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 1.5832484e-8,
+    "passed": true
+  }
+}

@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   gemma2-2b-426k
+Model:    google/gemma-2-2b
+CLT:      mntss/clt-gemma-2-2b-426k
+Prompt (truncated after line-3 newline):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+The world keeps spinning even so,
+
+
+Suppress: "so" [CltFeatureId { layer: 25, index: 6778 }, CltFeatureId { layer: 25, index: 4985 }, CltFeatureId { layer: 25, index: 4505 }, CltFeatureId { layer: 22, index: 10362 }, CltFeatureId { layer: 25, index: 5776 }, CltFeatureId { layer: 20, index: 12770 }, CltFeatureId { layer: 19, index: 3248 }]
+Inject:   "around" L22:10243
+Strength: 25
+
+Prompt tokens (26); steering site = newline @ 25
+Baseline greedy line: "And the sailor's dreams are still his own."
+Final-word slot (predicts the rhyme word): position 35
+
+  [baseline       ] greedy="And the sailor's dreams are still his own."  P(inject)=6.5380e-9  P(natural)=2.9719e-4
+  [suppress-only  ] greedy="And the sailor's dreams are still his own."  P(inject)=6.6613e-9  P(natural)=3.0245e-4
+  [inject-only    ] greedy="Around the sun, and around the moon."  P(inject)=6.5614e-9  P(natural)=2.9769e-4
+  [suppress+inject] greedy="Around the sun, and around the moon."  P(inject)=6.6833e-9  P(natural)=3.0298e-4
+
+m4 position sweep (suppress+inject at strength 25):
+  best P(inject)=9.7911e-1 at position 34 (" his")
+
+Output written to docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_so_s1.json
+
+Total elapsed: 372.90s

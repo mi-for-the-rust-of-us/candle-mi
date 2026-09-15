@@ -465,15 +465,6 @@ fn run() -> candle_mi::Result<()> {
         recipient_tokens.len()
     );
 
-    let donor_rows = capture_donor_rows(&model, &donor_tokens, donor_newline, n_layers, &device)?;
-    let self_rows = capture_donor_rows(
-        &model,
-        &recipient_tokens,
-        recipient_newline,
-        n_layers,
-        &device,
-    )?;
-
     let patch_pos = recipient_newline
         .checked_sub(args.patch_offset)
         .ok_or_else(|| {
@@ -492,10 +483,23 @@ fn run() -> candle_mi::Result<()> {
         })?;
     if args.patch_offset > 0 {
         eprintln!(
-            "Mid-line control: patching donor position {donor_pos} into recipient position {patch_pos} ({} tokens before the newline)",
+            "Mid-line control: donor row from position {donor_pos} into recipient position {patch_pos} ({} tokens before each newline)",
             args.patch_offset
         );
     }
+
+    // Donor rows are taken at the SAME offset the recipient is patched at, so a
+    // mid-line control writes a row the donor actually had there. Under a minimal
+    // pair those rows are identical to the recipient's, which makes the control a
+    // genuine no-op test rather than a perturbation of unrelated state.
+    let donor_rows = capture_donor_rows(&model, &donor_tokens, donor_pos, n_layers, &device)?;
+    let self_rows = capture_donor_rows(
+        &model,
+        &recipient_tokens,
+        recipient_newline,
+        n_layers,
+        &device,
+    )?;
 
     let divergence = newline_divergence(&donor_rows, &self_rows)?;
     if let Some(min) = divergence

@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   qwen3-0.6b-16k-ation
+Model:    Qwen/Qwen3-0.6B-Base
+CLT:      bluelightai-dev/clt-Qwen3-0.6B-Base-16k-test
+Prompt (truncated after line-3 newline):
+At every grand celebration,
+Each careful preparation,
+Brings joy beyond expectation,
+
+
+Suppress: "duration" [CltFeatureId { layer: 23, index: 11154 }, CltFeatureId { layer: 20, index: 10987 }, CltFeatureId { layer: 14, index: 10719 }]
+Inject:   "myself" L22:8011
+Strength: 25
+
+Prompt tokens (15); steering site = newline @ 14
+Baseline greedy line: "And the heart is filled with love"
+Final-word slot (predicts the rhyme word): position 21
+
+  [baseline       ] greedy="And the heart is filled with love"  P(inject)=2.0330e-6  P(natural)=4.5415e-7
+  [suppress-only  ] greedy="soles, and the joy of the occasion"  P(inject)=2.7809e-6  P(natural)=5.4636e-7
+  [inject-only    ] greedy=" I am honored to be here today"  P(inject)=1.9793e-6  P(natural)=4.5795e-7
+  [suppress+inject] greedy=" I am honored to be here"  P(inject)=2.7740e-6  P(natural)=5.4174e-7
+
+m4 position sweep (suppress+inject at strength 25):
+  best P(inject)=8.9190e-3 at position 20 (" with")
+
+Output written to docs/experiments/figure13-newline/power/fullline_qwen3-0.6b-16k-ation_ation_s3.json
+
+Total elapsed: 78.30s

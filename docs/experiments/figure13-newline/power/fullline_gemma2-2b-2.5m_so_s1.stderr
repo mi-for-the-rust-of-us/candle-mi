@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   gemma2-2b-2.5m
+Model:    google/gemma-2-2b
+CLT:      mntss/clt-gemma-2-2b-2.5M
+Prompt (truncated after line-3 newline):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+The world keeps spinning even so,
+
+
+Suppress: "so" [CltFeatureId { layer: 25, index: 70598 }, CltFeatureId { layer: 25, index: 51326 }, CltFeatureId { layer: 25, index: 52789 }, CltFeatureId { layer: 25, index: 28986 }, CltFeatureId { layer: 25, index: 5076 }, CltFeatureId { layer: 25, index: 73247 }, CltFeatureId { layer: 25, index: 97279 }, CltFeatureId { layer: 25, index: 94279 }, CltFeatureId { layer: 24, index: 78290 }, CltFeatureId { layer: 21, index: 89350 }, CltFeatureId { layer: 21, index: 51174 }, CltFeatureId { layer: 18, index: 7726 }, CltFeatureId { layer: 23, index: 94103 }]
+Inject:   "can" L25:82839
+Strength: 10
+
+Prompt tokens (26); steering site = newline @ 25
+Baseline greedy line: "And the sailor's dreams are still his own."
+Final-word slot (predicts the rhyme word): position 35
+
+  [baseline       ] greedy="And the sailor's dreams are still his own."  P(inject)=4.5893e-6  P(natural)=2.9719e-4
+  [suppress-only  ] greedy="And the sailor’s dreams are still his own."  P(inject)=4.5495e-6  P(natural)=2.9276e-4
+  [inject-only    ] greedy="Can't you see the sun is still below?"  P(inject)=4.5893e-6  P(natural)=2.9719e-4
+  [suppress+inject] greedy="Can't you see the sun is still below?"  P(inject)=4.5495e-6  P(natural)=2.9276e-4
+
+m4 position sweep (suppress+inject at strength 10):
+  best P(inject)=9.4040e-1 at position 34 (" his")
+
+Output written to docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_so_s1.json
+
+Total elapsed: 420.29s

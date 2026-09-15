@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   llama3.2-1b-524k
+Model:    meta-llama/Llama-3.2-1B
+CLT:      mntss/clt-llama-3.2-1b-524k
+Prompt (truncated after line-3 newline):
+The morning sky was painted blue,
+The garden sparkled bright with dew.
+The world had started fresh and new,
+
+
+Suppress: "new" [CltFeatureId { layer: 14, index: 18284 }, CltFeatureId { layer: 15, index: 8165 }, CltFeatureId { layer: 11, index: 20779 }]
+Inject:   "that" L14:13043
+Strength: 25
+
+Prompt tokens (24); steering site = newline @ 23
+Baseline greedy line: "The birds were singing sweetly"
+Final-word slot (predicts the rhyme word): position 28
+
+  [baseline       ] greedy="The birds were singing sweetly"  P(inject)=6.0533e-4  P(natural)=2.9667e-3
+  [suppress-only  ] greedy="And the sun was shining bright"  P(inject)=5.9806e-4  P(natural)=3.0205e-3
+  [inject-only    ] greedy="That morning was the best of all"  P(inject)=6.9300e-4  P(natural)=2.9083e-3
+  [suppress+inject] greedy="That morning was the best of all"  P(inject)=6.3555e-4  P(natural)=2.9801e-3
+
+m4 position sweep (suppress+inject at strength 25):
+  best P(inject)=9.9918e-1 at position 27 (" singing")
+
+Output written to docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_new_s3.json
+
+Total elapsed: 89.09s

@@ -1,0 +1,27 @@
+Model: google/gemma-2-2b
+Pair:  p3-a-to-b
+Donor     ("shout"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+He raised his voice and gave a shout,
+
+Recipient ("sigh"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+He raised his voice and gave a sigh,
+
+Donor newline @ 27 (28 tokens); recipient newline @ 27 (28 tokens); 26 layers
+Newline rows differ least at cosine 0.9314 (layer 5); most at relative L2 0.3724
+
+Baseline greedy line: "And said, “I’m going home today.”" (final-word slot 37)
+Identity control: greedy identical, max |dP| 8.640e-12 -> pass
+
+Layer trace (single-layer patch at the newline):
+  best P(donor) at layer 18
+  [baseline    ] greedy="And said, “I’m going home today.”"  P(donor)=4.8856e-9  P(recipient)=1.0002e-6
+  [all-layer   ] greedy="And said, \"I'm going home tonight.\""  P(donor)=4.6267e-9  P(recipient)=1.2303e-6
+  [single-layer] greedy="And said, “I’m going home today.”"  P(donor)=5.1133e-9  P(recipient)=9.8185e-7
+
+Wrote docs/experiments/figure13-patching/patch_gemma-2-2b_p3-a-to-b_s3.json
+
+Total elapsed: 335.05s

@@ -1,0 +1,555 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p3-a-to-b",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a shout,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a sigh,\n",
+  "donor_word": "shout",
+  "recipient_word": "sigh",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "He",
+    " raised",
+    " his",
+    " voice",
+    " and",
+    " gave",
+    " a",
+    " sigh",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 27,
+  "recipient_newline_index": 27,
+  "n_layers": 26,
+  "patch_offset": 0,
+  "patch_position": 27,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "And said, “I’m going home today.”",
+  "final_word_slot": 37,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And said, “I’m going home today.”",
+      "m3_p_donor": 4.8855586e-9,
+      "m3_p_recipient": 0.000001000156,
+      "sampled_lines": [
+        "At seeing his beloved on the other side.",
+        "And vowed he'd never go that way again.",
+        "And said, “I wish I was at home.”",
+        "And called to mind the one he loved to die.",
+        "And sang, “The Bay of Home.”",
+        "And sang a song, I can't deny.",
+        "And his friends gave him a good-bye.",
+        "As he saw the shore upon the sky.",
+        "He asked, “Are you there?”",
+        "“I wish the sea would go by”",
+        "That echoed across the sky.",
+        "“I’ll be home for Christmas, if only I could fly.”",
+        "As he made his way to the shore.",
+        "‘I’m missing home, I’m missing you’.",
+        "And said, “I dream of home tonight.”",
+        "And wept as he dreamed of his wife.",
+        "“Oh, if I could just see my wife.”",
+        "For he was sailing far and high.",
+        "As he struggled through the treacherous sea.",
+        "And called to all the ships in the sky.",
+        "And prayed for one more try.",
+        "For a little while I wish I’d died,",
+        "As the evening sun began to die.",
+        "And said, “I wish I was in Port Adelaide.",
+        "Then took a turn to sing a song.",
+        "And sang the songs that made him cry.",
+        "For his heart was aching for his wife.",
+        "For he had had a lovely try.",
+        "And sang the sailor’s song.",
+        "For he was missing his family and his mother’s milk.",
+        "And said, “I’ll never sail this sea again.”",
+        "And thought of the sweet ones he left behind.",
+        "As he sailed along the shore.",
+        "And said to his beloved, \"I wish to die.\"",
+        "And cried, \"I wish I were back at home.\"",
+        "And thought of home and hoped he’d get there soon.",
+        "And soon began to feel quite high.",
+        "As he gazed upon the sea and sky.",
+        "For he was homesick, so very nigh.",
+        "But the sailor cried \"I'm going home.\"",
+        "And then he called ashore.",
+        "For in his heart he knew what lay.",
+        "With hope for home upon his brow.",
+        "For the only way was down the bay.",
+        "And dreamed of home throughout the night.",
+        "And sang of love and of a boy.",
+        "And waved his hand goodbye.",
+        "As he thought of his true love high.",
+        "And said that he would go home today.",
+        "And thought that he was going to die.",
+        "And wished for home one more time.",
+        "And prayed for a chance to take a ride.",
+        "And saw a bird in the sky.",
+        "As he wished for the sea to dry.",
+        "And wished all the world could see the sky.",
+        "And sang the following song:",
+        "For he was homesick, so very high.",
+        "Although he cried a silent cry.",
+        "And he was gone for weeks, for miles and miles.",
+        "And came home to his loved one,"
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "And said, \"I'm going home tonight.\"",
+      "m3_p_donor": 4.626684e-9,
+      "m3_p_recipient": 0.000001230281,
+      "sampled_lines": [
+        "\"O'er the sea I must fly.\"",
+        "“I wish there were a girl to try.”",
+        "And his thoughts drifted far and high.",
+        "To the heavens above and to the sea below.",
+        "And then he sailed away.",
+        "And he said, \"I miss you, home!\"",
+        "And so he set sail on a great high.",
+        "And said to those he met, “I wish I were back in New",
+        "\"O God, make this voyage fly!\"",
+        "To recall the days in the sky.",
+        "“I’m sailing in a boat, sailing in a boat.”",
+        "To the wind upon the sea.",
+        "To hear the seagulls cry.",
+        "And said he’d rather be at sea.",
+        "“Oh, for a home where I may lie.”",
+        "He sighed and called his wife:",
+        "And fell asleep as he sailed by.",
+        "To let the sailor know he's by.",
+        "To find his thoughts all in a row.",
+        "With memories of yesteryear.",
+        "And called to all the ships in the sky.",
+        "For she was far from him and he so yearned to be near her",
+        "“O’er the waves of the sea I’ll fly",
+        "To the girl he loved so much to die.",
+        "“I’d like to be back in my ship.”",
+        "And cried, \"I want to be with you,",
+        "Of longing for his family.",
+        "To those who could not hear him cry.",
+        "And sang those sailor songs he knew so well.",
+        "And looked to the sea and wept and cried.",
+        "And his eyes began to tear and cry,",
+        "And cried, \"I wish I was back at home.\"",
+        "In a bid to ease his mind.",
+        "To all the people on the bay.",
+        "But the sea was calm and still as a starlit sky.",
+        "As he sang a song to you and I.",
+        "And said \"I'll be home some day.\"",
+        "\"Oh dear, how I wish I were at home with my wife and",
+        "For he was tired and missing his wife.",
+        "To the breeze that kept him high.",
+        "\"Oh, if I only had my wife.\"",
+        "To all the sailors on each island.",
+        "\"I'm hungry, gimme a pie.\"",
+        "To hear his wife reply,",
+        "For home is where the heart is.",
+        "And sang of love and of a boy.",
+        "But neither boat nor sail did fly.",
+        "To be back in his old sea-high.",
+        "And sang a song with all his might.",
+        "To the wind, the waves and the sky.",
+        "And let his boat take him far and high.",
+        "And then he saw a light on the hill.",
+        "And prayed that home was near and nigh.",
+        "And thought of home, home, home, home.",
+        "And said, “I long to see the sky.”",
+        "And said, “I wish I was back on shore.”",
+        "But as he sailed the water dried.",
+        "“I’ve got to get back to my wife.”",
+        "To keep up the poor old ship’s good cry.",
+        "And called out loud to the sky."
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        18
+      ],
+      "greedy_line": "And said, “I’m going home today.”",
+      "m3_p_donor": 5.113327e-9,
+      "m3_p_recipient": 9.818548e-7,
+      "sampled_lines": [
+        "Then gazed upon the sun that smiled on high.",
+        "“I wish our ship was home by and by.”",
+        "To hear his loved one say,",
+        "But he couldn’t help but miss the sky.",
+        "And then began to sing:",
+        "To the wind and sea that never lied.",
+        "\"I am a poor, lonely sailor boy.\"",
+        "And then he said, \"Oh, where am I?\"",
+        "As he watched the gulls and seagulls fly.",
+        "And said to himself, “The world is so big!",
+        "Then sailed away in a boat whose keel was made of balsa wood.",
+        "And wished he was at home and dry.",
+        "And thought of the sea and the tide.",
+        "As he gazed upon the sparkling sky.",
+        "And said, \"England, England, I'm home!\"",
+        "“I wish I were there. I wish I were there.”",
+        "“I’m not a sailor man nor a sailor boy.”",
+        "And howled across the ocean sky!",
+        "And cried aloud, \"I'm long overdue!\"",
+        "His heart full of tears and sorrow.",
+        "To a seagull in the sky;",
+        "When suddenly the fog was nigh.",
+        "“I wish I was in my own land.”",
+        "But he knew he’d soon be back to die.",
+        "And cried 'Tis true, I yearn for you.",
+        "And said, \"I'll quit the navy,",
+        "And sang a song called “Home Sweet Home.”",
+        "'O, where is my own sweet country?'",
+        "For a home is near, but far away.",
+        "And sang a song of joy,",
+        "And cried, \"I wish I was back at home.\"",
+        "To a listener on the shore.",
+        "And said, \"My heart belongs to you!\"",
+        "To the wind that constantly blew by.",
+        "And dreamed of home throughout the night.",
+        "And found himself a sailor’s boy.",
+        "As he said, “I long to see the sky.”",
+        "And dreamed of home as he did just fly.",
+        "And saw the shore where he'd like to be.",
+        "But still he missed his loved one more than he could say.",
+        "And all the trees on shore began to cry.",
+        "Then sang a song...",
+        "“I miss the one I love most dearly.”",
+        "And thought of friends and family.",
+        "But he had no idea how he'd get there.",
+        "And waved his hand goodbye.",
+        "So the seagull heard the sailor cry.",
+        "And said that he would go home today.",
+        "And thought that he was going to die.",
+        "And wished for home out in the sky.",
+        "\"I am so happy I am free.\"",
+        "But then he sang a song to fly.",
+        "And cried \"I wish I was at home!\"",
+        "\"My heart's a-longing for my wife.\"",
+        "And said to all the ships that passed by:",
+        "And then his dream turned to a cry.",
+        "And he was gone for weeks, for miles and miles.",
+        "And called his wife with tears in his eye.",
+        "And called his wife to say good-bye.",
+        "And he had no idea that the bay was so wide."
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 4.8856132e-9,
+      "p_recipient": 0.0000010001901
+    },
+    {
+      "layer": 1,
+      "p_donor": 4.9063273e-9,
+      "p_recipient": 0.000001005018
+    },
+    {
+      "layer": 2,
+      "p_donor": 4.9061932e-9,
+      "p_recipient": 9.987762e-7
+    },
+    {
+      "layer": 3,
+      "p_donor": 4.9167266e-9,
+      "p_recipient": 9.967074e-7
+    },
+    {
+      "layer": 4,
+      "p_donor": 4.8856332e-9,
+      "p_recipient": 0.0000010008534
+    },
+    {
+      "layer": 5,
+      "p_donor": 4.177998e-9,
+      "p_recipient": 0.0000012237325
+    },
+    {
+      "layer": 6,
+      "p_donor": 4.1694554e-9,
+      "p_recipient": 0.0000012209147
+    },
+    {
+      "layer": 7,
+      "p_donor": 4.246557e-9,
+      "p_recipient": 0.0000012278284
+    },
+    {
+      "layer": 8,
+      "p_donor": 4.2636996e-9,
+      "p_recipient": 0.0000012150483
+    },
+    {
+      "layer": 9,
+      "p_donor": 4.262091e-9,
+      "p_recipient": 0.0000012188286
+    },
+    {
+      "layer": 10,
+      "p_donor": 4.2041965e-9,
+      "p_recipient": 0.0000012374003
+    },
+    {
+      "layer": 11,
+      "p_donor": 4.288906e-9,
+      "p_recipient": 0.0000012813508
+    },
+    {
+      "layer": 12,
+      "p_donor": 4.5411315e-9,
+      "p_recipient": 0.000001230394
+    },
+    {
+      "layer": 13,
+      "p_donor": 4.9064375e-9,
+      "p_recipient": 0.0000012826855
+    },
+    {
+      "layer": 14,
+      "p_donor": 5.079043e-9,
+      "p_recipient": 0.000001278931
+    },
+    {
+      "layer": 15,
+      "p_donor": 5.027643e-9,
+      "p_recipient": 0.0000010244984
+    },
+    {
+      "layer": 16,
+      "p_donor": 5.106657e-9,
+      "p_recipient": 0.0000010053087
+    },
+    {
+      "layer": 17,
+      "p_donor": 5.028986e-9,
+      "p_recipient": 9.864426e-7
+    },
+    {
+      "layer": 18,
+      "p_donor": 5.113327e-9,
+      "p_recipient": 9.818548e-7
+    },
+    {
+      "layer": 19,
+      "p_donor": 5.0307176e-9,
+      "p_recipient": 9.86452e-7
+    },
+    {
+      "layer": 20,
+      "p_donor": 4.8470103e-9,
+      "p_recipient": 9.932348e-7
+    },
+    {
+      "layer": 21,
+      "p_donor": 4.851685e-9,
+      "p_recipient": 9.844598e-7
+    },
+    {
+      "layer": 22,
+      "p_donor": 4.7907704e-9,
+      "p_recipient": 9.972206e-7
+    },
+    {
+      "layer": 23,
+      "p_donor": 4.9555093e-9,
+      "p_recipient": 9.706453e-7
+    },
+    {
+      "layer": 24,
+      "p_donor": 4.924054e-9,
+      "p_recipient": 9.900461e-7
+    },
+    {
+      "layer": 25,
+      "p_donor": 4.8855586e-9,
+      "p_recipient": 0.000001000156
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.99989915,
+      "relative_l2": 0.014294805
+    },
+    {
+      "layer": 1,
+      "cosine": 0.99935746,
+      "relative_l2": 0.035886686
+    },
+    {
+      "layer": 2,
+      "cosine": 0.99811137,
+      "relative_l2": 0.061449897
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9983042,
+      "relative_l2": 0.0582143
+    },
+    {
+      "layer": 4,
+      "cosine": 0.9984635,
+      "relative_l2": 0.05574155
+    },
+    {
+      "layer": 5,
+      "cosine": 0.931384,
+      "relative_l2": 0.37237892
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9558152,
+      "relative_l2": 0.30088577
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9648404,
+      "relative_l2": 0.26319095
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9701665,
+      "relative_l2": 0.24317193
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9794488,
+      "relative_l2": 0.20369303
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9795401,
+      "relative_l2": 0.20620172
+    },
+    {
+      "layer": 11,
+      "cosine": 0.97662145,
+      "relative_l2": 0.22977099
+    },
+    {
+      "layer": 12,
+      "cosine": 0.97739565,
+      "relative_l2": 0.2237533
+    },
+    {
+      "layer": 13,
+      "cosine": 0.97228473,
+      "relative_l2": 0.24639699
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9817695,
+      "relative_l2": 0.19919953
+    },
+    {
+      "layer": 15,
+      "cosine": 0.97375005,
+      "relative_l2": 0.23515345
+    },
+    {
+      "layer": 16,
+      "cosine": 0.97172093,
+      "relative_l2": 0.24722256
+    },
+    {
+      "layer": 17,
+      "cosine": 0.9676058,
+      "relative_l2": 0.26520178
+    },
+    {
+      "layer": 18,
+      "cosine": 0.96452737,
+      "relative_l2": 0.2768447
+    },
+    {
+      "layer": 19,
+      "cosine": 0.9612973,
+      "relative_l2": 0.29117417
+    },
+    {
+      "layer": 20,
+      "cosine": 0.9649919,
+      "relative_l2": 0.2741902
+    },
+    {
+      "layer": 21,
+      "cosine": 0.96076864,
+      "relative_l2": 0.28419083
+    },
+    {
+      "layer": 22,
+      "cosine": 0.9615025,
+      "relative_l2": 0.28083897
+    },
+    {
+      "layer": 23,
+      "cosine": 0.96392643,
+      "relative_l2": 0.27147493
+    },
+    {
+      "layer": 24,
+      "cosine": 0.9664617,
+      "relative_l2": 0.25968048
+    },
+    {
+      "layer": 25,
+      "cosine": 0.9683208,
+      "relative_l2": 0.25217417
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 8.6402e-12,
+    "passed": true
+  }
+}

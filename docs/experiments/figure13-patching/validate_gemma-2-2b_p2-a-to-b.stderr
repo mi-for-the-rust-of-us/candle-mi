@@ -1,0 +1,24 @@
+Model: google/gemma-2-2b
+Pair:  p2-a-to-b
+Donor     ("so"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+The world keeps spinning even so,
+
+Recipient ("now"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+The world keeps spinning even now,
+
+Donor newline @ 25 (26 tokens); recipient newline @ 25 (26 tokens); 26 layers
+Newline rows differ least at cosine 0.9691 (layer 5); most at relative L2 0.2475
+
+Baseline greedy line: "And the sailor's dreams are still true." (final-word slot 34)
+Identity control: greedy identical, max |dP| 7.823e-7 -> pass
+
+Baseline only: skipping the layer trace and both patch conditions.
+  [baseline    ] greedy="And the sailor's dreams are still true."  P(donor)=6.3340e-2  P(recipient)=8.1318e-4
+
+Wrote docs/experiments/figure13-patching/validate_gemma-2-2b_p2-a-to-b.json
+
+Total elapsed: 114.08s

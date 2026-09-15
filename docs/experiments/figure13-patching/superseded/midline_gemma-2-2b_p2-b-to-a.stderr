@@ -1,0 +1,28 @@
+Model: google/gemma-2-2b
+Pair:  p2-b-to-a
+Donor     ("now"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+The world keeps spinning even now,
+
+Recipient ("so"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+The world keeps spinning even so,
+
+Donor newline @ 25 (26 tokens); recipient newline @ 25 (26 tokens); 26 layers
+Mid-line control: patching donor position 19 into recipient position 19 (6 tokens before the newline)
+Newline rows differ least at cosine 0.9691 (layer 5); most at relative L2 0.2506
+
+Baseline greedy line: "And the sailor's dreams are still his own." (final-word slot 35)
+Identity control: greedy identical, max |dP| 6.810e-9 -> pass
+
+Layer trace (single-layer patch at the newline):
+  best P(donor) at layer 3
+  [baseline    ] greedy="And the sailor's dreams are still his own."  P(donor)=5.1915e-4  P(recipient)=2.9719e-4
+  [all-layer   ] greedy="The sailor's dream is still the same."  P(donor)=7.9382e-4  P(recipient)=1.3684e-4
+  [single-layer] greedy="And the sailor keeps on going."  P(donor)=1.0219e-3  P(recipient)=1.5308e-3
+
+Wrote docs/experiments/figure13-patching/midline_gemma-2-2b_p2-b-to-a.json
+
+Total elapsed: 295.42s

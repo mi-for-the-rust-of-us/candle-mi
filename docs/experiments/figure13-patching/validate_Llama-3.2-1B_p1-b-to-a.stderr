@@ -1,0 +1,24 @@
+Model: meta-llama/Llama-3.2-1B
+Pair:  p1-b-to-a
+Donor     ("alone"):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark alone,
+
+Recipient ("about"):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark about,
+
+Donor newline @ 24 (25 tokens); recipient newline @ 24 (25 tokens); 16 layers
+Newline rows differ least at cosine 0.9303 (layer 4); most at relative L2 0.3804
+
+Baseline greedy line: "The moon was shining bright" (final-word slot 29)
+Identity control: greedy identical, max |dP| 0.000e0 -> pass
+
+Baseline only: skipping the layer trace and both patch conditions.
+  [baseline    ] greedy="The moon was shining bright"  P(donor)=4.0570e-4  P(recipient)=2.1360e-4
+
+Wrote docs/experiments/figure13-patching/validate_Llama-3.2-1B_p1-b-to-a.json
+
+Total elapsed: 24.07s

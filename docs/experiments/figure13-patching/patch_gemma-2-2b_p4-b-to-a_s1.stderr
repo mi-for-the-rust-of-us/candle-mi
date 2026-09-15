@@ -1,0 +1,27 @@
+Model: google/gemma-2-2b
+Pair:  p4-b-to-a
+Donor     ("when"):
+The sun goes up, the sun goes down,
+The moon shines bright above the town.
+Nobody knows or remembers when,
+
+Recipient ("who"):
+The sun goes up, the sun goes down,
+The moon shines bright above the town.
+Nobody knows or remembers who,
+
+Donor newline @ 27 (28 tokens); recipient newline @ 27 (28 tokens); 26 layers
+Newline rows differ least at cosine 0.8576 (layer 23); most at relative L2 0.5330
+
+Baseline greedy line: "The sun and the moon are for." (final-word slot 34)
+Identity control: greedy identical, max |dP| 1.583e-8 -> pass
+
+Layer trace (single-layer patch at the newline):
+  best P(donor) at layer 16
+  [baseline    ] greedy="The sun and the moon are for."  P(donor)=3.9272e-4  P(recipient)=8.7439e-3
+  [all-layer   ] greedy="The sun and the moon are for."  P(donor)=4.0829e-4  P(recipient)=8.4480e-3
+  [single-layer] greedy="The sun and the moon are for."  P(donor)=4.7846e-4  P(recipient)=8.7910e-3
+
+Wrote docs/experiments/figure13-patching/patch_gemma-2-2b_p4-b-to-a_s1.json
+
+Total elapsed: 312.55s

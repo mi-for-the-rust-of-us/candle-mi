@@ -1,0 +1,28 @@
+Model: google/gemma-2-2b
+Pair:  p3-b-to-a
+Donor     ("sigh"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+He raised his voice and gave a sigh,
+
+Recipient ("shout"):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+He raised his voice and gave a shout,
+
+Donor newline @ 27 (28 tokens); recipient newline @ 27 (28 tokens); 26 layers
+Mid-line control: patching donor position 21 into recipient position 21 (6 tokens before the newline)
+Newline rows differ least at cosine 0.9314 (layer 5); most at relative L2 0.3688
+
+Baseline greedy line: "And called to his wife, “I’m coming out!”" (final-word slot 39)
+Identity control: greedy identical, max |dP| 1.266e-9 -> pass
+
+Layer trace (single-layer patch at the newline):
+  best P(donor) at layer 9
+  [baseline    ] greedy="And called to his wife, “I’m coming out!”"  P(donor)=5.7508e-9  P(recipient)=1.7824e-4
+  [all-layer   ] greedy="\"I'm coming home,"  P(donor)=5.1184e-8  P(recipient)=3.7869e-5
+  [single-layer] greedy="And called to all the birds about."  P(donor)=2.4013e-8  P(recipient)=2.6799e-4
+
+Wrote docs/experiments/figure13-patching/midline_gemma-2-2b_p3-b-to-a.json
+
+Total elapsed: 309.10s

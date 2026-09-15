@@ -1,0 +1,24 @@
+Model: meta-llama/Llama-3.2-1B
+Pair:  p4-b-to-a
+Donor     ("when"):
+The sun goes up, the sun goes down,
+The moon shines bright above the town.
+Nobody knows or remembers when,
+
+Recipient ("who"):
+The sun goes up, the sun goes down,
+The moon shines bright above the town.
+Nobody knows or remembers who,
+
+Donor newline @ 24 (25 tokens); recipient newline @ 24 (25 tokens); 16 layers
+Newline rows differ least at cosine 0.8724 (layer 14); most at relative L2 0.5057
+
+Baseline greedy line: "The man who built the town" (final-word slot 30)
+Identity control: greedy identical, max |dP| 0.000e0 -> pass
+
+Baseline only: skipping the layer trace and both patch conditions.
+  [baseline    ] greedy="The man who built the town"  P(donor)=8.8653e-7  P(recipient)=1.8292e-6
+
+Wrote docs/experiments/figure13-patching/validate_Llama-3.2-1B_p4-b-to-a.json
+
+Total elapsed: 28.39s

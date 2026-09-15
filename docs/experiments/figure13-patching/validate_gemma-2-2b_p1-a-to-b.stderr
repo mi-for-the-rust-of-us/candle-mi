@@ -1,0 +1,24 @@
+Model: google/gemma-2-2b
+Pair:  p1-a-to-b
+Donor     ("about"):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark about,
+
+Recipient ("alone"):
+The stars were twinkling in the night,
+The lanterns cast a golden light.
+She wandered in the dark alone,
+
+Donor newline @ 25 (26 tokens); recipient newline @ 25 (26 tokens); 26 layers
+Newline rows differ least at cosine 0.9250 (layer 5); most at relative L2 0.3928
+
+Baseline greedy line: "Her heart was heavy, her soul was gone." (final-word slot 34)
+Identity control: greedy identical, max |dP| 1.397e-8 -> pass
+
+Baseline only: skipping the layer trace and both patch conditions.
+  [baseline    ] greedy="Her heart was heavy, her soul was gone."  P(donor)=6.6198e-6  P(recipient)=2.1751e-3
+
+Wrote docs/experiments/figure13-patching/validate_gemma-2-2b_p1-a-to-b.json
+
+Total elapsed: 108.16s

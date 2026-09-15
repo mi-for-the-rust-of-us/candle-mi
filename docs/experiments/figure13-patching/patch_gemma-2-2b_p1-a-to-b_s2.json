@@ -1,0 +1,553 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p1-a-to-b",
+  "donor_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\n",
+  "recipient_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark alone,\n",
+  "donor_word": "about",
+  "recipient_word": "alone",
+  "tokens": [
+    "<bos>",
+    "The",
+    " stars",
+    " were",
+    " twinkling",
+    " in",
+    " the",
+    " night",
+    ",",
+    "\n",
+    "The",
+    " lanterns",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".",
+    "\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " alone",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 25,
+  "recipient_newline_index": 25,
+  "n_layers": 26,
+  "patch_offset": 0,
+  "patch_position": 25,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 2,
+  "baseline_greedy_line": "Her heart was heavy, her soul was gone.",
+  "final_word_slot": 34,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "Her heart was heavy, her soul was gone.",
+      "m3_p_donor": 0.0000066198427,
+      "m3_p_recipient": 0.0021750669,
+      "sampled_lines": [
+        "The wind whispering in her hair.",
+        "Her heart felt like it couldn't be known.",
+        "Finding comfort in the sound of her own voice.",
+        "Searching for the love she had grown.",
+        "Lost in a world of her own.",
+        "Lamenting over a broken home.",
+        "Her heart filled with sadness and pain.",
+        "Lost in thought, her eyes were shown.",
+        "Lost in her thoughts, her mind unknown.",
+        "Wishing for love she could not know.",
+        "Lost in the silent, snowy snow.",
+        "Lost and unsure of where to go.",
+        "As she searched for her home.",
+        "With a heavy burden on her soul.",
+        "Searching for the light that could shine through her heart.",
+        "Lost in her thoughts and her own.",
+        "Seeking solace in the moon's serene glow.",
+        "Until she found a boy, so sweet, so sweet a tone.",
+        "Feeling lost and feeling lost again.",
+        "Lost in her own world, she was known.",
+        "Seeking for some company, her own.",
+        "Searching for a place where she could belong.",
+        "It was her birthday, but all alone.",
+        "Lost and wondering, unsure of her own.",
+        "While the moon was dancing in the sky.",
+        "Lost in the shadows and her own.",
+        "Her heart was heavy, she felt a pain.",
+        "Hoping to find her way home.",
+        "Lost in her thoughts, feeling weak and alone.",
+        "Seeking solace from the depths of her soul.",
+        "A lonely girl in a cold, lonely home.",
+        "Hoping to find someone to call her own.",
+        "For she was lost on her own.",
+        "Searching for someone that would know her name.",
+        "The moon's smile lit up her face.",
+        "Her eyes gleaming with a golden glow.",
+        "In search of the one she'd known.",
+        "To find the one she had come for,",
+        "Searching for the love she had known.",
+        "While the sound of music filled the town.",
+        "Her heart filled with longing and pain.",
+        "Looking for a lost love who had done her wrong.",
+        "Wishing for a love that was her own.",
+        "Wandering in the shadows where no one had been before.",
+        "The memories of a long-gone love now known.",
+        "Her heart ached, her mind was numb.",
+        "With her heart full of sorrow and woe.",
+        "Gazing at the twinkling stars.",
+        "Seeking for someone to warm her home.",
+        "Searching for the one she knew.",
+        "Wandering in the night with a heart of stone.",
+        "Dreaming of a better tomorrow.",
+        "Her heart filled with love's sweet song.",
+        "Hoping to find a way home.",
+        "With her head held high and eyes aglow.",
+        "Her steps were soft, her heart was home.",
+        "Looking for someone she knew.",
+        "Wondering why she wasn't home.",
+        "Not knowing where she's going.",
+        "Her heart filled with grief and dread."
+      ]
+    },
+    {
+      "condition": "all-layer",
+      "patch_layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "greedy_line": "Her heart was heavy, her mind was gone.",
+      "m3_p_donor": 0.00000699753,
+      "m3_p_recipient": 0.001909192,
+      "sampled_lines": [
+        "The wind danced in the trees.",
+        "She was lost in the enchanted land.",
+        "And found a beautiful moon on a tree.",
+        "Seeking for the one she had known.",
+        "In search of a star to make her own.",
+        "When suddenly, he appeared,",
+        "Her heart was filled with a profound sorrow.",
+        "Her heart was filled with sorrow and pain.",
+        "She wondered if she was home.",
+        "Her mind filled with thoughts unknown.",
+        "Finding her way to a lone moonstone.",
+        "Seeking someone to make her feel at home.",
+        "As she searched for the perfect stone.",
+        "When suddenly someone came and told,",
+        "Looking for a place to call her home.",
+        "Hoping for a sign, seeking for a home.",
+        "And found a garden growing roses so fine.",
+        "Her steps were lit by the moonlight glow.",
+        "Hoping to find someone to call his own.",
+        "Thinking of her lost love.",
+        "The moon cast a soft blue glow.",
+        "Her feet were weary, her heart was sore.",
+        "To find the one who’d never let her go.",
+        "Searching for her lost home.",
+        "Hoping to find the answer, to be alone.",
+        "While the moon was dancing in the sky.",
+        "Looking for a place to call her home.",
+        "With a heart filled with sadness",
+        "To find her lover, to make him moan.",
+        "Looking for her prince but finding none.",
+        "To find her lover, the moon and the stars had flown.",
+        "And a light appeared before her throne.",
+        "Hoping to find someone to call her own.",
+        "To find a place where she could be at home.",
+        "Looking for the one who could be her own.",
+        "With no one to guide her to her home.",
+        "In search of a star to call her own.",
+        "Gazing at the stars and the moon.",
+        "To find her destiny to unfold.",
+        "Finding comfort in the company of her own.",
+        "Gazing at the stars in the sky,",
+        "Wondering if this was the right way to go.",
+        "Her heart was heavy and her soul was gone.",
+        "The wind was blowing in her hair.",
+        "Wondering where her lover had gone.",
+        "Until a stranger called out her name.",
+        "In search of the one that was her own.",
+        "Searching for the one she loved.",
+        "Looking for something unknown.",
+        "Finding herself lost in another's home.",
+        "Wondering about life's unknown.",
+        "And found a star that shone her home.",
+        "With a heart that was so cold and forlorn.",
+        "The moon reflected on her face.",
+        "Looking for someone to make her home.",
+        "The moonlight made the trees all aglow.",
+        "Her eyes they gazed at the moon.",
+        "Searching for a soul she had found before.",
+        "Looking for someone she knew.",
+        "Hoping that she'd find her home."
+      ]
+    },
+    {
+      "condition": "single-layer",
+      "patch_layers": [
+        13
+      ],
+      "greedy_line": "Her heart was heavy, her mind was gone.",
+      "m3_p_donor": 0.000007338573,
+      "m3_p_recipient": 0.0021253151,
+      "sampled_lines": [
+        "The wind whispering the story of her home.",
+        "Looking for the prince of her own.",
+        "As she sought the one who made her glow.",
+        "With her heart full of sorrow and woe.",
+        "Looking for a place to sit down.",
+        "Fearing that someone was coming home.",
+        "Her heart filled with sadness and unknown.",
+        "Until she heard a voice, \"Come along.\"",
+        "The cold wind blowing through the bone.",
+        "Searching for love, or for a home.",
+        "The sound of voices echoing from the throne.",
+        "A beautiful sight to behold.",
+        "And suddenly, a voice she heard,",
+        "And now, she stood alone.",
+        "Searching for the light that could shine again.",
+        "Unable to find the way home.",
+        "Her heart filled with longing and sorrow.",
+        "Her steps were small each step she took.",
+        "Hoping to find someone to call his own.",
+        "Lost in her thoughts, her dreams and her home.",
+        "The moonlight kissed her skin,",
+        "Seeking for some company, some home.",
+        "Feeling lost and all alone.",
+        "Searching for her way back home.",
+        "Her heart was filled with sorrow.",
+        "Hoping someone would take her home.",
+        "She wished to see a star reflected in his eyes.",
+        "Lost in thought, sad and forlorn.",
+        "Not knowing where she is to go.",
+        "Her heart full of woe and sorrow.",
+        "Looking for the truth, the one she knew.",
+        "Her heart breaking in two.",
+        "Searching for a place to call her home.",
+        "She felt safe with her beloved one.",
+        "The moon was her only friend.",
+        "Hoping to find a loved one.",
+        "And she was lost without a home.",
+        "Her heart was filled with sorrow and pain.",
+        "A frightened child, her only home.",
+        "A lone star, lost and alone.",
+        "In her mind she was a queen, all on her own.",
+        "Lost in her own, silent thoughts.",
+        "Lost in the silence of the moon.",
+        "To seek a place she could call home.",
+        "Her heart was lost and her mind was stone.",
+        "As she was left in the place unknown.",
+        "And wondered where her lover had gone.",
+        "Looking for someone to be her own.",
+        "The forest seemed to hold a song.",
+        "She was afraid and didn't know where to go.",
+        "Hoping to find her silent home.",
+        "Searching for a phone.",
+        "And wondered where and where to go.",
+        "In search of something she couldn’t know.",
+        "As the fireflies lit her path for home.",
+        "Searching for the one she loves so,",
+        "The beauty of the moon and stars were so serene and so divine.",
+        "Her heart ached with sadness, her soul was almost gone.",
+        "The music of the stars had her throne.",
+        "Where the ghosts lay waiting for her bone."
+      ]
+    }
+  ],
+  "layer_trace": [
+    {
+      "layer": 0,
+      "p_donor": 0.0000066282996,
+      "p_recipient": 0.0021755444
+    },
+    {
+      "layer": 1,
+      "p_donor": 0.0000066765997,
+      "p_recipient": 0.002163727
+    },
+    {
+      "layer": 2,
+      "p_donor": 0.0000067434826,
+      "p_recipient": 0.0021673108
+    },
+    {
+      "layer": 3,
+      "p_donor": 0.0000066200773,
+      "p_recipient": 0.002109702
+    },
+    {
+      "layer": 4,
+      "p_donor": 0.0000068192567,
+      "p_recipient": 0.00217191
+    },
+    {
+      "layer": 5,
+      "p_donor": 0.0000071156533,
+      "p_recipient": 0.0020572164
+    },
+    {
+      "layer": 6,
+      "p_donor": 0.0000073213255,
+      "p_recipient": 0.0020985866
+    },
+    {
+      "layer": 7,
+      "p_donor": 0.0000067905166,
+      "p_recipient": 0.0020528696
+    },
+    {
+      "layer": 8,
+      "p_donor": 0.0000067504475,
+      "p_recipient": 0.0020327687
+    },
+    {
+      "layer": 9,
+      "p_donor": 0.000006730336,
+      "p_recipient": 0.0020242971
+    },
+    {
+      "layer": 10,
+      "p_donor": 0.0000069976613,
+      "p_recipient": 0.002090918
+    },
+    {
+      "layer": 11,
+      "p_donor": 0.0000070384394,
+      "p_recipient": 0.0020883544
+    },
+    {
+      "layer": 12,
+      "p_donor": 0.0000071440586,
+      "p_recipient": 0.0020780177
+    },
+    {
+      "layer": 13,
+      "p_donor": 0.000007338573,
+      "p_recipient": 0.0021253151
+    },
+    {
+      "layer": 14,
+      "p_donor": 0.0000073140372,
+      "p_recipient": 0.0021222765
+    },
+    {
+      "layer": 15,
+      "p_donor": 0.0000067683936,
+      "p_recipient": 0.0020216706
+    },
+    {
+      "layer": 16,
+      "p_donor": 0.000006732394,
+      "p_recipient": 0.0020102144
+    },
+    {
+      "layer": 17,
+      "p_donor": 0.00000671822,
+      "p_recipient": 0.002079183
+    },
+    {
+      "layer": 18,
+      "p_donor": 0.000006749691,
+      "p_recipient": 0.0020812813
+    },
+    {
+      "layer": 19,
+      "p_donor": 0.000006663919,
+      "p_recipient": 0.002154973
+    },
+    {
+      "layer": 20,
+      "p_donor": 0.0000066524035,
+      "p_recipient": 0.0021728752
+    },
+    {
+      "layer": 21,
+      "p_donor": 0.0000066468915,
+      "p_recipient": 0.0021728543
+    },
+    {
+      "layer": 22,
+      "p_donor": 0.000006629529,
+      "p_recipient": 0.0021808841
+    },
+    {
+      "layer": 23,
+      "p_donor": 0.000006644646,
+      "p_recipient": 0.0021760075
+    },
+    {
+      "layer": 24,
+      "p_donor": 0.000006619019,
+      "p_recipient": 0.0021723823
+    },
+    {
+      "layer": 25,
+      "p_donor": 0.0000066198427,
+      "p_recipient": 0.0021750669
+    }
+  ],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.999958,
+      "relative_l2": 0.009191395
+    },
+    {
+      "layer": 1,
+      "cosine": 0.9975745,
+      "relative_l2": 0.06987707
+    },
+    {
+      "layer": 2,
+      "cosine": 0.99473935,
+      "relative_l2": 0.10245585
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9904502,
+      "relative_l2": 0.13787206
+    },
+    {
+      "layer": 4,
+      "cosine": 0.99190295,
+      "relative_l2": 0.12700346
+    },
+    {
+      "layer": 5,
+      "cosine": 0.92502177,
+      "relative_l2": 0.3928259
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9613786,
+      "relative_l2": 0.2839611
+    },
+    {
+      "layer": 7,
+      "cosine": 0.97083765,
+      "relative_l2": 0.24811798
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9799207,
+      "relative_l2": 0.20421511
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9859015,
+      "relative_l2": 0.17135619
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9881925,
+      "relative_l2": 0.1561294
+    },
+    {
+      "layer": 11,
+      "cosine": 0.98871684,
+      "relative_l2": 0.15384313
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9893526,
+      "relative_l2": 0.15217397
+    },
+    {
+      "layer": 13,
+      "cosine": 0.9830603,
+      "relative_l2": 0.18451673
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9837048,
+      "relative_l2": 0.18015975
+    },
+    {
+      "layer": 15,
+      "cosine": 0.98086274,
+      "relative_l2": 0.19588241
+    },
+    {
+      "layer": 16,
+      "cosine": 0.98010737,
+      "relative_l2": 0.19878633
+    },
+    {
+      "layer": 17,
+      "cosine": 0.97911304,
+      "relative_l2": 0.20332617
+    },
+    {
+      "layer": 18,
+      "cosine": 0.9797537,
+      "relative_l2": 0.2004583
+    },
+    {
+      "layer": 19,
+      "cosine": 0.97847897,
+      "relative_l2": 0.20642553
+    },
+    {
+      "layer": 20,
+      "cosine": 0.97849673,
+      "relative_l2": 0.20644279
+    },
+    {
+      "layer": 21,
+      "cosine": 0.9781808,
+      "relative_l2": 0.20982048
+    },
+    {
+      "layer": 22,
+      "cosine": 0.97758687,
+      "relative_l2": 0.21199264
+    },
+    {
+      "layer": 23,
+      "cosine": 0.9781748,
+      "relative_l2": 0.21018635
+    },
+    {
+      "layer": 24,
+      "cosine": 0.97945154,
+      "relative_l2": 0.20232213
+    },
+    {
+      "layer": 25,
+      "cosine": 0.9766197,
+      "relative_l2": 0.21633075
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 1.3969839e-8,
+    "passed": true
+  }
+}

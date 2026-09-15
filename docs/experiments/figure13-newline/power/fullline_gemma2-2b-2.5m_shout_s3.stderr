@@ -1,0 +1,30 @@
+=== Experiment 2: composition-horizon newline steering ===
+
+Preset:   gemma2-2b-2.5m
+Model:    google/gemma-2-2b
+CLT:      mntss/clt-gemma-2-2b-2.5M
+Prompt (truncated after line-3 newline):
+A sailor sailed across the bay,
+And dreamed of home throughout the day.
+He raised his voice and gave a shout,
+
+
+Suppress: "shout" [CltFeatureId { layer: 25, index: 57092 }, CltFeatureId { layer: 23, index: 49923 }, CltFeatureId { layer: 20, index: 77102 }]
+Inject:   "can" L25:82839
+Strength: 10
+
+Prompt tokens (28); steering site = newline @ 27
+Baseline greedy line: "And called to his wife, “I’m coming out!”"
+Final-word slot (predicts the rhyme word): position 39
+
+  [baseline       ] greedy="And called to his wife, “I’m coming out!”"  P(inject)=2.8175e-7  P(natural)=1.7824e-4
+  [suppress-only  ] greedy="And called to his wife, “I’m coming out!”"  P(inject)=2.8334e-7  P(natural)=1.7890e-4
+  [inject-only    ] greedy="Can you hear me, can you hear me now?"  P(inject)=2.8175e-7  P(natural)=1.7824e-4
+  [suppress+inject] greedy="Can you hear me, can you hear me now?"  P(inject)=2.8334e-7  P(natural)=1.7890e-4
+
+m4 position sweep (suppress+inject at strength 10):
+  best P(inject)=9.0902e-1 at position 38 (" coming")
+
+Output written to docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_shout_s3.json
+
+Total elapsed: 442.44s
