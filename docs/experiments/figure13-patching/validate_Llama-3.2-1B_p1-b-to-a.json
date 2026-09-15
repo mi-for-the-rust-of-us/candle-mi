@@ -1,0 +1,202 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "pair": "p1-b-to-a",
+  "donor_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark alone,\n",
+  "recipient_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\n",
+  "donor_word": "alone",
+  "recipient_word": "about",
+  "tokens": [
+    "<|begin_of_text|>",
+    "The",
+    " stars",
+    " were",
+    " twink",
+    "ling",
+    " in",
+    " the",
+    " night",
+    ",\n",
+    "The",
+    " lantern",
+    "s",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " about",
+    ",\n"
+  ],
+  "donor_newline_index": 24,
+  "recipient_newline_index": 24,
+  "n_layers": 16,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "The moon was shining bright",
+  "final_word_slot": 29,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "The moon was shining bright",
+      "m3_p_donor": 0.00040569835,
+      "m3_p_recipient": 0.00021359666,
+      "sampled_lines": [
+        "She slept on the cold hard ground",
+        "She could not tell where she stood",
+        "In the land of her dreams",
+        "Till she saw a little girl",
+        "The sun had set and the moon was out",
+        "And all the while she asked me why",
+        "I was only a boy of 15",
+        "The spirits of the night",
+        "Without a care in the world",
+        "The park was full of people",
+        "She loved the night with all her heart",
+        "Searching for the boy she loved",
+        "And in the shadows she could be",
+        "Close to the roaring river",
+        "Until she was lost in the crowd",
+        "There was a lonely look in her eye",
+        "The bright moon shone on the ground",
+        "The night was so full and bright",
+        "She felt lonely and lost",
+        "The stars were twinkling in the night",
+        "And found a lonely place to stay",
+        "Waiting for the moon to rise",
+        "She searched her heart to find",
+        "Through the dancing shadows of the night",
+        "The streets were silent to the sound",
+        "She stopped at one of them",
+        "There was a sound of music there",
+        "The moonlight cast a soft glow",
+        "With a smile on her face, and a light in her eye",
+        "She drank the wine, she ate the cake",
+        "The only light was the moon",
+        "With her head in the clouds above",
+        "Even the stars were not enough",
+        "And saw a beautiful sight",
+        "She saw the beautiful sight",
+        "As the moon shone brightly on her",
+        "Where all the stars were shining bright",
+        "But she never saw the light",
+        "Wondering where her loved one was",
+        "With the hope in her heart light",
+        "She felt that she was lost",
+        "The distant fireflies twinkled bright",
+        "And she came to a place that she knew",
+        "She was a lonely and strange",
+        "In search of a place to rest",
+        "Her heart was filled with a light",
+        "And the moonbeams were silver bright",
+        "Where the moonlight shone so bright",
+        "Stumbling along the path of life",
+        "The world was still before her",
+        "While the city lights were bright",
+        "One step and the other she grew",
+        "The winter wind upon her hair",
+        "Always on the look out",
+        "She was lost in the moonlight",
+        "With the stars to light her way",
+        "Puzzled and scared and puzzled again",
+        "And heard the birds singing sweetly",
+        "To find a man in a strange land",
+        "And now and then she found a light"
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.98507315,
+      "relative_l2": 0.17302248
+    },
+    {
+      "layer": 1,
+      "cosine": 0.9464689,
+      "relative_l2": 0.33708376
+    },
+    {
+      "layer": 2,
+      "cosine": 0.96031874,
+      "relative_l2": 0.28114524
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9676283,
+      "relative_l2": 0.25553486
+    },
+    {
+      "layer": 4,
+      "cosine": 0.9303084,
+      "relative_l2": 0.38036147
+    },
+    {
+      "layer": 5,
+      "cosine": 0.9595348,
+      "relative_l2": 0.28454226
+    },
+    {
+      "layer": 6,
+      "cosine": 0.96400905,
+      "relative_l2": 0.27071527
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9660041,
+      "relative_l2": 0.25855044
+    },
+    {
+      "layer": 8,
+      "cosine": 0.96127397,
+      "relative_l2": 0.27704602
+    },
+    {
+      "layer": 9,
+      "cosine": 0.96303004,
+      "relative_l2": 0.271837
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9789469,
+      "relative_l2": 0.20494772
+    },
+    {
+      "layer": 11,
+      "cosine": 0.9805664,
+      "relative_l2": 0.19722413
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9817696,
+      "relative_l2": 0.19021161
+    },
+    {
+      "layer": 13,
+      "cosine": 0.98209447,
+      "relative_l2": 0.18905157
+    },
+    {
+      "layer": 14,
+      "cosine": 0.98525065,
+      "relative_l2": 0.17167042
+    },
+    {
+      "layer": 15,
+      "cosine": 0.9902388,
+      "relative_l2": 0.14165029
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 0.0,
+    "passed": true
+  }
+}

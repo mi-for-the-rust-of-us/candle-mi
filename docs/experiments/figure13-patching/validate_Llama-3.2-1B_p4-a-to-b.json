@@ -1,0 +1,202 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "pair": "p4-a-to-b",
+  "donor_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers who,\n",
+  "recipient_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers when,\n",
+  "donor_word": "who",
+  "recipient_word": "when",
+  "tokens": [
+    "<|begin_of_text|>",
+    "The",
+    " sun",
+    " goes",
+    " up",
+    ",",
+    " the",
+    " sun",
+    " goes",
+    " down",
+    ",\n",
+    "The",
+    " moon",
+    " shines",
+    " bright",
+    " above",
+    " the",
+    " town",
+    ".\n",
+    "Nobody",
+    " knows",
+    " or",
+    " remembers",
+    " when",
+    ",\n"
+  ],
+  "donor_newline_index": 24,
+  "recipient_newline_index": 24,
+  "n_layers": 16,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "But the sun goes up, the sun goes down",
+  "final_word_slot": 34,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "But the sun goes up, the sun goes down",
+      "m3_p_donor": 6.5569274e-8,
+      "m3_p_recipient": 8.932926e-7,
+      "sampled_lines": [
+        "When did it start, when did it stop",
+        "But everybody knows it ain’t no lie",
+        "What time the sun was born",
+        "When the war was over, the peace was won",
+        "That the first day of the week was born",
+        "But everybody knows the time",
+        "The sun will show its face again",
+        "But the house in front of the town",
+        "What made the town to be",
+        "The moon saw this town and its people",
+        "But some folks have been singing about it",
+        "But the people living there",
+        "A man came to town alone",
+        "When did you have a nice summer",
+        "But go to the dirt and you'll find",
+        "Or how long, but it was that way",
+        "The sun was last beneath the trees",
+        "But everybody knows that fall is here",
+        "But the village is still there",
+        "But this family will never forget",
+        "Who took the sun and made it shine",
+        "Those were the days of old",
+        "When the town was built, or when it fell",
+        "The sun no longer shines above the town",
+        "Or where the sun came from or went to",
+        "When it all began, what it was for",
+        "The day the people were born",
+        "But we loved each other anyway",
+        "When the sun came up again",
+        "This is the first time that I've seen the sun rise",
+        "Who built that house of cards",
+        "How the sun went up and how it went down",
+        "The sun was born, or the moon came to town",
+        "That before the sun came to town",
+        "But we know it’s been going round",
+        "But we know the sun will rise again",
+        "I was born again and made new",
+        "But the sun comes up again the next morning",
+        "But they know it's time to go home",
+        "The town was a gypsy camp",
+        "When the moon was first seen on the town",
+        "The car starts to do the town",
+        "The sun goes up, the sun goes down",
+        "But we all know that it’s a sight",
+        "But the world was created on a Friday",
+        "Who was the last one to die",
+        "What happened to the last one of us",
+        "The day it started and when it ended",
+        "The sun was first born",
+        "The sun goes up, the sun goes down",
+        "The people living in the city",
+        "At the break of dawn or at the setting sun",
+        "But one day soon the sun will be up",
+        "When was the last time that the moon waned away",
+        "The day that the sun went down",
+        "The first day of the first hour",
+        "The river goes up and the town goes down",
+        "When the sun goes up, the sun goes down",
+        "How the town was built",
+        "The very first moon was born"
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.9821393,
+      "relative_l2": 0.1881731
+    },
+    {
+      "layer": 1,
+      "cosine": 0.91320455,
+      "relative_l2": 0.40914172
+    },
+    {
+      "layer": 2,
+      "cosine": 0.9309841,
+      "relative_l2": 0.36938286
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9445433,
+      "relative_l2": 0.33545575
+    },
+    {
+      "layer": 4,
+      "cosine": 0.92145884,
+      "relative_l2": 0.3932974
+    },
+    {
+      "layer": 5,
+      "cosine": 0.94257164,
+      "relative_l2": 0.33593777
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9368463,
+      "relative_l2": 0.35743397
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9361415,
+      "relative_l2": 0.35389704
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9351628,
+      "relative_l2": 0.3653609
+    },
+    {
+      "layer": 9,
+      "cosine": 0.8948263,
+      "relative_l2": 0.47283268
+    },
+    {
+      "layer": 10,
+      "cosine": 0.91664034,
+      "relative_l2": 0.40734518
+    },
+    {
+      "layer": 11,
+      "cosine": 0.9230791,
+      "relative_l2": 0.39040998
+    },
+    {
+      "layer": 12,
+      "cosine": 0.8919814,
+      "relative_l2": 0.46029937
+    },
+    {
+      "layer": 13,
+      "cosine": 0.88538545,
+      "relative_l2": 0.4761376
+    },
+    {
+      "layer": 14,
+      "cosine": 0.87238944,
+      "relative_l2": 0.5046684
+    },
+    {
+      "layer": 15,
+      "cosine": 0.9070345,
+      "relative_l2": 0.43962803
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 4.206413e-12,
+    "passed": true
+  }
+}

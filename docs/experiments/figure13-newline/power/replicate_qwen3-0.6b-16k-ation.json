@@ -1,0 +1,489 @@
+{
+  "model": "Qwen/Qwen3-0.6B-Base",
+  "clt_repo": "bluelightai-dev/clt-Qwen3-0.6B-Base-16k-test",
+  "preset": "qwen3-0.6b-16k-ation",
+  "prompt": "At every grand celebration,\nEach careful preparation,\nBrings joy beyond expectation,\n",
+  "tokens": [
+    "At",
+    " every",
+    " grand",
+    " celebration",
+    ",\n",
+    "Each",
+    " careful",
+    " preparation",
+    ",\n",
+    "Br",
+    "ings",
+    " joy",
+    " beyond",
+    " expectation",
+    ",\n"
+  ],
+  "newline_index": 14,
+  "suppress_word": "duration",
+  "inject_word": "myself",
+  "suppress_features": [
+    {
+      "layer": 23,
+      "index": 11154
+    },
+    {
+      "layer": 20,
+      "index": 10987
+    },
+    {
+      "layer": 14,
+      "index": 10719
+    }
+  ],
+  "inject_feature": {
+    "layer": 22,
+    "index": 8011
+  },
+  "strength": 25.0,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 42,
+  "baseline_greedy_line": "And the heart is filled with love",
+  "final_word_slot": 21,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "greedy_line": "And the heart is filled with love",
+      "m3_p_inject": 2.0330322e-06,
+      "m3_p_natural": 4.5415368e-07,
+      "sampled_lines": [
+        "In the heart of every celebration",
+        "As expectations are fulfilled",
+        "An immortal memory birthed",
+        "For a birthday gift that's truly special",
+        "Reaching for the stars",
+        "A life filled with love and laughter",
+        "And true love shines like a star",
+        "As the stage is filled with light",
+        "As the spirit gushes forth",
+        "Brings glory and glory",
+        "To the heart of the soul of the heart.<|endoftext|>Human beings have been",
+        "To a tale of love and hems and hoops",
+        "And smiles as bright as day",
+        "Makes your heart race within",
+        "Benefits those who dedicate",
+        "But what if it wasn’t meant to be",
+        "The promise of a perfect day",
+        "To the heart of every single",
+        "And when many things come together",
+        "And the spirit of our life"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "celebration",
+          "fulfilled",
+          "birthed",
+          "special",
+          "stars",
+          "laughter",
+          "star",
+          "light",
+          "forth",
+          "glory",
+          "been",
+          "hoops",
+          "day",
+          "within",
+          "dedicate",
+          "be",
+          "day",
+          "single",
+          "together",
+          "life"
+        ],
+        "natural": {
+          "count": 1,
+          "fraction": 0.05,
+          "ci95": [
+            0.0013,
+            0.2487
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 19,
+          "fraction": 0.95,
+          "ci95": [
+            0.7513,
+            0.9987
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress-only",
+      "greedy_line": "soles, and the joy of the occasion",
+      "m3_p_inject": 2.7809263e-06,
+      "m3_p_natural": 5.4635797e-07,
+      "sampled_lines": [
+        "kinsman-legal heirs",
+        "очных",
+        "очные, звучно, наполнено",
+        "�버릴 때 다음 주제를 추천해줘. 숨",
+        "kinsman to the Prince of Peace",
+        "soles and spills",
+        "cken, the heart is filled with eager anticipation. Can you continue the poem",
+        "cken",
+        "一个个单词的意思",
+        "不足一点，最后一句可以如何修改",
+        "soles, to the end",
+        "selectAll the finest",
+        "stock, share, and enjoy! 🎉",
+        "reste",
+        "soles our hearts with tears upon them",
+        "kinsmanship and goodwill",
+        "一个个的祝贺，新年快乐，中秋快乐！祝你新年快乐，",
+        "soles",
+        "kinsman to daughter",
+        "cg"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "heirs",
+          "",
+          "",
+          "",
+          "peace",
+          "spills",
+          "poem",
+          "cken",
+          "",
+          "",
+          "end",
+          "finest",
+          "enjoy",
+          "reste",
+          "them",
+          "goodwill",
+          "",
+          "soles",
+          "daughter",
+          "cg"
+        ],
+        "natural": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 20,
+          "fraction": 1.0,
+          "ci95": [
+            0.8316,
+            1.0
+          ]
+        }
+      }
+    },
+    {
+      "condition": "inject-only",
+      "greedy_line": " I am honored to be here today",
+      "m3_p_inject": 1.9793458e-06,
+      "m3_p_natural": 4.5795457e-07,
+      "sampled_lines": [
+        " I find it hard to believe",
+        " I vow, I'll make it a tradition",
+        " I may savor every moment",
+        " I am blessed to share it with you",
+        " I am proud to be your guide",
+        " I am proud of my heart",
+        " I am here to pay homage",
+        " I find my way",
+        " I am so blessed",
+        " I am honored to say that I have made it this far. I am",
+        " I dedicate my heart and soul to the celebration of your life, and I",
+        " I look upon them with longing eyes",
+        " I rejoice in your presence",
+        " I eagerly await your visit",
+        " I hear the soft tapestry weave",
+        " I hope you have a wonderful time at this dance. It's always a",
+        " I can’t wait for you to arrive",
+        " I am witness to the power",
+        " I have been blessed with your love",
+        " I am here to believe you will know it all"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "believe",
+          "tradition",
+          "moment",
+          "you",
+          "guide",
+          "heart",
+          "homage",
+          "way",
+          "blessed",
+          "am",
+          "i",
+          "eyes",
+          "presence",
+          "visit",
+          "weave",
+          "a",
+          "arrive",
+          "power",
+          "love",
+          "all"
+        ],
+        "natural": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 20,
+          "fraction": 1.0,
+          "ci95": [
+            0.8316,
+            1.0
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress+inject",
+      "greedy_line": " I am honored to be here",
+      "m3_p_inject": 2.7740396e-06,
+      "m3_p_natural": 5.4174086e-07,
+      "sampled_lines": [
+        " I must take my seat",
+        "莞州之声12306",
+        "rought us a touch, a gesture",
+        " I shall say it in my heart",
+        " I love the way you feel",
+        " I've been blessed with the finest",
+        " I have a special friend",
+        " I hope you can understand",
+        " I've joined the battle for happiness",
+        " I shall share my joy",
+        " I always find my way",
+        " I should be joyful",
+        " I remember in this",
+        "cnl",
+        " I, as an educator",
+        "rought hearts to rejoice",
+        " I hope",
+        " I believe the depths of vulnerability",
+        "eren",
+        "elier"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "seat",
+          "莞州之声12306",
+          "gesture",
+          "heart",
+          "feel",
+          "finest",
+          "friend",
+          "understand",
+          "happiness",
+          "joy",
+          "way",
+          "joyful",
+          "this",
+          "cnl",
+          "educator",
+          "rejoice",
+          "hope",
+          "vulnerability",
+          "eren",
+          "elier"
+        ],
+        "natural": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 20,
+          "fraction": 1.0,
+          "ci95": [
+            0.8316,
+            1.0
+          ]
+        }
+      }
+    }
+  ],
+  "m4_position_sweep": [
+    {
+      "position": 0,
+      "token": "At",
+      "p_inject": 3.9468665e-07,
+      "p_natural": 1.0962817e-06
+    },
+    {
+      "position": 1,
+      "token": " every",
+      "p_inject": 2.2331258e-06,
+      "p_natural": 5.118854e-07
+    },
+    {
+      "position": 2,
+      "token": " grand",
+      "p_inject": 2.235864e-06,
+      "p_natural": 4.599938e-07
+    },
+    {
+      "position": 3,
+      "token": " celebration",
+      "p_inject": 2.46376e-06,
+      "p_natural": 4.0025208e-07
+    },
+    {
+      "position": 4,
+      "token": ",\n",
+      "p_inject": 1.9987467e-06,
+      "p_natural": 5.014769e-07
+    },
+    {
+      "position": 5,
+      "token": "Each",
+      "p_inject": 2.2449858e-06,
+      "p_natural": 5.5348283e-07
+    },
+    {
+      "position": 6,
+      "token": " careful",
+      "p_inject": 2.1868937e-06,
+      "p_natural": 4.726766e-07
+    },
+    {
+      "position": 7,
+      "token": " preparation",
+      "p_inject": 2.5040515e-06,
+      "p_natural": 4.1346468e-07
+    },
+    {
+      "position": 8,
+      "token": ",\n",
+      "p_inject": 1.9005952e-06,
+      "p_natural": 5.544303e-07
+    },
+    {
+      "position": 9,
+      "token": "Br",
+      "p_inject": 2.18007e-06,
+      "p_natural": 5.3513486e-07
+    },
+    {
+      "position": 10,
+      "token": "ings",
+      "p_inject": 2.3705215e-06,
+      "p_natural": 6.0316916e-07
+    },
+    {
+      "position": 11,
+      "token": " joy",
+      "p_inject": 1.306779e-06,
+      "p_natural": 4.803242e-07
+    },
+    {
+      "position": 12,
+      "token": " beyond",
+      "p_inject": 2.388074e-06,
+      "p_natural": 4.175428e-07
+    },
+    {
+      "position": 13,
+      "token": " expectation",
+      "p_inject": 2.2448135e-06,
+      "p_natural": 2.1996057e-07
+    },
+    {
+      "position": 14,
+      "token": ",\n",
+      "p_inject": 2.7740396e-06,
+      "p_natural": 5.4174086e-07
+    },
+    {
+      "position": 15,
+      "token": "And",
+      "p_inject": 2.344833e-06,
+      "p_natural": 5.4281213e-07
+    },
+    {
+      "position": 16,
+      "token": " the",
+      "p_inject": 2.3110472e-06,
+      "p_natural": 5.0392117e-07
+    },
+    {
+      "position": 17,
+      "token": " heart",
+      "p_inject": 3.8317826e-06,
+      "p_natural": 8.296672e-07
+    },
+    {
+      "position": 18,
+      "token": " is",
+      "p_inject": 2.0824093e-06,
+      "p_natural": 5.7263577e-07
+    },
+    {
+      "position": 19,
+      "token": " filled",
+      "p_inject": 2.3375171e-06,
+      "p_natural": 7.5711114e-07
+    },
+    {
+      "position": 20,
+      "token": " with",
+      "p_inject": 0.008919019,
+      "p_natural": 2.2219886e-06
+    }
+  ],
+  "m1_classified": true
+}

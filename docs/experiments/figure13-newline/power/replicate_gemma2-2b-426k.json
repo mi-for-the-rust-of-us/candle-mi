@@ -1,0 +1,556 @@
+{
+  "model": "google/gemma-2-2b",
+  "clt_repo": "mntss/clt-gemma-2-2b-426k",
+  "preset": "gemma2-2b-426k",
+  "prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\n",
+  "tokens": [
+    "<bos>",
+    "The",
+    " stars",
+    " were",
+    " twinkling",
+    " in",
+    " the",
+    " night",
+    ",",
+    "\n",
+    "The",
+    " lanterns",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".",
+    "\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " about",
+    ",",
+    "\n"
+  ],
+  "newline_index": 25,
+  "suppress_word": "out",
+  "inject_word": "around",
+  "suppress_features": [
+    {
+      "layer": 16,
+      "index": 13725
+    },
+    {
+      "layer": 25,
+      "index": 9385
+    }
+  ],
+  "inject_feature": {
+    "layer": 22,
+    "index": 10243
+  },
+  "strength": 25.0,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 42,
+  "baseline_greedy_line": "Her heart was filled with doubt.",
+  "final_word_slot": 31,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "greedy_line": "Her heart was filled with doubt.",
+      "m3_p_inject": 8.953448e-07,
+      "m3_p_natural": 0.0004448571,
+      "sampled_lines": [
+        "To find the right path for love.",
+        "The moon was full, the stars were out.",
+        "Searching for the right spot to shout.",
+        "Her feet were sore and her heart was out.",
+        "As she tried to reach the town.",
+        "With a smile on her face and a song in her mouth.",
+        "Seeking something, but lost her doubt.",
+        "With her heart full of love and doubt.",
+        "Searching for love she did not doubt.",
+        "She was lost, alone & afraid,",
+        "Wondering where she might alight.",
+        "And gazed at each one, with awe and shout.",
+        "Her soul longing for a warm embrace.",
+        "Looking for the one she loved.",
+        "Searching for the one she loved.",
+        "Searching for a place to stop and shout.",
+        "Searching for a place to spend the night.",
+        "As her eyes sought out the moon.",
+        "The road was steep and muddy,",
+        "The night wind gave her a shout."
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "love",
+          "out",
+          "shout",
+          "out",
+          "town",
+          "mouth",
+          "doubt",
+          "doubt",
+          "doubt",
+          "afraid",
+          "alight",
+          "shout",
+          "embrace",
+          "loved",
+          "loved",
+          "shout",
+          "night",
+          "moon",
+          "muddy",
+          "shout"
+        ],
+        "natural": {
+          "count": 9,
+          "fraction": 0.45,
+          "ci95": [
+            0.2306,
+            0.6847
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 11,
+          "fraction": 0.55,
+          "ci95": [
+            0.3153,
+            0.7694
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress-only",
+      "greedy_line": "A smile on her face, a heart full of doubt.",
+      "m3_p_inject": 9.1578477e-07,
+      "m3_p_natural": 0.00044846127,
+      "sampled_lines": [
+        "But she did not feel her bout.",
+        "The moon was full, the stars were out.",
+        "Afraid of the monsters that came out.",
+        "A girl who was at the ball of doubt.",
+        "A smile on her face, a light in her heart.",
+        "Her heart was heavy and her soul was out.",
+        "A smile lit up her eyes and mouth.",
+        "With her head up high and proud.",
+        "A smile on her lips and a song in her mouth.",
+        "Afraid of getting lost, she’d shout.",
+        "With tears in her eyes, and heart full of doubt.",
+        "A heart full of love for her love.",
+        "Hoping to find the perfect outfit.",
+        "Until she paused at the entrance of a house.",
+        "She was searching for a place to shout.",
+        "Not knowing what to do or how.",
+        "With her eyes on the sky above.",
+        "A beautiful young girl, with a rose about.",
+        "And then she met a handsome knight.",
+        "Not knowing what lay in store."
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "bout",
+          "out",
+          "out",
+          "doubt",
+          "heart",
+          "out",
+          "mouth",
+          "proud",
+          "mouth",
+          "shout",
+          "doubt",
+          "love",
+          "outfit",
+          "house",
+          "shout",
+          "how",
+          "above",
+          "about",
+          "knight",
+          "store"
+        ],
+        "natural": {
+          "count": 9,
+          "fraction": 0.45,
+          "ci95": [
+            0.2306,
+            0.6847
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 11,
+          "fraction": 0.55,
+          "ci95": [
+            0.3153,
+            0.7694
+          ]
+        }
+      }
+    },
+    {
+      "condition": "inject-only",
+      "greedy_line": "Around the town, she went about.",
+      "m3_p_inject": 9.198064e-07,
+      "m3_p_natural": 0.00044600395,
+      "sampled_lines": [
+        " around the town, around the bout.",
+        " around the park.",
+        "around the corner of the old town.",
+        " Around the square, the crowd.",
+        "around the place with no sound.",
+        "Around the castle, like the moon.",
+        " around the town.",
+        "Around the town, with a smile so sweet.",
+        " AROUND HER HOME, IN HER GARDEN TOO.",
+        " Around the corner of a red light,",
+        " alrededor del mundo de la magia y la fantasía",
+        " Around the marketplace she walked,",
+        " AROUND THE CORNER, ",
+        "Around the stalls and booths she trotted,",
+        " rundt på et jungeltjære fra julekalenderen.",
+        " around the town,",
+        "around the castle, and the grounds.",
+        "Around the castle she made a route.",
+        " around and around the town.",
+        "Around the town."
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "bout",
+          "park",
+          "town",
+          "crowd",
+          "sound",
+          "moon",
+          "town",
+          "sweet",
+          "too",
+          "light",
+          "fantasía",
+          "walked",
+          "corner",
+          "trotted",
+          "julekalenderen",
+          "town",
+          "grounds",
+          "route",
+          "town",
+          "town"
+        ],
+        "natural": {
+          "count": 1,
+          "fraction": 0.05,
+          "ci95": [
+            0.0013,
+            0.2487
+          ]
+        },
+        "inject": {
+          "count": 1,
+          "fraction": 0.05,
+          "ci95": [
+            0.0013,
+            0.2487
+          ]
+        },
+        "other": {
+          "count": 18,
+          "fraction": 0.9,
+          "ci95": [
+            0.683,
+            0.9877
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress+inject",
+      "greedy_line": "Around the town, she went about.",
+      "m3_p_inject": 9.3301344e-07,
+      "m3_p_natural": 0.00045096353,
+      "sampled_lines": [
+        " around the town, around the bout.",
+        " around the park.",
+        "around the corner of the old town.",
+        " Around the park, the streets she strolled.",
+        " around the village.",
+        "Around the town, at last, she found",
+        " around the town.",
+        "Around the town, with a smile so sweet.",
+        " AROUND HER HEAD, there was a sound.",
+        " Around the corner of a house that's about.",
+        "around a pond on a winter day.",
+        " AROUND THE CORNER, I'M COMING. ",
+        "Around the stalls and booths she trotted,",
+        "Around the town.",
+        " AROUND 1300 BC,",
+        " Around the streets of the town.",
+        "around the lake, feeling lost and doubt.",
+        "around the streets of the town.",
+        "around the grounds with her heart on a pout.",
+        "Around the lake where all the love was out."
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "bout",
+          "park",
+          "town",
+          "strolled",
+          "village",
+          "found",
+          "town",
+          "sweet",
+          "sound",
+          "about",
+          "day",
+          "coming",
+          "trotted",
+          "town",
+          "bc",
+          "town",
+          "doubt",
+          "town",
+          "pout",
+          "out"
+        ],
+        "natural": {
+          "count": 5,
+          "fraction": 0.25,
+          "ci95": [
+            0.0866,
+            0.491
+          ]
+        },
+        "inject": {
+          "count": 2,
+          "fraction": 0.1,
+          "ci95": [
+            0.0123,
+            0.317
+          ]
+        },
+        "other": {
+          "count": 13,
+          "fraction": 0.65,
+          "ci95": [
+            0.4078,
+            0.8461
+          ]
+        }
+      }
+    }
+  ],
+  "m4_position_sweep": [
+    {
+      "position": 0,
+      "token": "<bos>",
+      "p_inject": 9.743745e-07,
+      "p_natural": 0.00052183
+    },
+    {
+      "position": 1,
+      "token": "The",
+      "p_inject": 8.7682486e-07,
+      "p_natural": 0.00044076092
+    },
+    {
+      "position": 2,
+      "token": " stars",
+      "p_inject": 8.961093e-07,
+      "p_natural": 0.00044336717
+    },
+    {
+      "position": 3,
+      "token": " were",
+      "p_inject": 8.99781e-07,
+      "p_natural": 0.00044489815
+    },
+    {
+      "position": 4,
+      "token": " twinkling",
+      "p_inject": 9.041199e-07,
+      "p_natural": 0.00044296053
+    },
+    {
+      "position": 5,
+      "token": " in",
+      "p_inject": 8.947705e-07,
+      "p_natural": 0.00044843915
+    },
+    {
+      "position": 6,
+      "token": " the",
+      "p_inject": 8.958585e-07,
+      "p_natural": 0.00044676842
+    },
+    {
+      "position": 7,
+      "token": " night",
+      "p_inject": 8.8291944e-07,
+      "p_natural": 0.00045452203
+    },
+    {
+      "position": 8,
+      "token": ",",
+      "p_inject": 8.8762636e-07,
+      "p_natural": 0.0004466202
+    },
+    {
+      "position": 9,
+      "token": "\n",
+      "p_inject": 9.093365e-07,
+      "p_natural": 0.00044575514
+    },
+    {
+      "position": 10,
+      "token": "The",
+      "p_inject": 9.0628015e-07,
+      "p_natural": 0.00044679348
+    },
+    {
+      "position": 11,
+      "token": " lanterns",
+      "p_inject": 8.9629816e-07,
+      "p_natural": 0.00044680398
+    },
+    {
+      "position": 12,
+      "token": " cast",
+      "p_inject": 9.043474e-07,
+      "p_natural": 0.00044092475
+    },
+    {
+      "position": 13,
+      "token": " a",
+      "p_inject": 8.88873e-07,
+      "p_natural": 0.00044541332
+    },
+    {
+      "position": 14,
+      "token": " golden",
+      "p_inject": 9.0719954e-07,
+      "p_natural": 0.00046027347
+    },
+    {
+      "position": 15,
+      "token": " light",
+      "p_inject": 8.5467525e-07,
+      "p_natural": 0.00051353575
+    },
+    {
+      "position": 16,
+      "token": ".",
+      "p_inject": 9.024922e-07,
+      "p_natural": 0.00044086366
+    },
+    {
+      "position": 17,
+      "token": "\n",
+      "p_inject": 9.164008e-07,
+      "p_natural": 0.00044588675
+    },
+    {
+      "position": 18,
+      "token": "She",
+      "p_inject": 8.989168e-07,
+      "p_natural": 0.00045455148
+    },
+    {
+      "position": 19,
+      "token": " wandered",
+      "p_inject": 8.887844e-07,
+      "p_natural": 0.00044491296
+    },
+    {
+      "position": 20,
+      "token": " in",
+      "p_inject": 8.8212e-07,
+      "p_natural": 0.00045260807
+    },
+    {
+      "position": 21,
+      "token": " the",
+      "p_inject": 9.013805e-07,
+      "p_natural": 0.00044564137
+    },
+    {
+      "position": 22,
+      "token": " dark",
+      "p_inject": 1.0118049e-06,
+      "p_natural": 0.00051229616
+    },
+    {
+      "position": 23,
+      "token": " about",
+      "p_inject": 1.1925382e-06,
+      "p_natural": 0.00047552693
+    },
+    {
+      "position": 24,
+      "token": ",",
+      "p_inject": 9.0250995e-07,
+      "p_natural": 0.00044628276
+    },
+    {
+      "position": 25,
+      "token": "\n",
+      "p_inject": 9.3301344e-07,
+      "p_natural": 0.00045096353
+    },
+    {
+      "position": 26,
+      "token": "Her",
+      "p_inject": 9.835057e-07,
+      "p_natural": 0.00045603965
+    },
+    {
+      "position": 27,
+      "token": " heart",
+      "p_inject": 9.581541e-07,
+      "p_natural": 0.0004403107
+    },
+    {
+      "position": 28,
+      "token": " was",
+      "p_inject": 9.839662e-07,
+      "p_natural": 0.00045149022
+    },
+    {
+      "position": 29,
+      "token": " filled",
+      "p_inject": 1.1359355e-06,
+      "p_natural": 0.00038463625
+    },
+    {
+      "position": 30,
+      "token": " with",
+      "p_inject": 0.80977976,
+      "p_natural": 4.0345224e-11
+    }
+  ],
+  "m1_classified": true
+}

@@ -1,0 +1,255 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p3-a-to-b",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a shout,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a sigh,\n",
+  "donor_word": "shout",
+  "recipient_word": "sigh",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "He",
+    " raised",
+    " his",
+    " voice",
+    " and",
+    " gave",
+    " a",
+    " sigh",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 27,
+  "recipient_newline_index": 27,
+  "n_layers": 26,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "And said, “I’m going home today.”",
+  "final_word_slot": 37,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And said, “I’m going home today.”",
+      "m3_p_donor": 4.8855586e-9,
+      "m3_p_recipient": 0.000001000156,
+      "sampled_lines": [
+        "At seeing his beloved on the other side.",
+        "And vowed he'd never go that way again.",
+        "And said, “I wish I was at home.”",
+        "And called to mind the one he loved to die.",
+        "And sang, “The Bay of Home.”",
+        "And sang a song, I can't deny.",
+        "And his friends gave him a good-bye.",
+        "As he saw the shore upon the sky.",
+        "He asked, “Are you there?”",
+        "“I wish the sea would go by”",
+        "That echoed across the sky.",
+        "“I’ll be home for Christmas, if only I could fly.”",
+        "As he made his way to the shore.",
+        "‘I’m missing home, I’m missing you’.",
+        "And said, “I dream of home tonight.”",
+        "And wept as he dreamed of his wife.",
+        "“Oh, if I could just see my wife.”",
+        "For he was sailing far and high.",
+        "As he struggled through the treacherous sea.",
+        "And called to all the ships in the sky.",
+        "And prayed for one more try.",
+        "For a little while I wish I’d died,",
+        "As the evening sun began to die.",
+        "And said, “I wish I was in Port Adelaide.",
+        "Then took a turn to sing a song.",
+        "And sang the songs that made him cry.",
+        "For his heart was aching for his wife.",
+        "For he had had a lovely try.",
+        "And sang the sailor’s song.",
+        "For he was missing his family and his mother’s milk.",
+        "And said, “I’ll never sail this sea again.”",
+        "And thought of the sweet ones he left behind.",
+        "As he sailed along the shore.",
+        "And said to his beloved, \"I wish to die.\"",
+        "And cried, \"I wish I were back at home.\"",
+        "And thought of home and hoped he’d get there soon.",
+        "And soon began to feel quite high.",
+        "As he gazed upon the sea and sky.",
+        "For he was homesick, so very nigh.",
+        "But the sailor cried \"I'm going home.\"",
+        "And then he called ashore.",
+        "For in his heart he knew what lay.",
+        "With hope for home upon his brow.",
+        "For the only way was down the bay.",
+        "And dreamed of home throughout the night.",
+        "And sang of love and of a boy.",
+        "And waved his hand goodbye.",
+        "As he thought of his true love high.",
+        "And said that he would go home today.",
+        "And thought that he was going to die.",
+        "And wished for home one more time.",
+        "And prayed for a chance to take a ride.",
+        "And saw a bird in the sky.",
+        "As he wished for the sea to dry.",
+        "And wished all the world could see the sky.",
+        "And sang the following song:",
+        "For he was homesick, so very high.",
+        "Although he cried a silent cry.",
+        "And he was gone for weeks, for miles and miles.",
+        "And came home to his loved one,"
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.99989915,
+      "relative_l2": 0.014294805
+    },
+    {
+      "layer": 1,
+      "cosine": 0.99935746,
+      "relative_l2": 0.035886686
+    },
+    {
+      "layer": 2,
+      "cosine": 0.99811137,
+      "relative_l2": 0.061449897
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9983042,
+      "relative_l2": 0.0582143
+    },
+    {
+      "layer": 4,
+      "cosine": 0.9984635,
+      "relative_l2": 0.05574155
+    },
+    {
+      "layer": 5,
+      "cosine": 0.931384,
+      "relative_l2": 0.37237892
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9558152,
+      "relative_l2": 0.30088577
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9648404,
+      "relative_l2": 0.26319095
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9701665,
+      "relative_l2": 0.24317193
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9794488,
+      "relative_l2": 0.20369303
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9795401,
+      "relative_l2": 0.20620172
+    },
+    {
+      "layer": 11,
+      "cosine": 0.97662145,
+      "relative_l2": 0.22977099
+    },
+    {
+      "layer": 12,
+      "cosine": 0.97739565,
+      "relative_l2": 0.2237533
+    },
+    {
+      "layer": 13,
+      "cosine": 0.97228473,
+      "relative_l2": 0.24639699
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9817695,
+      "relative_l2": 0.19919953
+    },
+    {
+      "layer": 15,
+      "cosine": 0.97375005,
+      "relative_l2": 0.23515345
+    },
+    {
+      "layer": 16,
+      "cosine": 0.97172093,
+      "relative_l2": 0.24722256
+    },
+    {
+      "layer": 17,
+      "cosine": 0.9676058,
+      "relative_l2": 0.26520178
+    },
+    {
+      "layer": 18,
+      "cosine": 0.96452737,
+      "relative_l2": 0.2768447
+    },
+    {
+      "layer": 19,
+      "cosine": 0.9612973,
+      "relative_l2": 0.29117417
+    },
+    {
+      "layer": 20,
+      "cosine": 0.9649919,
+      "relative_l2": 0.2741902
+    },
+    {
+      "layer": 21,
+      "cosine": 0.96076864,
+      "relative_l2": 0.28419083
+    },
+    {
+      "layer": 22,
+      "cosine": 0.9615025,
+      "relative_l2": 0.28083897
+    },
+    {
+      "layer": 23,
+      "cosine": 0.96392643,
+      "relative_l2": 0.27147493
+    },
+    {
+      "layer": 24,
+      "cosine": 0.9664617,
+      "relative_l2": 0.25968048
+    },
+    {
+      "layer": 25,
+      "cosine": 0.9683208,
+      "relative_l2": 0.25217417
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 8.6402e-12,
+    "passed": true
+  }
+}

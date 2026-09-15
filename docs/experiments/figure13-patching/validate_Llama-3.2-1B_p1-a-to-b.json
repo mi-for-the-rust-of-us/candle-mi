@@ -1,0 +1,202 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "pair": "p1-a-to-b",
+  "donor_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\n",
+  "recipient_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark alone,\n",
+  "donor_word": "about",
+  "recipient_word": "alone",
+  "tokens": [
+    "<|begin_of_text|>",
+    "The",
+    " stars",
+    " were",
+    " twink",
+    "ling",
+    " in",
+    " the",
+    " night",
+    ",\n",
+    "The",
+    " lantern",
+    "s",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " alone",
+    ",\n"
+  ],
+  "donor_newline_index": 24,
+  "recipient_newline_index": 24,
+  "n_layers": 16,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "The moon was shining bright",
+  "final_word_slot": 29,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "The moon was shining bright",
+      "m3_p_donor": 0.00007477596,
+      "m3_p_recipient": 0.00057226396,
+      "sampled_lines": [
+        "She wished she could have company",
+        "The moon was shining brightly",
+        "As shadows danced in the light",
+        "And the sounds of the river flowed",
+        "In the cold, in the cold and the rain",
+        "Gazing at the stars in her eyes",
+        "she felt a little lost and alone",
+        "The moon was bright enough to find",
+        "A solitary soul in the night",
+        "And the cold air made her shiver",
+        "Blue eyes glistening as the moonlight danced on her skin",
+        "Her heart was heavy in her chest",
+        "A twinkle in her lonely eyes",
+        "Yet she was not afraid",
+        "Past the fallen leaves and snow",
+        "The moonlight gleamed on her face",
+        "To the sound of the children’s voices",
+        "Thinking of her silent lover",
+        "She found herself in a strange land",
+        "When the moonlight came and shone",
+        "The moon was shining bright",
+        "But her heart was filled with pride",
+        "In the shadow of the moonlight",
+        "In the swaying arms of the night",
+        "And the moonlight seemed so bright",
+        "To find her way by the stars",
+        "And the moonlight cast the light",
+        "With no one to keep her company",
+        "The sounds of the street echoed loud",
+        "Along the lonely path she went",
+        "Lost in the many miles of night",
+        "To the moon and the stars above",
+        "She moved with a light in her old song",
+        "The wind made her shiver at the cold",
+        "With a candle in her hand",
+        "Looking for her lost love",
+        "But the stars kept shining bright",
+        "But she soon felt secure",
+        "But she felt the warmth of his heart",
+        "A young girl singing her song",
+        "With no one to guide her along",
+        "She prayed to her Lord and Savior",
+        "With the sound of her heart",
+        "She was a lonely lass",
+        "In her heart was a stormy night",
+        "The sound of the gong was strange",
+        "She felt the cold around her feet",
+        "When sudden the starlight brightened",
+        "Telling sad stories to the moon",
+        "The little blood moon shining through the sky",
+        "I saw her by the moonlight",
+        "Till in the light of the moon she saw",
+        "The lonely path she was on",
+        "She was thinking of her loved one",
+        "With her heart in her throat",
+        "The little things that she knew",
+        "Lost in her thoughts and dreams",
+        "But she did not feel alone at all",
+        "Singing softly to the night",
+        "The distant sound of the clock"
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.98507315,
+      "relative_l2": 0.17257898
+    },
+    {
+      "layer": 1,
+      "cosine": 0.9464689,
+      "relative_l2": 0.3230099
+    },
+    {
+      "layer": 2,
+      "cosine": 0.96031874,
+      "relative_l2": 0.28234744
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9676283,
+      "relative_l2": 0.25359157
+    },
+    {
+      "layer": 4,
+      "cosine": 0.9303084,
+      "relative_l2": 0.36890748
+    },
+    {
+      "layer": 5,
+      "cosine": 0.9595348,
+      "relative_l2": 0.2844243
+    },
+    {
+      "layer": 6,
+      "cosine": 0.96400905,
+      "relative_l2": 0.26671377
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9660041,
+      "relative_l2": 0.2666806
+    },
+    {
+      "layer": 8,
+      "cosine": 0.96127397,
+      "relative_l2": 0.27995852
+    },
+    {
+      "layer": 9,
+      "cosine": 0.96303004,
+      "relative_l2": 0.27200222
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9789469,
+      "relative_l2": 0.20548278
+    },
+    {
+      "layer": 11,
+      "cosine": 0.9805664,
+      "relative_l2": 0.19707328
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9817696,
+      "relative_l2": 0.19232921
+    },
+    {
+      "layer": 13,
+      "cosine": 0.98209447,
+      "relative_l2": 0.1894486
+    },
+    {
+      "layer": 14,
+      "cosine": 0.98525065,
+      "relative_l2": 0.17183907
+    },
+    {
+      "layer": 15,
+      "cosine": 0.9902388,
+      "relative_l2": 0.14679076
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 0.0,
+    "passed": true
+  }
+}

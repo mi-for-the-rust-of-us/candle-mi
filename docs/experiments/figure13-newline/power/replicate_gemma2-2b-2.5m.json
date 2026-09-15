@@ -1,0 +1,560 @@
+{
+  "model": "google/gemma-2-2b",
+  "clt_repo": "mntss/clt-gemma-2-2b-2.5M",
+  "preset": "gemma2-2b-2.5m",
+  "prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\n",
+  "tokens": [
+    "<bos>",
+    "The",
+    " stars",
+    " were",
+    " twinkling",
+    " in",
+    " the",
+    " night",
+    ",",
+    "\n",
+    "The",
+    " lanterns",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".",
+    "\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " about",
+    ",",
+    "\n"
+  ],
+  "newline_index": 25,
+  "suppress_word": "out",
+  "inject_word": "can",
+  "suppress_features": [
+    {
+      "layer": 25,
+      "index": 57092
+    },
+    {
+      "layer": 23,
+      "index": 49923
+    },
+    {
+      "layer": 20,
+      "index": 77102
+    }
+  ],
+  "inject_feature": {
+    "layer": 25,
+    "index": 82839
+  },
+  "strength": 10.0,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 42,
+  "baseline_greedy_line": "Her heart was filled with doubt.",
+  "final_word_slot": 31,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "greedy_line": "Her heart was filled with doubt.",
+      "m3_p_inject": 5.467947e-07,
+      "m3_p_natural": 0.0004448571,
+      "sampled_lines": [
+        "To find the right path for love.",
+        "The moon was full, the stars were out.",
+        "Searching for the right spot to shout.",
+        "Her feet were sore and her heart was out.",
+        "As she tried to reach the town.",
+        "With a smile on her face and a song in her mouth.",
+        "Seeking something, but lost her doubt.",
+        "With her heart full of love and doubt.",
+        "Searching for love she did not doubt.",
+        "She was lost, alone & afraid,",
+        "Wondering where she might alight.",
+        "And gazed at each one, with awe and shout.",
+        "Her soul longing for a warm embrace.",
+        "Looking for the one she loved.",
+        "Searching for the one she loved.",
+        "Searching for a place to stop and shout.",
+        "Searching for a place to spend the night.",
+        "As her eyes sought out the moon.",
+        "The road was steep and muddy,",
+        "The night wind gave her a shout."
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "love",
+          "out",
+          "shout",
+          "out",
+          "town",
+          "mouth",
+          "doubt",
+          "doubt",
+          "doubt",
+          "afraid",
+          "alight",
+          "shout",
+          "embrace",
+          "loved",
+          "loved",
+          "shout",
+          "night",
+          "moon",
+          "muddy",
+          "shout"
+        ],
+        "natural": {
+          "count": 9,
+          "fraction": 0.45,
+          "ci95": [
+            0.2306,
+            0.6847
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 11,
+          "fraction": 0.55,
+          "ci95": [
+            0.3153,
+            0.7694
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress-only",
+      "greedy_line": "The moon was shining bright.",
+      "m3_p_inject": 5.4471894e-07,
+      "m3_p_natural": 0.00046082394,
+      "sampled_lines": [
+        "The moon was smiling, so proud.",
+        "The moon was full, the stars were out.",
+        "Searching for the way back to her home.",
+        "Searching for that which was about.",
+        "Looking for a friend to talk aloud.",
+        "The night was full of love and joy.",
+        "She was lost, but not alone,",
+        "She sought for her beloved out.",
+        "With a smile on her face and eyes wide with fright.",
+        "The silence of the night and the moon’s glow,",
+        "Wondering where she might alight.",
+        "And gazed at each one, with awe and shout.",
+        "Struggling not to show her doubt.",
+        "Looking for the one she loved.",
+        "Searching for the one she loved.",
+        "Feeling cold and feeling out of doubt.",
+        "Hoping to see the love of her life.",
+        "As if she were lost, like a lost soul.",
+        "With her eyes, looking for a love,",
+        "Her eyes searching for her love."
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "proud",
+          "out",
+          "home",
+          "about",
+          "aloud",
+          "joy",
+          "alone",
+          "out",
+          "fright",
+          "glow",
+          "alight",
+          "shout",
+          "doubt",
+          "loved",
+          "loved",
+          "doubt",
+          "life",
+          "soul",
+          "love",
+          "love"
+        ],
+        "natural": {
+          "count": 6,
+          "fraction": 0.3,
+          "ci95": [
+            0.1189,
+            0.5428
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 14,
+          "fraction": 0.7,
+          "ci95": [
+            0.4572,
+            0.8811
+          ]
+        }
+      }
+    },
+    {
+      "condition": "inject-only",
+      "greedy_line": "Can't find her way back to the house.",
+      "m3_p_inject": 5.467947e-07,
+      "m3_p_natural": 0.0004448571,
+      "sampled_lines": [
+        "As she heard the laughter of those who shout.",
+        "Can't help but wonder about.",
+        "Looking for that love she found.",
+        "While he stayed in his own little world.",
+        "Can't seem to find what she was about.",
+        "Can't say she was too happy out.",
+        "Can you guess where she was aimlessly going?",
+        "Can't find her way to the right,",
+        "Can’t help but wonder when it’ll be found.",
+        "Until she came across a glow.",
+        "Can’t decide what color to wear about.",
+        "Gazing at the starry skies,",
+        "Her heart was heavy but her feet were slow.",
+        "Can’t find a path to guide her out.",
+        "Can you believe she was a pout?",
+        "Can't find her way back to the house.",
+        "Trying to find her way to the sound.",
+        "Wearing her white night gown,",
+        "Can't seem to find her way out.",
+        "Feeling cold without a coat."
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "shout",
+          "about",
+          "found",
+          "world",
+          "about",
+          "out",
+          "going",
+          "right",
+          "found",
+          "glow",
+          "about",
+          "skies",
+          "slow",
+          "out",
+          "pout",
+          "house",
+          "sound",
+          "gown",
+          "out",
+          "coat"
+        ],
+        "natural": {
+          "count": 8,
+          "fraction": 0.4,
+          "ci95": [
+            0.1912,
+            0.6395
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 12,
+          "fraction": 0.6,
+          "ci95": [
+            0.3605,
+            0.8088
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress+inject",
+      "greedy_line": "Can't find her way back to the house.",
+      "m3_p_inject": 5.4471894e-07,
+      "m3_p_natural": 0.00046082394,
+      "sampled_lines": [
+        "And found a book, with candles about.",
+        "Can't find the place she was before",
+        "Her breath was cold, her heart was stout.",
+        "Can't help but feel a bit out of sorts.",
+        "Wondering what was in her heart out.",
+        "Her eyes were bright with the moon’s light.",
+        "Searching for him, her beloved.",
+        "Can't find a way to the banquet.",
+        "Outside the window the moon was out.",
+        "Can't find her way back home.",
+        "Her cloak still dripping with dew.",
+        "Can’t figure out why she was out.",
+        "Seeking a light to lead her out.",
+        "Can't find her way back to the town.",
+        "Can't help but think of what she could shout.",
+        "Can't find her way back to the house.",
+        "Finding her way by the sound of the owl's soft hoot.",
+        "Looking for the love of her sweet heart.",
+        "can't tell where she was truly out.",
+        "Thinking about him, her love,"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "about",
+          "before",
+          "stout",
+          "sorts",
+          "out",
+          "light",
+          "beloved",
+          "banquet",
+          "out",
+          "home",
+          "dew",
+          "out",
+          "out",
+          "town",
+          "shout",
+          "house",
+          "hoot",
+          "heart",
+          "out",
+          "love"
+        ],
+        "natural": {
+          "count": 8,
+          "fraction": 0.4,
+          "ci95": [
+            0.1912,
+            0.6395
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 12,
+          "fraction": 0.6,
+          "ci95": [
+            0.3605,
+            0.8088
+          ]
+        }
+      }
+    }
+  ],
+  "m4_position_sweep": [
+    {
+      "position": 0,
+      "token": "<bos>",
+      "p_inject": 5.1899184e-07,
+      "p_natural": 0.0005424973
+    },
+    {
+      "position": 1,
+      "token": "The",
+      "p_inject": 5.4736495e-07,
+      "p_natural": 0.0004443894
+    },
+    {
+      "position": 2,
+      "token": " stars",
+      "p_inject": 5.474005e-07,
+      "p_natural": 0.00044567592
+    },
+    {
+      "position": 3,
+      "token": " were",
+      "p_inject": 5.463878e-07,
+      "p_natural": 0.00044532126
+    },
+    {
+      "position": 4,
+      "token": " twinkling",
+      "p_inject": 5.4559393e-07,
+      "p_natural": 0.00044170383
+    },
+    {
+      "position": 5,
+      "token": " in",
+      "p_inject": 5.4599e-07,
+      "p_natural": 0.0004445822
+    },
+    {
+      "position": 6,
+      "token": " the",
+      "p_inject": 5.466723e-07,
+      "p_natural": 0.000446154
+    },
+    {
+      "position": 7,
+      "token": " night",
+      "p_inject": 5.478319e-07,
+      "p_natural": 0.00044393036
+    },
+    {
+      "position": 8,
+      "token": ",",
+      "p_inject": 5.4525503e-07,
+      "p_natural": 0.00044064416
+    },
+    {
+      "position": 9,
+      "token": "\n",
+      "p_inject": 5.4513015e-07,
+      "p_natural": 0.00043451352
+    },
+    {
+      "position": 10,
+      "token": "The",
+      "p_inject": 5.459145e-07,
+      "p_natural": 0.00045127768
+    },
+    {
+      "position": 11,
+      "token": " lanterns",
+      "p_inject": 5.4427966e-07,
+      "p_natural": 0.00044058054
+    },
+    {
+      "position": 12,
+      "token": " cast",
+      "p_inject": 5.4549577e-07,
+      "p_natural": 0.0004417899
+    },
+    {
+      "position": 13,
+      "token": " a",
+      "p_inject": 5.449723e-07,
+      "p_natural": 0.00044114672
+    },
+    {
+      "position": 14,
+      "token": " golden",
+      "p_inject": 5.4640105e-07,
+      "p_natural": 0.00044382908
+    },
+    {
+      "position": 15,
+      "token": " light",
+      "p_inject": 5.4958116e-07,
+      "p_natural": 0.0004425273
+    },
+    {
+      "position": 16,
+      "token": ".",
+      "p_inject": 5.4324846e-07,
+      "p_natural": 0.00045875713
+    },
+    {
+      "position": 17,
+      "token": "\n",
+      "p_inject": 5.431919e-07,
+      "p_natural": 0.0004364393
+    },
+    {
+      "position": 18,
+      "token": "She",
+      "p_inject": 5.43015e-07,
+      "p_natural": 0.00044702805
+    },
+    {
+      "position": 19,
+      "token": " wandered",
+      "p_inject": 5.440907e-07,
+      "p_natural": 0.00043937334
+    },
+    {
+      "position": 20,
+      "token": " in",
+      "p_inject": 5.412614e-07,
+      "p_natural": 0.00043660027
+    },
+    {
+      "position": 21,
+      "token": " the",
+      "p_inject": 5.4065777e-07,
+      "p_natural": 0.00045587064
+    },
+    {
+      "position": 22,
+      "token": " dark",
+      "p_inject": 5.463679e-07,
+      "p_natural": 0.0004491449
+    },
+    {
+      "position": 23,
+      "token": " about",
+      "p_inject": 5.433001e-07,
+      "p_natural": 0.00044248428
+    },
+    {
+      "position": 24,
+      "token": ",",
+      "p_inject": 5.429073e-07,
+      "p_natural": 0.00046303362
+    },
+    {
+      "position": 25,
+      "token": "\n",
+      "p_inject": 5.4471894e-07,
+      "p_natural": 0.00046082394
+    },
+    {
+      "position": 26,
+      "token": "Her",
+      "p_inject": 5.37597e-07,
+      "p_natural": 0.00053882756
+    },
+    {
+      "position": 27,
+      "token": " heart",
+      "p_inject": 5.425165e-07,
+      "p_natural": 0.00049504143
+    },
+    {
+      "position": 28,
+      "token": " was",
+      "p_inject": 5.369852e-07,
+      "p_natural": 0.00056660804
+    },
+    {
+      "position": 29,
+      "token": " filled",
+      "p_inject": 5.480615e-07,
+      "p_natural": 0.0009628063
+    },
+    {
+      "position": 30,
+      "token": " with",
+      "p_inject": 0.57878333,
+      "p_natural": 0.0017336494
+    }
+  ],
+  "m1_classified": true
+}

@@ -1,0 +1,253 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p2-b-to-a",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nThe world keeps spinning even now,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nThe world keeps spinning even so,\n",
+  "donor_word": "now",
+  "recipient_word": "so",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "The",
+    " world",
+    " keeps",
+    " spinning",
+    " even",
+    " so",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 25,
+  "recipient_newline_index": 25,
+  "n_layers": 26,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "And the sailor's dreams are still his own.",
+  "final_word_slot": 35,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And the sailor's dreams are still his own.",
+      "m3_p_donor": 0.00051914656,
+      "m3_p_recipient": 0.00029719068,
+      "sampled_lines": [
+        "As stars align and the dark blue sea.",
+        "And nothing moves but distant snow.",
+        "But that sailor will never go.",
+        "As he leaves the ship to go.",
+        "And the sailor knows the sea will go.",
+        "Even when you’re on the high seas.",
+        "But he felt as though he was at the zoo.",
+        "But the sailor's mind is still in the bay.",
+        "But in his heart he misses his abode.",
+        "That’s how it is and always has been",
+        "But his head is reeling from the woe.",
+        "But he'd rather be in a harbor now.",
+        "As we stand with open eyes.",
+        "The ship still moves on through the sea-foam.",
+        "And today, I’m still not home.",
+        "But I'm still here, and I'm coming home.",
+        "And he's stuck sailing to the sea.",
+        "As his thoughts are of his own.",
+        "While he still lives in the sea,",
+        "His memory’s still like a memory so.",
+        "And the sailor's dreams are yet to go.",
+        "But the world of this sailor is now.",
+        "Though all around you lies a sea of snow.",
+        "But the sun is still going to rise.",
+        "But my heart’s always with you.",
+        "And the sailor's dream will never go.",
+        "But he was far from far away.",
+        "But home is far, and time has gone.",
+        "And he keeps sailing from that lonely, lonely, lonely,",
+        "And on the deck the man he goes,",
+        "As he hopes for a better tomorrow.",
+        "The sailor’s dream must end too.",
+        "And the sailor's dream won't let go.",
+        "But does it really mean the same?",
+        "But the sailor never will go.",
+        "But his heart is still in Hawaii.",
+        "And he keeps wondering what it's for.",
+        "And the sea has always been a friend to me.",
+        "So he will wait until it’s over.",
+        "The sun shines and the moon stays low.",
+        "He’ll never be the same.",
+        "And he keeps dreaming even though.",
+        "He never really stops to go.",
+        "But the sailor kept dreaming, though.",
+        "And he waits for the tides to flow.",
+        "The world keeps spinning even though.",
+        "But home is where the heart is.",
+        "And he's still the same old man on the ocean.",
+        "As he dreams of the people he knows.",
+        "And he’s not the only one to know.",
+        "And the clock keeps on ticking.",
+        "But he can't get off this boat.",
+        "But I’m the only one who knows.",
+        "And the waves are rough and rolly,",
+        "As he waits and waits for the sea to go.",
+        "While the boat drifts with the tide.",
+        "And he waits and he waits and he waits",
+        "And the sailor sails along alone.",
+        "Now he’s home and it’s a go.",
+        "While dreams are always the same."
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.9999539,
+      "relative_l2": 0.009609898
+    },
+    {
+      "layer": 1,
+      "cosine": 0.99950296,
+      "relative_l2": 0.031860888
+    },
+    {
+      "layer": 2,
+      "cosine": 0.9987534,
+      "relative_l2": 0.050444636
+    },
+    {
+      "layer": 3,
+      "cosine": 0.99835455,
+      "relative_l2": 0.058443476
+    },
+    {
+      "layer": 4,
+      "cosine": 0.99804354,
+      "relative_l2": 0.06350097
+    },
+    {
+      "layer": 5,
+      "cosine": 0.96906435,
+      "relative_l2": 0.2505844
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9836342,
+      "relative_l2": 0.18276751
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9880313,
+      "relative_l2": 0.15562487
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9916421,
+      "relative_l2": 0.12912041
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9945901,
+      "relative_l2": 0.10418813
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9954127,
+      "relative_l2": 0.0957501
+    },
+    {
+      "layer": 11,
+      "cosine": 0.99502623,
+      "relative_l2": 0.09961473
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9949141,
+      "relative_l2": 0.10105897
+    },
+    {
+      "layer": 13,
+      "cosine": 0.992132,
+      "relative_l2": 0.12565425
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9946139,
+      "relative_l2": 0.103863455
+    },
+    {
+      "layer": 15,
+      "cosine": 0.99169654,
+      "relative_l2": 0.12944128
+    },
+    {
+      "layer": 16,
+      "cosine": 0.9902261,
+      "relative_l2": 0.1409054
+    },
+    {
+      "layer": 17,
+      "cosine": 0.99053216,
+      "relative_l2": 0.13803704
+    },
+    {
+      "layer": 18,
+      "cosine": 0.990508,
+      "relative_l2": 0.13821992
+    },
+    {
+      "layer": 19,
+      "cosine": 0.990605,
+      "relative_l2": 0.13784203
+    },
+    {
+      "layer": 20,
+      "cosine": 0.9917315,
+      "relative_l2": 0.12937266
+    },
+    {
+      "layer": 21,
+      "cosine": 0.99304134,
+      "relative_l2": 0.1192995
+    },
+    {
+      "layer": 22,
+      "cosine": 0.9934378,
+      "relative_l2": 0.115775645
+    },
+    {
+      "layer": 23,
+      "cosine": 0.994088,
+      "relative_l2": 0.109378174
+    },
+    {
+      "layer": 24,
+      "cosine": 0.994181,
+      "relative_l2": 0.10850642
+    },
+    {
+      "layer": 25,
+      "cosine": 0.99475193,
+      "relative_l2": 0.10394157
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 6.8102963e-9,
+    "passed": true
+  }
+}

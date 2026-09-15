@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`bench_hook_diagnostic_gpu` and `bench_hook_overhead_gpu` no longer report
+  `ok` for a GPU run that never happened.** Both already skipped correctly when
+  no CUDA device was found, but a skip is reported as `ok`, indistinguishable
+  from a pass in the summary line. That is right when the crate is built
+  without `cuda` (there is no GPU path compiled in), and wrong when the feature
+  is on, where it hides a broken environment behind a green run. The no-device
+  branch now asserts `!cfg!(feature = "cuda")`, so that case fails with a
+  message saying what happened, and the remaining skip names its own reason
+  rather than saying only "no CUDA device available".
+
+  Verified both ways on an RTX 5060 Ti: with default features the diagnostic
+  runs for 41.6 s and prints its table; with `--no-default-features` it skips
+  and passes. The oracle suite is unaffected (`resurrect.ps1` contains no
+  `bench_hook` entry, and already classifies a skip as `SKIP` rather than
+  `PASS`, so "last verified" never advances on one).
+
+### Added
+
+- **`figure13_newline_patch` example** — newline activation patching, the first
+  CLT-free causal probe of the rhyme "planning site". Donor and recipient are a
+  *minimal pair*: two poems identical through line 3 except for that line's
+  final word, which sets a different rhyme. The donor's newline residual is
+  patched into the recipient at [`HookPoint::ResidPost`], one layer at a time
+  for a causal trace and at every layer at once, and the model then composes
+  line 4. Because the instrument replaces a row the model itself produced, a
+  null cannot be attributed to the decoder-derived feature discovery every
+  other probe in this line of work depends on.
+
+  Ships three things beyond the sweep: an **identity control** (patching a
+  prompt from its own row must be a bit-exact no-op) that runs by default,
+  since [`Intervention::PatchAt`] was silently wrong on CUDA before the
+  v0.1.24 fix; a **row-divergence diagnostic** (per-layer cosine and relative
+  L2 between the donor's and recipient's newline rows), without which a null is
+  uninterpretable; and verbatim composed lines, classified downstream by the
+  same CMU-rime Python layer as `figure13_newline_steering`, so the two
+  experiments share one phonology.
+
+
 ## [0.1.24] - 2026-09-03
 
 ### Added

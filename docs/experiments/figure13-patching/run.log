@@ -1,0 +1,29 @@
+2026-09-14 21:26:10 ### patching validate start (K=60, DRY_RUN=0) ###
+2026-09-14 21:27:58 done  docs/experiments/figure13-patching/validate_gemma-2-2b_p1-a-to-b.json  (108 s)
+2026-09-14 21:29:42 done  docs/experiments/figure13-patching/validate_gemma-2-2b_p1-b-to-a.json  (104 s)
+2026-09-14 21:31:36 done  docs/experiments/figure13-patching/validate_gemma-2-2b_p2-a-to-b.json  (114 s)
+2026-09-14 21:33:28 done  docs/experiments/figure13-patching/validate_gemma-2-2b_p2-b-to-a.json  (112 s)
+2026-09-14 21:35:24 done  docs/experiments/figure13-patching/validate_gemma-2-2b_p3-a-to-b.json  (115 s)
+2026-09-14 21:37:23 done  docs/experiments/figure13-patching/validate_gemma-2-2b_p3-b-to-a.json  (119 s)
+2026-09-14 21:39:19 done  docs/experiments/figure13-patching/validate_gemma-2-2b_p4-a-to-b.json  (116 s)
+2026-09-14 21:41:12 done  docs/experiments/figure13-patching/validate_gemma-2-2b_p4-b-to-a.json  (113 s)
+2026-09-14 21:41:37 done  docs/experiments/figure13-patching/validate_Llama-3.2-1B_p1-a-to-b.json  (25 s)
+2026-09-14 21:42:01 done  docs/experiments/figure13-patching/validate_Llama-3.2-1B_p1-b-to-a.json  (24 s)
+2026-09-14 21:42:27 done  docs/experiments/figure13-patching/validate_Llama-3.2-1B_p2-a-to-b.json  (26 s)
+2026-09-14 21:42:53 done  docs/experiments/figure13-patching/validate_Llama-3.2-1B_p2-b-to-a.json  (26 s)
+2026-09-14 21:43:20 done  docs/experiments/figure13-patching/validate_Llama-3.2-1B_p3-a-to-b.json  (27 s)
+2026-09-14 21:43:49 done  docs/experiments/figure13-patching/validate_Llama-3.2-1B_p3-b-to-a.json  (29 s)
+2026-09-14 21:44:16 done  docs/experiments/figure13-patching/validate_Llama-3.2-1B_p4-a-to-b.json  (27 s)
+2026-09-14 21:44:45 done  docs/experiments/figure13-patching/validate_Llama-3.2-1B_p4-b-to-a.json  (29 s)
+2026-09-14 21:44:45 ### validation done ###  classify with:
+2026-09-14 21:44:45   python <Figure-13>/scripts/patch_stats.py docs/experiments/figure13-patching/validate_*.json
+2026-09-15 16:13:06 ### patching grid start (K=60, DRY_RUN=1) ###
+2026-09-15 16:13:06 skip (exists) docs/experiments/figure13-patching/patch_gemma-2-2b_p1-a-to-b_s1.json
+2026-09-15 16:13:07 ### grid done ###  analyse with:
+2026-09-15 16:13:07   python <Figure-13>/scripts/patch_stats.py docs/experiments/figure13-patching/patch_*.json
+2026-09-15 16:25:52 ### patching controls start (K=60, DRY_RUN=1) ###
+2026-09-15 16:25:53 ### controls done ###  analyse with:
+2026-09-15 16:25:53   python <Figure-13>/scripts/patch_stats.py docs/experiments/figure13-patching/samerime_*.json docs/experiments/figure13-patching/midline_*.json
+2026-09-15 16:25:53 ### patching controls start (K=60, DRY_RUN=1) ###
+2026-09-15 16:25:53 ### controls done ###  analyse with:
+2026-09-15 16:25:53   python <Figure-13>/scripts/patch_stats.py docs/experiments/figure13-patching/samerime_*.json docs/experiments/figure13-patching/midline_*.json

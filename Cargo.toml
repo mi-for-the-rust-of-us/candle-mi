@@ -283,6 +283,10 @@ name = "figure13_newline_steering"
 required-features = ["clt", "transformer"]
 
 [[example]]
+name = "figure13_newline_patch"
+required-features = ["transformer"]
+
+[[example]]
 name = "clt_hook_reconcile"
 required-features = ["clt", "transformer"]
 

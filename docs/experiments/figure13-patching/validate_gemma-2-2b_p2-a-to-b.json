@@ -1,0 +1,253 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p2-a-to-b",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nThe world keeps spinning even so,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nThe world keeps spinning even now,\n",
+  "donor_word": "so",
+  "recipient_word": "now",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "The",
+    " world",
+    " keeps",
+    " spinning",
+    " even",
+    " now",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 25,
+  "recipient_newline_index": 25,
+  "n_layers": 26,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "And the sailor's dreams are still true.",
+  "final_word_slot": 34,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And the sailor's dreams are still true.",
+      "m3_p_donor": 0.06334033,
+      "m3_p_recipient": 0.00081318174,
+      "sampled_lines": [
+        "As months pass by and years go by.",
+        "And hope remains for sailors too.",
+        "But it's not the same, without you.",
+        "He must do something to get back.",
+        "The ship moved on with the tide.",
+        "Since he was long ago taken down.",
+        "And he wants to go and see the moon.",
+        "But the sailor's mind is still in the bay.",
+        "But in his heart he longed for blue.",
+        "As his dreams play out in a sailor’s new.",
+        "But I’m waiting here at the bay.",
+        "Past the sunset and the dawn.",
+        "And time keeps moving on.",
+        "And the little ship just keeps on moving through the gloom.",
+        "And he’s still dreaming of the blue.",
+        "And the sun keeps shining down.",
+        "But I'm sailing home I'm sailing home.",
+        "Yet the sea still holds him fast.",
+        "But the sailor is not here.",
+        "But the sailor yearns for still,",
+        "A sailor sails across the bay.",
+        "And he will dream from here until he’s through.",
+        "But in the back of his mind, he’d give anything to be",
+        "The moon is bright, but I can't see it through the clouds",
+        "But the sailor's dreams never come true.",
+        "And the sailor's dream will never come true.",
+        "And the stars are shining in the sky.",
+        "But our souls are free and we are young.",
+        "And he's sailing, sailing, sailing,",
+        "And I feel you in a way that’s true.",
+        "And the weather keeps on blowing through.",
+        "But he's still looking for the way.",
+        "But he'll be home for Christmas, I vow.",
+        "But I can hardly hear the sound.",
+        "The world keeps spinning even now.",
+        "And I’m waiting for you.",
+        "But he never stops to give it a look.",
+        "And the world keeps spinning,",
+        "But time is a cruel thief.",
+        "And he can still see the shore from the bow.",
+        "And he still sails the ocean blue.",
+        "And the sailor dreams of home, our home.",
+        "But the sailor's day is long and blue.",
+        "While he sits here alone on the dock.",
+        "He looks to the night and wonders why.",
+        "And he will sail for many a year.",
+        "But you're still in my mind, and in my heart,",
+        "As he sees his love and his family",
+        "And he keeps dreaming of the way.",
+        "But time seems to stand still for him and me.",
+        "But he will never sail for you.",
+        "As he faces the horizon.",
+        "And the sailor seems to be just a cloud.",
+        "But that sailor’s dreams are far from new.",
+        "He misses his wife, his son and her too.",
+        "He will never find his way back.",
+        "The sun and moon are ever new.",
+        "But I’m stuck in this old town.",
+        "The day will come, just you wait and see.",
+        "But he's still sailing in his mind."
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.9999539,
+      "relative_l2": 0.009606227
+    },
+    {
+      "layer": 1,
+      "cosine": 0.99950296,
+      "relative_l2": 0.03173032
+    },
+    {
+      "layer": 2,
+      "cosine": 0.9987534,
+      "relative_l2": 0.050140794
+    },
+    {
+      "layer": 3,
+      "cosine": 0.99835455,
+      "relative_l2": 0.057885114
+    },
+    {
+      "layer": 4,
+      "cosine": 0.99804354,
+      "relative_l2": 0.06292544
+    },
+    {
+      "layer": 5,
+      "cosine": 0.96906435,
+      "relative_l2": 0.24751382
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9836342,
+      "relative_l2": 0.18019108
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9880313,
+      "relative_l2": 0.15429093
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9916421,
+      "relative_l2": 0.12954083
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9945901,
+      "relative_l2": 0.10391402
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9954127,
+      "relative_l2": 0.09582371
+    },
+    {
+      "layer": 11,
+      "cosine": 0.99502623,
+      "relative_l2": 0.100144275
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9949141,
+      "relative_l2": 0.10074681
+    },
+    {
+      "layer": 13,
+      "cosine": 0.992132,
+      "relative_l2": 0.12529688
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9946139,
+      "relative_l2": 0.10373097
+    },
+    {
+      "layer": 15,
+      "cosine": 0.99169654,
+      "relative_l2": 0.12861364
+    },
+    {
+      "layer": 16,
+      "cosine": 0.9902261,
+      "relative_l2": 0.13947226
+    },
+    {
+      "layer": 17,
+      "cosine": 0.99053216,
+      "relative_l2": 0.13735718
+    },
+    {
+      "layer": 18,
+      "cosine": 0.990508,
+      "relative_l2": 0.13752797
+    },
+    {
+      "layer": 19,
+      "cosine": 0.990605,
+      "relative_l2": 0.13676256
+    },
+    {
+      "layer": 20,
+      "cosine": 0.9917315,
+      "relative_l2": 0.12833005
+    },
+    {
+      "layer": 21,
+      "cosine": 0.99304134,
+      "relative_l2": 0.117872365
+    },
+    {
+      "layer": 22,
+      "cosine": 0.9934378,
+      "relative_l2": 0.11446958
+    },
+    {
+      "layer": 23,
+      "cosine": 0.994088,
+      "relative_l2": 0.10858544
+    },
+    {
+      "layer": 24,
+      "cosine": 0.994181,
+      "relative_l2": 0.10773177
+    },
+    {
+      "layer": 25,
+      "cosine": 0.99475193,
+      "relative_l2": 0.10260132
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 7.8231096e-7,
+    "passed": true
+  }
+}

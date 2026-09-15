@@ -1,0 +1,550 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "clt_repo": "mntss/clt-llama-3.2-1b-524k",
+  "preset": "llama3.2-1b-524k",
+  "prompt": "The birds were singing in the tree,\nAnd everything was wild and free.\nThe river ran down to the sea,\n",
+  "tokens": [
+    "<|begin_of_text|>",
+    "The",
+    " birds",
+    " were",
+    " singing",
+    " in",
+    " the",
+    " tree",
+    ",\n",
+    "And",
+    " everything",
+    " was",
+    " wild",
+    " and",
+    " free",
+    ".\n",
+    "The",
+    " river",
+    " ran",
+    " down",
+    " to",
+    " the",
+    " sea",
+    ",\n"
+  ],
+  "newline_index": 23,
+  "suppress_word": "free",
+  "inject_word": "that",
+  "suppress_features": [
+    {
+      "layer": 13,
+      "index": 30985
+    },
+    {
+      "layer": 9,
+      "index": 5488
+    },
+    {
+      "layer": 14,
+      "index": 27874
+    },
+    {
+      "layer": 13,
+      "index": 32049
+    }
+  ],
+  "inject_feature": {
+    "layer": 14,
+    "index": 13043
+  },
+  "strength": 25.0,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 42,
+  "baseline_greedy_line": "And the sun was shining bright",
+  "final_word_slot": 29,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "greedy_line": "And the sun was shining bright",
+      "m3_p_inject": 0.0010819094,
+      "m3_p_natural": 0.0026780632,
+      "sampled_lines": [
+        "With all the noise it made",
+        "And everything was wild and free",
+        "And we were all free, free as the sea",
+        "And the sun was shining bright",
+        "And the sun was shining in the sky",
+        "And the trees waved in the wind",
+        "And the wind was blowing my way",
+        "And the waves made a music loud",
+        "And the birds were singing in the tree",
+        "And the river was the sea",
+        "Where the waves broke and the air was free",
+        "And the beach was shining bright",
+        "And the clouds were gathering gray",
+        "And we were sailing on our way",
+        "And everything was wild and free",
+        "And everything was happy and free",
+        "And the land was green and blue",
+        "And all the children of the sea",
+        "And the birds were singing in the tree",
+        "As we drove in the car"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "made",
+          "free",
+          "sea",
+          "bright",
+          "sky",
+          "wind",
+          "way",
+          "loud",
+          "tree",
+          "sea",
+          "free",
+          "bright",
+          "gray",
+          "way",
+          "free",
+          "free",
+          "blue",
+          "sea",
+          "tree",
+          "car"
+        ],
+        "natural": {
+          "count": 9,
+          "fraction": 0.45,
+          "ci95": [
+            0.2306,
+            0.6847
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 11,
+          "fraction": 0.55,
+          "ci95": [
+            0.3153,
+            0.7694
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress-only",
+      "greedy_line": "Our hearts were filled with joy",
+      "m3_p_inject": 0.0009849112,
+      "m3_p_natural": 0.0027784074,
+      "sampled_lines": [
+        "Our boat was floating through the tide",
+        "Our world was so full of life",
+        "Our little boat, there’s no need to wait",
+        "Our hearts were filled with joy and love",
+        "Our home was our world",
+        "Our island floats on the sea",
+        "Our hands were made for touch and feel",
+        "Our hearts were filled with joy",
+        "Our eyes were fixed on the sky",
+        "Our lives were full of change",
+        "Our fathers came from far away",
+        "Whispering to the tides",
+        "Our boys were dancing in the rain",
+        "Our canoe was barely rowed",
+        "Our lives were all free and wild",
+        "Our thoughts were floating away",
+        "Our Lord and Savior was his name",
+        "Our love was never ending",
+        "Our home was in the trees",
+        "Our story was a happy one"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "tide",
+          "life",
+          "wait",
+          "love",
+          "world",
+          "sea",
+          "feel",
+          "joy",
+          "sky",
+          "change",
+          "away",
+          "tides",
+          "rain",
+          "rowed",
+          "wild",
+          "away",
+          "name",
+          "ending",
+          "trees",
+          "one"
+        ],
+        "natural": {
+          "count": 1,
+          "fraction": 0.05,
+          "ci95": [
+            0.0013,
+            0.2487
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 19,
+          "fraction": 0.95,
+          "ci95": [
+            0.7513,
+            0.9987
+          ]
+        }
+      }
+    },
+    {
+      "condition": "inject-only",
+      "greedy_line": "That was the way to go",
+      "m3_p_inject": 0.0010707038,
+      "m3_p_natural": 0.0026961116,
+      "sampled_lines": [
+        "That's where I saw it shine",
+        "That is where I long to be",
+        "That was the one thing they'd never seen",
+        "That was where I wanted to be",
+        "That's where the birds were singing free",
+        "That golden sea was at my feet",
+        "That was where I had to go",
+        "That night the sea ran high",
+        "That billowed with its white and blue",
+        "That's all the world I knew",
+        "That beautiful place for a bride",
+        "That's a great thing about this story",
+        "That laugh and dance and shriek",
+        "That blessed is she who feeds the deer",
+        "That’s where I belong",
+        "That was there to be seen",
+        "That's where I want to go",
+        "That was a fine thing for me",
+        "That was so far away",
+        "That was far away, that was far away"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "shine",
+          "be",
+          "seen",
+          "be",
+          "free",
+          "feet",
+          "go",
+          "high",
+          "blue",
+          "knew",
+          "bride",
+          "story",
+          "shriek",
+          "deer",
+          "belong",
+          "seen",
+          "go",
+          "me",
+          "away",
+          "away"
+        ],
+        "natural": {
+          "count": 4,
+          "fraction": 0.2,
+          "ci95": [
+            0.0573,
+            0.4366
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 16,
+          "fraction": 0.8,
+          "ci95": [
+            0.5634,
+            0.9427
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress+inject",
+      "greedy_line": "That's where the birds were singing in the tree",
+      "m3_p_inject": 0.0009379515,
+      "m3_p_natural": 0.002787882,
+      "sampled_lines": [
+        "That's where I saw it hiding",
+        "that the waves were wild and free",
+        "That was the one thing they'd never seen",
+        "That was where I wanted to be",
+        "That's where the birds were singing free",
+        "That golden sea was for me",
+        "That's how it should be",
+        "That was so cool and so sweet",
+        "that was running wild and free",
+        "That's where the birds and the trees",
+        "that there was nothing that was new",
+        "That was the name of the boat",
+        "that carried all its cares away",
+        "that's where the natives used to live",
+        "That river was wild and free",
+        "that horses galloped by the sea",
+        "That's where I want to go",
+        "That was a grand old ocean there",
+        "that was so clear and cool",
+        "That sweet song in the heart"
+      ],
+      "m1": {
+        "n": 20,
+        "final_words": [
+          "hiding",
+          "free",
+          "seen",
+          "be",
+          "free",
+          "me",
+          "be",
+          "sweet",
+          "free",
+          "trees",
+          "new",
+          "boat",
+          "away",
+          "live",
+          "free",
+          "sea",
+          "go",
+          "there",
+          "cool",
+          "heart"
+        ],
+        "natural": {
+          "count": 8,
+          "fraction": 0.4,
+          "ci95": [
+            0.1912,
+            0.6395
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.1684
+          ]
+        },
+        "other": {
+          "count": 12,
+          "fraction": 0.6,
+          "ci95": [
+            0.3605,
+            0.8088
+          ]
+        }
+      }
+    }
+  ],
+  "m4_position_sweep": [
+    {
+      "position": 0,
+      "token": "<|begin_of_text|>",
+      "p_inject": 0.00090889196,
+      "p_natural": 0.0024923133
+    },
+    {
+      "position": 1,
+      "token": "The",
+      "p_inject": 0.0010849631,
+      "p_natural": 0.0026487752
+    },
+    {
+      "position": 2,
+      "token": " birds",
+      "p_inject": 0.0010834665,
+      "p_natural": 0.0027104113
+    },
+    {
+      "position": 3,
+      "token": " were",
+      "p_inject": 0.0010754103,
+      "p_natural": 0.0026904377
+    },
+    {
+      "position": 4,
+      "token": " singing",
+      "p_inject": 0.0010714838,
+      "p_natural": 0.0027362185
+    },
+    {
+      "position": 5,
+      "token": " in",
+      "p_inject": 0.0010638594,
+      "p_natural": 0.0026845543
+    },
+    {
+      "position": 6,
+      "token": " the",
+      "p_inject": 0.00105881,
+      "p_natural": 0.0026906887
+    },
+    {
+      "position": 7,
+      "token": " tree",
+      "p_inject": 0.0010522717,
+      "p_natural": 0.002682807
+    },
+    {
+      "position": 8,
+      "token": ",\n",
+      "p_inject": 0.001077245,
+      "p_natural": 0.0027937454
+    },
+    {
+      "position": 9,
+      "token": "And",
+      "p_inject": 0.0010917152,
+      "p_natural": 0.0026376473
+    },
+    {
+      "position": 10,
+      "token": " everything",
+      "p_inject": 0.0010656335,
+      "p_natural": 0.0027632152
+    },
+    {
+      "position": 11,
+      "token": " was",
+      "p_inject": 0.0010615994,
+      "p_natural": 0.0027501571
+    },
+    {
+      "position": 12,
+      "token": " wild",
+      "p_inject": 0.0010242612,
+      "p_natural": 0.0027971917
+    },
+    {
+      "position": 13,
+      "token": " and",
+      "p_inject": 0.0010410643,
+      "p_natural": 0.0028378577
+    },
+    {
+      "position": 14,
+      "token": " free",
+      "p_inject": 0.0010068144,
+      "p_natural": 0.0048239096
+    },
+    {
+      "position": 15,
+      "token": ".\n",
+      "p_inject": 0.0009562365,
+      "p_natural": 0.00271778
+    },
+    {
+      "position": 16,
+      "token": "The",
+      "p_inject": 0.0010710751,
+      "p_natural": 0.0026284158
+    },
+    {
+      "position": 17,
+      "token": " river",
+      "p_inject": 0.0011167433,
+      "p_natural": 0.0026936429
+    },
+    {
+      "position": 18,
+      "token": " ran",
+      "p_inject": 0.0010417475,
+      "p_natural": 0.0026067656
+    },
+    {
+      "position": 19,
+      "token": " down",
+      "p_inject": 0.0009967737,
+      "p_natural": 0.0025315108
+    },
+    {
+      "position": 20,
+      "token": " to",
+      "p_inject": 0.0010278708,
+      "p_natural": 0.00266291
+    },
+    {
+      "position": 21,
+      "token": " the",
+      "p_inject": 0.0010192441,
+      "p_natural": 0.0027129806
+    },
+    {
+      "position": 22,
+      "token": " sea",
+      "p_inject": 0.0010440238,
+      "p_natural": 0.0029964019
+    },
+    {
+      "position": 23,
+      "token": ",\n",
+      "p_inject": 0.0009379515,
+      "p_natural": 0.002787882
+    },
+    {
+      "position": 24,
+      "token": "And",
+      "p_inject": 0.0011067443,
+      "p_natural": 0.002613546
+    },
+    {
+      "position": 25,
+      "token": " the",
+      "p_inject": 0.0010876876,
+      "p_natural": 0.0026457754
+    },
+    {
+      "position": 26,
+      "token": " sun",
+      "p_inject": 0.00163871,
+      "p_natural": 0.00358694
+    },
+    {
+      "position": 27,
+      "token": " was",
+      "p_inject": 0.0015440827,
+      "p_natural": 0.0025223831
+    },
+    {
+      "position": 28,
+      "token": " shining",
+      "p_inject": 0.9983463,
+      "p_natural": 4.3879763e-13
+    }
+  ],
+  "m1_classified": true
+}

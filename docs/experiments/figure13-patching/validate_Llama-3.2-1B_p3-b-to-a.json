@@ -1,0 +1,202 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "pair": "p3-b-to-a",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a sigh,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a shout,\n",
+  "donor_word": "sigh",
+  "recipient_word": "shout",
+  "tokens": [
+    "<|begin_of_text|>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".\n",
+    "He",
+    " raised",
+    " his",
+    " voice",
+    " and",
+    " gave",
+    " a",
+    " shout",
+    ",\n"
+  ],
+  "donor_newline_index": 24,
+  "recipient_newline_index": 24,
+  "n_layers": 16,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "And shouted, \"I'm home, I'm home",
+  "final_word_slot": 35,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And shouted, \"I'm home, I'm home",
+      "m3_p_donor": 7.211796e-7,
+      "m3_p_recipient": 2.635231e-7,
+      "sampled_lines": [
+        "And sailors joined his song",
+        "He said: \"I'll see you tonight",
+        "To let the world know that he was free",
+        "And said, \"I am in America",
+        "It was when he was far away",
+        "“Home!!! Home!!! Home!!!” he cried",
+        "And he said, \"I've come to find a boat",
+        "“Home! Home! Home!” and all the men shouted back",
+        "“Can you hear me? Can you see me?”",
+        "But all he could make out was the tush",
+        "The ship rocked and rolled him through the night",
+        "And sailed down the bay in sight",
+        "He knew he would not be coming back",
+        "As the wind brought his message home",
+        "He cheered his mates as they cheered him",
+        "Then he came to this way",
+        "He could still hear the sound of the sea",
+        "And waved his ship’s flag at all",
+        "When night had come and the moon had gone",
+        "He had come to the end of the world",
+        "And all of his crew replied",
+        "“A ship has arrived in St. Mary’s!”",
+        "And shouted from the top of the hill",
+        "And the whole world he could see",
+        "And began his voyage across",
+        "As he was passing by the shout",
+        "As the sun was setting on the west",
+        "To the clouds above his ship",
+        "As he passed the fallen tree",
+        "And he called out to his wife",
+        "To find a friend in the night",
+        "Then he sailed on through the night",
+        "And he said to his shipmates",
+        "And tried to hail the darkness",
+        "And the crew all joined in the song",
+        "He sailed away at night",
+        "And the wind filled his sails and boats",
+        "He raised his voice and gave a shout",
+        "And sang a song that I have heard",
+        "And cried, “I'm here, I'm home!”",
+        "And all the men who heard it cried out",
+        "For he knew he'd never see it more",
+        "And when he was quite alone",
+        "He had to tell his family",
+        "And sailors on the shore did stop",
+        "And said \"This is the right I'm gonna have",
+        "For he saw the ships of men",
+        "And the children ran and play",
+        "And another sailor joined in",
+        "And his steps were swift and light",
+        "The ship was lost to sight",
+        "And made his plans for the night",
+        "“What is this, a new world?” he cried",
+        "And said, “I’ve made it, I’ve made it!”",
+        "As the city lights were shrouded",
+        "He shouted to the captain, \"I'm a sailor",
+        "And shouted \"I'm home!\" and shouted \"Hooray",
+        "And the others heard him out",
+        "He gave the sign and made a shout",
+        "As he sailed away and away"
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.99250776,
+      "relative_l2": 0.12361141
+    },
+    {
+      "layer": 1,
+      "cosine": 0.98588526,
+      "relative_l2": 0.17245477
+    },
+    {
+      "layer": 2,
+      "cosine": 0.9876936,
+      "relative_l2": 0.15835461
+    },
+    {
+      "layer": 3,
+      "cosine": 0.98316246,
+      "relative_l2": 0.1872972
+    },
+    {
+      "layer": 4,
+      "cosine": 0.95312005,
+      "relative_l2": 0.3089766
+    },
+    {
+      "layer": 5,
+      "cosine": 0.9794095,
+      "relative_l2": 0.20369105
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9754833,
+      "relative_l2": 0.22018331
+    },
+    {
+      "layer": 7,
+      "cosine": 0.97319233,
+      "relative_l2": 0.22999519
+    },
+    {
+      "layer": 8,
+      "cosine": 0.97924876,
+      "relative_l2": 0.20269778
+    },
+    {
+      "layer": 9,
+      "cosine": 0.97939134,
+      "relative_l2": 0.20197403
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9842415,
+      "relative_l2": 0.17683388
+    },
+    {
+      "layer": 11,
+      "cosine": 0.9848253,
+      "relative_l2": 0.17360984
+    },
+    {
+      "layer": 12,
+      "cosine": 0.98276126,
+      "relative_l2": 0.18497886
+    },
+    {
+      "layer": 13,
+      "cosine": 0.9802656,
+      "relative_l2": 0.19879135
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9817479,
+      "relative_l2": 0.1913282
+    },
+    {
+      "layer": 15,
+      "cosine": 0.98781306,
+      "relative_l2": 0.15606725
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 1.4495072e-12,
+    "passed": true
+  }
+}

@@ -453,7 +453,15 @@ fn bench_hook_diagnostic_gpu() {
         .ok()
         .filter(candle_core::Device::is_cuda)
     else {
-        eprintln!("SKIP: no CUDA device available");
+        // A skip reports `ok`, indistinguishable from a pass in the summary
+        // line. That is correct when the crate was built without `cuda` (there
+        // is no GPU path compiled in to exercise), but with the feature on it
+        // would hide a broken environment behind a green run, so fail loudly.
+        assert!(
+            !cfg!(feature = "cuda"),
+            "built with the `cuda` feature but no CUDA device is available; this test would              otherwise report `ok` without exercising the GPU"
+        );
+        eprintln!("SKIP: built without the `cuda` feature, so there is no GPU path to exercise");
         return;
     };
     run_diagnostic("CUDA F32", &device);

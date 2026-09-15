@@ -1,0 +1,944 @@
+{
+  "model": "google/gemma-2-2b",
+  "clt_repo": "mntss/clt-gemma-2-2b-2.5M",
+  "preset": "gemma2-2b-2.5m",
+  "prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nThe world keeps spinning even so,\n",
+  "tokens": [
+    "<bos>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",",
+    "\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".",
+    "\n",
+    "The",
+    " world",
+    " keeps",
+    " spinning",
+    " even",
+    " so",
+    ",",
+    "\n"
+  ],
+  "newline_index": 25,
+  "suppress_word": "so",
+  "inject_word": "can",
+  "suppress_features": [
+    {
+      "layer": 25,
+      "index": 70598
+    },
+    {
+      "layer": 25,
+      "index": 51326
+    },
+    {
+      "layer": 25,
+      "index": 52789
+    },
+    {
+      "layer": 25,
+      "index": 28986
+    },
+    {
+      "layer": 25,
+      "index": 5076
+    },
+    {
+      "layer": 25,
+      "index": 73247
+    },
+    {
+      "layer": 25,
+      "index": 97279
+    },
+    {
+      "layer": 25,
+      "index": 94279
+    },
+    {
+      "layer": 24,
+      "index": 78290
+    },
+    {
+      "layer": 21,
+      "index": 89350
+    },
+    {
+      "layer": 21,
+      "index": 51174
+    },
+    {
+      "layer": 18,
+      "index": 7726
+    },
+    {
+      "layer": 23,
+      "index": 94103
+    }
+  ],
+  "inject_feature": {
+    "layer": 25,
+    "index": 82839
+  },
+  "strength": 10.0,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 2,
+  "baseline_greedy_line": "And the sailor's dreams are still his own.",
+  "final_word_slot": 35,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "greedy_line": "And the sailor's dreams are still his own.",
+      "m3_p_inject": 4.5892507e-06,
+      "m3_p_natural": 0.00029719068,
+      "sampled_lines": [
+        "No matter where the ship might go.",
+        "But we can stop, and sit and think about it.",
+        "He still has more to say.",
+        "And his heart yearns for a lover.",
+        "And the water keeps flowing,",
+        "And his sails are empty,",
+        "And I am still here in my worry,",
+        "And he doesn’t care where he goes.",
+        "While I await the day it must go.",
+        "But I’m afraid that I will never know,",
+        "But the sailor’s heart is waiting for her,",
+        "And the sailor's heart keeps longing for home.",
+        "And the sun continues to glow.",
+        "He stands upon the deck alone.",
+        "While he tries to hold onto his hope.",
+        "But the sailor keeps sailing.",
+        "But all he wants is to be in his home.",
+        "And he’s still longing for his to-do.",
+        "And his thoughts come back to me.",
+        "And the world keeps spinning still.",
+        "And she waits for her sailor.",
+        "The sea keeps rolling on and on.",
+        "At least we have the ocean.",
+        "And the wind keeps blowing.",
+        "And even sailors always go.",
+        "And he knows his life is in the flow.",
+        "And the sun keeps shining, though,",
+        "And the sun still shines, though",
+        "But he's still in his own, private, little,",
+        "As he pines for a life that he knows.",
+        "The sailor is still missing you.",
+        "He still can't reach home.",
+        "And life goes on,",
+        "And so the sailor still will go.",
+        "And even if it doesn’t, I know.",
+        "But he was not far, no matter how.",
+        "And he is still miles away.",
+        "And it is good to have someone to know.",
+        "And he still holds to the hope of one day going home.",
+        "As the sailor sails ever further below.",
+        "And it doesn't stop for him to go.",
+        "With the sails in the wind and the ship in tow.",
+        "And the sun still rises and sets.",
+        "But he is only a stone away.",
+        "He still longs for his beloved.",
+        "As he sinks to sleep in a sea of woe.",
+        "And his ship kept on it's way.",
+        "And as the sun sets, he stays afloat.",
+        "The salty tears fall down his brow.",
+        "But these thoughts, they’ll never go.",
+        "But he can't forget his childhood.",
+        "He just has to make the most of his everyday.",
+        "And he's still at sea,",
+        "Yet we are still alone.",
+        "No longer is the sailor in a row.",
+        "And he is lonely far below.",
+        "And when the sun begins to go.",
+        "And his thoughts are fixed upon me.",
+        "While our hearts remain so.",
+        "And he could never leave his foe."
+      ],
+      "m1": {
+        "n": 60,
+        "final_words": [
+          "go",
+          "it",
+          "say",
+          "lover",
+          "flowing",
+          "empty",
+          "worry",
+          "goes",
+          "go",
+          "know",
+          "her",
+          "home",
+          "glow",
+          "alone",
+          "hope",
+          "sailing",
+          "home",
+          "to-do",
+          "me",
+          "still",
+          "sailor",
+          "on",
+          "ocean",
+          "blowing",
+          "go",
+          "flow",
+          "though",
+          "though",
+          "little",
+          "knows",
+          "you",
+          "home",
+          "on",
+          "go",
+          "know",
+          "how",
+          "away",
+          "know",
+          "home",
+          "below",
+          "go",
+          "tow",
+          "sets",
+          "away",
+          "beloved",
+          "woe",
+          "way",
+          "afloat",
+          "brow",
+          "go",
+          "childhood",
+          "everyday",
+          "sea",
+          "alone",
+          "row",
+          "below",
+          "go",
+          "me",
+          "so",
+          "foe"
+        ],
+        "natural": {
+          "count": 21,
+          "fraction": 0.35,
+          "ci95": [
+            0.2313,
+            0.484
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.0596
+          ]
+        },
+        "other": {
+          "count": 39,
+          "fraction": 0.65,
+          "ci95": [
+            0.516,
+            0.7687
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress-only",
+      "greedy_line": "And the sailor’s dreams are still his own.",
+      "m3_p_inject": 4.5495312e-06,
+      "m3_p_natural": 0.00029276128,
+      "sampled_lines": [
+        "The sun rises in the east,",
+        "And the sailor doesn’t know.",
+        "But he had other things to do.",
+        "And now he's missing all his friends.",
+        "Though I am far from the sea.",
+        "And he'd like to leave the boat and go.",
+        "The sailor's dream was still to go.",
+        "And we're all stuck in this time warp.",
+        "And the sailor kept on rowing.",
+        "And he can never go.",
+        "But the sailor’s heart is waiting for her,",
+        "And the sailor's heart keeps longing for home.",
+        "And the sun continues to glow.",
+        "And you're still waiting for me - don't you know?",
+        "But it’s the wind that blows where we go.",
+        "And he's a sailor, always a sailor.",
+        "And he’s going to miss the show.",
+        "And he wishes he could be back at home.",
+        "Under the sea, under the sea.",
+        "And though he longs to be back home,",
+        "A sailor sails across the bay.",
+        "As long as he can keep his hopes afloat.",
+        "While sailors dream of leaving their home.",
+        "While I wait to see you, my love.",
+        "And he’s sailing on and on and on.",
+        "While a lone sailor sails alone.",
+        "And I’m sure he’s missed his lady,",
+        "The sun will rise, and the tide will flow.",
+        "If love is all I know.",
+        "While he stays there, far away.",
+        "And he can’t get back to you.",
+        "And the sun keeps shining, too.",
+        "The sun continues to rise and glow.",
+        "And he's still a sailor, though.",
+        "And it is good to have someone to know.",
+        "And he still holds to the hope of one day going home.",
+        "As the sailor sails past the bay.",
+        "And it doesn't stop for him to go.",
+        "With the sails in the wind and the ship in tow.",
+        "And the sun still rises and sets.",
+        "He'll be a sailor for as long as he stays.",
+        "While he was sailing down to the bay.",
+        "It’s just a matter of time.",
+        "The sun keeps shining on his toe.",
+        "And he keeps sailing out to sea.",
+        "Though he’s far, far away from home.",
+        "But deep inside he’s hoping to go.",
+        "And now he’s just a thought in his own head.",
+        "His dreams of home will never go.",
+        "But still he wants his wife to know.",
+        "While the sails are all they have in tow.",
+        "And he is lonely far below.",
+        "And when the sun begins to go,",
+        "And all that he remembers is you.",
+        "His dreams will stay put.",
+        "And he could never leave his foe.",
+        "When all that matters is you.",
+        "And he waits for home to come to him,",
+        "And the tide of life seems to flow.",
+        "He has no other way to go."
+      ],
+      "m1": {
+        "n": 60,
+        "final_words": [
+          "east",
+          "know",
+          "do",
+          "friends",
+          "sea",
+          "go",
+          "go",
+          "warp",
+          "rowing",
+          "go",
+          "her",
+          "home",
+          "glow",
+          "know",
+          "go",
+          "sailor",
+          "show",
+          "home",
+          "sea",
+          "home",
+          "bay",
+          "afloat",
+          "home",
+          "love",
+          "on",
+          "alone",
+          "lady",
+          "flow",
+          "know",
+          "away",
+          "you",
+          "too",
+          "glow",
+          "though",
+          "know",
+          "home",
+          "bay",
+          "go",
+          "tow",
+          "sets",
+          "stays",
+          "bay",
+          "time",
+          "toe",
+          "sea",
+          "home",
+          "go",
+          "head",
+          "go",
+          "know",
+          "tow",
+          "below",
+          "go",
+          "you",
+          "put",
+          "foe",
+          "you",
+          "him",
+          "flow",
+          "go"
+        ],
+        "natural": {
+          "count": 25,
+          "fraction": 0.4167,
+          "ci95": [
+            0.2907,
+            0.5512
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.0596
+          ]
+        },
+        "other": {
+          "count": 35,
+          "fraction": 0.5833,
+          "ci95": [
+            0.4488,
+            0.7093
+          ]
+        }
+      }
+    },
+    {
+      "condition": "inject-only",
+      "greedy_line": "Can't you see the sun is still below?",
+      "m3_p_inject": 4.5892507e-06,
+      "m3_p_natural": 0.00029719068,
+      "sampled_lines": [
+        "But I’ve been gone for many a long, long, oh.",
+        "Can I see you from my boat?",
+        "But he sails through time and space.",
+        "Can't you hear the music you know.",
+        "Can’t get away!",
+        "Can’t help but think of my own.",
+        "Can this sailor ever go?",
+        "Can't stop the boat, it's like a slow-mo",
+        "Can you feel me, oh, will you know?",
+        "Can I get back home?",
+        "He’s thinking just of you and me.",
+        "And she'll never know.",
+        "And the ocean’s waters flow.",
+        "Can we still share our dreams?",
+        "Can you hear my voice from far below?",
+        "Can he catch up, or will he go?",
+        "can a sailor ever truly go?",
+        "Can anyone tell him where he is going?",
+        "Can he ever find his way?",
+        "Can't you see? I'm waiting for you.",
+        "Can’t you see the moon is still the glow?",
+        "Can’t you see, life goes on.",
+        "Can’t stop the sailor’s heart from growing cold.",
+        "Can you tell me what I'm supposed to do?",
+        "Can’t see the future from the bay.",
+        "The sun still shines, the trees still grow,",
+        "Can't feel you here, my love.",
+        "And she’s the same as she’s ever known.",
+        " can you tell me why?",
+        "Can’t help but look out for the sun.",
+        "Can I still hold onto my hope?",
+        "Can’t you see the sun has set on me?",
+        "can one bring back that one to know?",
+        "Can I take a time machine to go?",
+        "And even though he's far from home,",
+        "can you feel me?",
+        "Can I ever find my way home?",
+        "Can he find the home he once knew?",
+        "Can't you hear the wind blow?",
+        "Can the sailor ever go?",
+        "And the sun will rise tomorrow.",
+        "Can a sailor be home to stay?",
+        "And though he's far from home,",
+        "But now the day is gone, and the night has come.",
+        "But the sailor dreams of home.",
+        "And I hope you're doing well,",
+        "One cannot lose heart no matter how.",
+        "Can't you hear the music,",
+        "Can you catch a glimpse of what he knows?",
+        "can you find the time to let it go?",
+        "But he's not sure he'll find some peace of mind.",
+        "can’t forget the one you know.",
+        "Can the sailor ever be alone?",
+        "Can't stop the sea, but I can go.",
+        "Can you imagine how it goes?",
+        "Can't keep you from my heart though.",
+        "Can’t help but miss the old folks,",
+        "can't keep my thoughts from flowing",
+        "Can’t he go home in time to go?",
+        "And the sun keeps rising in the sky."
+      ],
+      "m1": {
+        "n": 60,
+        "final_words": [
+          "oh",
+          "boat",
+          "space",
+          "know",
+          "away",
+          "own",
+          "go",
+          "slow-mo",
+          "know",
+          "home",
+          "me",
+          "know",
+          "flow",
+          "dreams",
+          "below",
+          "go",
+          "go",
+          "going",
+          "way",
+          "you",
+          "glow",
+          "on",
+          "cold",
+          "do",
+          "bay",
+          "grow",
+          "love",
+          "known",
+          "why",
+          "sun",
+          "hope",
+          "me",
+          "know",
+          "go",
+          "home",
+          "me",
+          "home",
+          "knew",
+          "blow",
+          "go",
+          "tomorrow",
+          "stay",
+          "home",
+          "come",
+          "home",
+          "well",
+          "how",
+          "music",
+          "knows",
+          "go",
+          "mind",
+          "know",
+          "alone",
+          "go",
+          "goes",
+          "though",
+          "folks",
+          "flowing",
+          "go",
+          "sky"
+        ],
+        "natural": {
+          "count": 20,
+          "fraction": 0.3333,
+          "ci95": [
+            0.2169,
+            0.4669
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.0596
+          ]
+        },
+        "other": {
+          "count": 40,
+          "fraction": 0.6667,
+          "ci95": [
+            0.5331,
+            0.7831
+          ]
+        }
+      }
+    },
+    {
+      "condition": "suppress+inject",
+      "greedy_line": "Can't you see the sun is still below?",
+      "m3_p_inject": 4.5495312e-06,
+      "m3_p_natural": 0.00029276128,
+      "sampled_lines": [
+        "But I’ve been gone for many a long, long, oh.",
+        "Can I see you from my boat?",
+        "But he longs for life that was below.",
+        "Can't forget the people he knew.",
+        "Can’t get away!",
+        "Can’t help but think of my own.",
+        "Can he ever find his way home?",
+        "Can’t go home if you can’t go alone.",
+        "As the sailor sails across the sea.",
+        "And yet his mind is far away.",
+        "He’s thinking just of you and me.",
+        "And she, the sailor, slowly grows old.",
+        "Underfoot, its feet are heavy.",
+        "Can't hear of his return, though.",
+        "can't you see that your dreams still go?",
+        "Can she bring me the sea, again, I hope?",
+        "Can’t hold a sailor to the sea.",
+        "Can't slow it down, can't slow it down.",
+        "Can’t seem to slow down when the night falls low.",
+        "Even through the turbulent motion.",
+        "And time continually flows.",
+        "can't keep still when one's at sea.",
+        "Can he reach the shore in time to go?",
+        "And the sailor dreams of home,",
+        "can you find the centre?",
+        "and the sky keeps spinning too.",
+        "can’t wait to see my baby grow.",
+        "But the sun will rise, and the tide will flow.",
+        "Can’t you just come home, oh, come home?",
+        "Can’t find the time to go home.",
+        "can't help but think of you, I know.",
+        "And he is not far, but so far away.",
+        "With a smile he’s just on his way.",
+        "can’t you hear it sighing softly?",
+        "And the bay is still the same.",
+        " can't turn back time and go",
+        "A sailor sails the sea,",
+        "And he still can't sleep at night.",
+        "Can I ever come back, I don’t know.",
+        "And our dreams we must keep in tow.",
+        "But when I think of home, I'm not alone.",
+        "But now the day is gone, and the night has come.",
+        "For the sailor keeps on rowing.",
+        "And in this case, it’s hard to know.",
+        "Can you sail across the sea?",
+        "Can you imagine how I miss you?",
+        "Can it be that time has flown?",
+        "can you find the time to let it go?",
+        "But he's not sure he'll find my heart to know.",
+        "can’t forget the one you know.",
+        "Can the sailor ever be alone?",
+        "Can't stop the sea, but I can go.",
+        "Can you imagine how it goes?",
+        "Can't keep you from my heart though.",
+        "Can’t help but miss the old folks,",
+        "can't contain his longing for his mo.",
+        "Can he get back in time to go?",
+        "And the sea keeps on the roll.",
+        " can you truly be alone?",
+        "Can't you hear the song it's playing?"
+      ],
+      "m1": {
+        "n": 60,
+        "final_words": [
+          "oh",
+          "boat",
+          "below",
+          "knew",
+          "away",
+          "own",
+          "home",
+          "alone",
+          "sea",
+          "away",
+          "me",
+          "old",
+          "heavy",
+          "though",
+          "go",
+          "hope",
+          "sea",
+          "down",
+          "low",
+          "motion",
+          "flows",
+          "sea",
+          "go",
+          "home",
+          "centre",
+          "too",
+          "grow",
+          "flow",
+          "home",
+          "home",
+          "know",
+          "away",
+          "way",
+          "softly",
+          "same",
+          "go",
+          "sea",
+          "night",
+          "know",
+          "tow",
+          "alone",
+          "come",
+          "rowing",
+          "know",
+          "sea",
+          "you",
+          "flown",
+          "go",
+          "know",
+          "know",
+          "alone",
+          "go",
+          "goes",
+          "though",
+          "folks",
+          "mo",
+          "go",
+          "roll",
+          "alone",
+          "playing"
+        ],
+        "natural": {
+          "count": 20,
+          "fraction": 0.3333,
+          "ci95": [
+            0.2169,
+            0.4669
+          ]
+        },
+        "inject": {
+          "count": 0,
+          "fraction": 0.0,
+          "ci95": [
+            0.0,
+            0.0596
+          ]
+        },
+        "other": {
+          "count": 40,
+          "fraction": 0.6667,
+          "ci95": [
+            0.5331,
+            0.7831
+          ]
+        }
+      }
+    }
+  ],
+  "m4_position_sweep": [
+    {
+      "position": 0,
+      "token": "<bos>",
+      "p_inject": 4.0650757e-06,
+      "p_natural": 0.00026790012
+    },
+    {
+      "position": 1,
+      "token": "A",
+      "p_inject": 4.6144987e-06,
+      "p_natural": 0.00029698637
+    },
+    {
+      "position": 2,
+      "token": " sailor",
+      "p_inject": 4.622254e-06,
+      "p_natural": 0.0003005486
+    },
+    {
+      "position": 3,
+      "token": " sailed",
+      "p_inject": 4.6079913e-06,
+      "p_natural": 0.00029896855
+    },
+    {
+      "position": 4,
+      "token": " across",
+      "p_inject": 4.6368273e-06,
+      "p_natural": 0.00029769348
+    },
+    {
+      "position": 5,
+      "token": " the",
+      "p_inject": 4.584402e-06,
+      "p_natural": 0.00029629515
+    },
+    {
+      "position": 6,
+      "token": " bay",
+      "p_inject": 4.5725865e-06,
+      "p_natural": 0.00030093885
+    },
+    {
+      "position": 7,
+      "token": ",",
+      "p_inject": 4.576357e-06,
+      "p_natural": 0.00029755844
+    },
+    {
+      "position": 8,
+      "token": "\n",
+      "p_inject": 4.582247e-06,
+      "p_natural": 0.00029390704
+    },
+    {
+      "position": 9,
+      "token": "And",
+      "p_inject": 4.5667243e-06,
+      "p_natural": 0.0002973287
+    },
+    {
+      "position": 10,
+      "token": " dreamed",
+      "p_inject": 4.606367e-06,
+      "p_natural": 0.00029790093
+    },
+    {
+      "position": 11,
+      "token": " of",
+      "p_inject": 4.5923357e-06,
+      "p_natural": 0.00029806906
+    },
+    {
+      "position": 12,
+      "token": " home",
+      "p_inject": 4.7767444e-06,
+      "p_natural": 0.00028950794
+    },
+    {
+      "position": 13,
+      "token": " throughout",
+      "p_inject": 4.669796e-06,
+      "p_natural": 0.00029877434
+    },
+    {
+      "position": 14,
+      "token": " the",
+      "p_inject": 4.5678566e-06,
+      "p_natural": 0.00029749065
+    },
+    {
+      "position": 15,
+      "token": " day",
+      "p_inject": 4.8590173e-06,
+      "p_natural": 0.00030426666
+    },
+    {
+      "position": 16,
+      "token": ".",
+      "p_inject": 4.6141513e-06,
+      "p_natural": 0.00030534292
+    },
+    {
+      "position": 17,
+      "token": "\n",
+      "p_inject": 4.6057344e-06,
+      "p_natural": 0.0003019348
+    },
+    {
+      "position": 18,
+      "token": "The",
+      "p_inject": 4.5727325e-06,
+      "p_natural": 0.0002970378
+    },
+    {
+      "position": 19,
+      "token": " world",
+      "p_inject": 4.617904e-06,
+      "p_natural": 0.0003051744
+    },
+    {
+      "position": 20,
+      "token": " keeps",
+      "p_inject": 4.5964284e-06,
+      "p_natural": 0.00029942882
+    },
+    {
+      "position": 21,
+      "token": " spinning",
+      "p_inject": 4.558509e-06,
+      "p_natural": 0.000299801
+    },
+    {
+      "position": 22,
+      "token": " even",
+      "p_inject": 4.6328787e-06,
+      "p_natural": 0.0002904189
+    },
+    {
+      "position": 23,
+      "token": " so",
+      "p_inject": 4.758798e-06,
+      "p_natural": 0.00034317074
+    },
+    {
+      "position": 24,
+      "token": ",",
+      "p_inject": 4.5681254e-06,
+      "p_natural": 0.0002975557
+    },
+    {
+      "position": 25,
+      "token": "\n",
+      "p_inject": 4.5495312e-06,
+      "p_natural": 0.00029276128
+    },
+    {
+      "position": 26,
+      "token": "And",
+      "p_inject": 4.5961733e-06,
+      "p_natural": 0.00029954972
+    },
+    {
+      "position": 27,
+      "token": " the",
+      "p_inject": 4.5353518e-06,
+      "p_natural": 0.00029477052
+    },
+    {
+      "position": 28,
+      "token": " sailor",
+      "p_inject": 4.558564e-06,
+      "p_natural": 0.00029631195
+    },
+    {
+      "position": 29,
+      "token": "'",
+      "p_inject": 4.7918925e-06,
+      "p_natural": 0.00030156536
+    },
+    {
+      "position": 30,
+      "token": "s",
+      "p_inject": 4.5071565e-06,
+      "p_natural": 0.00030012027
+    },
+    {
+      "position": 31,
+      "token": " dreams",
+      "p_inject": 4.6180417e-06,
+      "p_natural": 0.00029088024
+    },
+    {
+      "position": 32,
+      "token": " are",
+      "p_inject": 4.704204e-06,
+      "p_natural": 0.0002999511
+    },
+    {
+      "position": 33,
+      "token": " still",
+      "p_inject": 5.0286867e-06,
+      "p_natural": 0.00033038462
+    },
+    {
+      "position": 34,
+      "token": " his",
+      "p_inject": 0.9404022,
+      "p_natural": 5.7864526e-15
+    }
+  ],
+  "m1_classified": true
+}

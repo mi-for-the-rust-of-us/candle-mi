@@ -1,0 +1,253 @@
+{
+  "model": "google/gemma-2-2b",
+  "pair": "p1-a-to-b",
+  "donor_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark about,\n",
+  "recipient_prompt": "The stars were twinkling in the night,\nThe lanterns cast a golden light.\nShe wandered in the dark alone,\n",
+  "donor_word": "about",
+  "recipient_word": "alone",
+  "tokens": [
+    "<bos>",
+    "The",
+    " stars",
+    " were",
+    " twinkling",
+    " in",
+    " the",
+    " night",
+    ",",
+    "\n",
+    "The",
+    " lanterns",
+    " cast",
+    " a",
+    " golden",
+    " light",
+    ".",
+    "\n",
+    "She",
+    " wandered",
+    " in",
+    " the",
+    " dark",
+    " alone",
+    ",",
+    "\n"
+  ],
+  "donor_newline_index": 25,
+  "recipient_newline_index": 25,
+  "n_layers": 26,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "Her heart was heavy, her soul was gone.",
+  "final_word_slot": 34,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "Her heart was heavy, her soul was gone.",
+      "m3_p_donor": 0.0000066198427,
+      "m3_p_recipient": 0.0021750669,
+      "sampled_lines": [
+        "Searching for her lost home.",
+        "And felt a presence, soon to unfold.",
+        "Her heart was heavy and her mind was numb.",
+        "To find the one who'd love her.",
+        "The forest was her only home.",
+        "Her worries felt so far away.",
+        "And the moon cast a silvery glow.",
+        "The moonlight danced on her face.",
+        "With a heart full of love she wished for a home.",
+        "And found him, a beautiful lone.",
+        "Her heart was full of sorrow and a sense of home.",
+        "Dreamy, lost in a world of her own.",
+        "The warmth of the stars shone through her soul.",
+        "Searching for a place to call her own.",
+        "Afraid to step into her home.",
+        "Believing that she was home.",
+        "Lost in her own thoughts unknown.",
+        "Her footsteps echoing with her own.",
+        "Searching for someone to love.",
+        "Afraid to face the night.",
+        "To find her soul mate and make it known.",
+        "Scared and bewildered, she didn't know where to go.",
+        "Searching for love and happiness unknown.",
+        "Lost in the world of her own.",
+        "Lost, frightened, helpless and forlorn.",
+        "With her hopes and dreams in her heart.",
+        "With an ache in her heart, unknown.",
+        "She took a book and read it all day long.",
+        "Feeling lost, with no one to see.",
+        "Feeling lonely and forlorn.",
+        "Wishing to find her way home.",
+        "Her heart lost and her soul forlorn.",
+        "Her eyes were filled with tears and pain.",
+        "As tears rolled down her dark, red, stained, crimson gown.",
+        "As she searched for the one she knew.",
+        "Lost in her thoughts of a dream so sweet.",
+        "Hoping to find a place to call home.",
+        "Her heart ached with thoughts of home.",
+        "Her heart filled with sorrow and pain.",
+        "She heard a voice and turned around.",
+        "In search of a way to make things her own.",
+        "The moon shone down, like a silver stone.",
+        "Wondering if he would ever come home.",
+        "A cold chill in the wind blew her bones.",
+        "Eyes searching for a path to go.",
+        "Her heart ached with a terrible pain.",
+        "Thinking of her lost love, her home.",
+        "As the world was at war, and she was all alone.",
+        "With a heart that was all her own.",
+        "Her heart ached with a deep-seated pain.",
+        "Where she would find the love of her own.",
+        "Her heart was heavy, her soul was known.",
+        "Her feet ached from walking on her own.",
+        "To find the one she loved so long.",
+        "The moon was shining on her face.",
+        "Her heart filled with pain and woe.",
+        "She looked for the place she could call home.",
+        "Hoping to find someone to show her home.",
+        "Looking for a way to go home.",
+        "Following the glow of her own."
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.999958,
+      "relative_l2": 0.009191395
+    },
+    {
+      "layer": 1,
+      "cosine": 0.9975745,
+      "relative_l2": 0.06987707
+    },
+    {
+      "layer": 2,
+      "cosine": 0.99473935,
+      "relative_l2": 0.10245585
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9904502,
+      "relative_l2": 0.13787206
+    },
+    {
+      "layer": 4,
+      "cosine": 0.99190295,
+      "relative_l2": 0.12700346
+    },
+    {
+      "layer": 5,
+      "cosine": 0.92502177,
+      "relative_l2": 0.3928259
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9613786,
+      "relative_l2": 0.2839611
+    },
+    {
+      "layer": 7,
+      "cosine": 0.97083765,
+      "relative_l2": 0.24811798
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9799207,
+      "relative_l2": 0.20421511
+    },
+    {
+      "layer": 9,
+      "cosine": 0.9859015,
+      "relative_l2": 0.17135619
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9881925,
+      "relative_l2": 0.1561294
+    },
+    {
+      "layer": 11,
+      "cosine": 0.98871684,
+      "relative_l2": 0.15384313
+    },
+    {
+      "layer": 12,
+      "cosine": 0.9893526,
+      "relative_l2": 0.15217397
+    },
+    {
+      "layer": 13,
+      "cosine": 0.9830603,
+      "relative_l2": 0.18451673
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9837048,
+      "relative_l2": 0.18015975
+    },
+    {
+      "layer": 15,
+      "cosine": 0.98086274,
+      "relative_l2": 0.19588241
+    },
+    {
+      "layer": 16,
+      "cosine": 0.98010737,
+      "relative_l2": 0.19878633
+    },
+    {
+      "layer": 17,
+      "cosine": 0.97911304,
+      "relative_l2": 0.20332617
+    },
+    {
+      "layer": 18,
+      "cosine": 0.9797537,
+      "relative_l2": 0.2004583
+    },
+    {
+      "layer": 19,
+      "cosine": 0.97847897,
+      "relative_l2": 0.20642553
+    },
+    {
+      "layer": 20,
+      "cosine": 0.97849673,
+      "relative_l2": 0.20644279
+    },
+    {
+      "layer": 21,
+      "cosine": 0.9781808,
+      "relative_l2": 0.20982048
+    },
+    {
+      "layer": 22,
+      "cosine": 0.97758687,
+      "relative_l2": 0.21199264
+    },
+    {
+      "layer": 23,
+      "cosine": 0.9781748,
+      "relative_l2": 0.21018635
+    },
+    {
+      "layer": 24,
+      "cosine": 0.97945154,
+      "relative_l2": 0.20232213
+    },
+    {
+      "layer": 25,
+      "cosine": 0.9766197,
+      "relative_l2": 0.21633075
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 1.3969839e-8,
+    "passed": true
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "pair": "p3-a-to-b",
+  "donor_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a shout,\n",
+  "recipient_prompt": "A sailor sailed across the bay,\nAnd dreamed of home throughout the day.\nHe raised his voice and gave a sigh,\n",
+  "donor_word": "shout",
+  "recipient_word": "sigh",
+  "tokens": [
+    "<|begin_of_text|>",
+    "A",
+    " sailor",
+    " sailed",
+    " across",
+    " the",
+    " bay",
+    ",\n",
+    "And",
+    " dreamed",
+    " of",
+    " home",
+    " throughout",
+    " the",
+    " day",
+    ".\n",
+    "He",
+    " raised",
+    " his",
+    " voice",
+    " and",
+    " gave",
+    " a",
+    " sigh",
+    ",\n"
+  ],
+  "donor_newline_index": 24,
+  "recipient_newline_index": 24,
+  "n_layers": 16,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "And said, \"I'm going home today",
+  "final_word_slot": 33,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "And said, \"I'm going home today",
+      "m3_p_donor": 2.0645508e-7,
+      "m3_p_recipient": 0.0000013103356,
+      "sampled_lines": [
+        "And prayed that all was well with his wife",
+        "And floated down the swell",
+        "He saw a beautiful dream",
+        "And the tears slipped down his face",
+        "And he said to the sea: “I will go!”",
+        "As if his heart were torn",
+        "The men on the deck were all awed",
+        "But his life was a pity play",
+        "With a ship's crew of 14",
+        "“God bless America, my land!”",
+        "And wished upon a star",
+        "And cried out to the air above",
+        "And, as he did, came the sigh",
+        "And a little boy heard him sigh",
+        "“O lucky me, I’m home at last!”",
+        "And said, \"I'm not going to make it",
+        "And sobbed aloud with the tide",
+        "Of the boy that he had left behind",
+        "And said to the sea: \"Dear sea",
+        "And said, “Home is near, and I am born",
+        "And saw a small boat in the sky",
+        "And wept as he sailed away",
+        "When he sailed his ship away",
+        "And all the sailors paid no heed",
+        "And cried, “I’m in love with the night",
+        "As he set course for Marina Bay",
+        "‘I’ll be back in the evening,’ he said",
+        "As he stood on the shore",
+        "As he chased away the din",
+        "And when the wind was still",
+        "As he sang of his country’s wife",
+        "He says, “I’m dreaming of home again",
+        "And the wind carried his words away",
+        "And then he lay down on his sail",
+        "And saw a ship as he sailed by",
+        "As if lost in thought",
+        "And said, \"Rejoice, oh sailor, sing",
+        "And said, \"I am alone",
+        "As he sailed, a breeze was blowing",
+        "He dreamed of home and the day",
+        "But he was too far to see",
+        "And his thoughts came to him as plain",
+        "And asked of the stars to sing",
+        "And in his dreams he found a price",
+        "As the wind grew colder in the night",
+        "To make his mother smile",
+        "And he was in a lonely place",
+        "And said: “It’s nice to be back in sight",
+        "“May you find home being there!”",
+        "For in the breeze he could see",
+        "As the boat slowly drifted away",
+        "And wished he could stay where he lay",
+        "As the gale of wind blew his ship",
+        "And set his course for the coast",
+        "As he pulled his anchor free",
+        "He was happy to be back home",
+        "As he stood on the deck of the ship",
+        "And said, “I long to see my wife",
+        "And it was the sound of a child",
+        "But the wind was too strong to hear"
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.99250776,
+      "relative_l2": 0.1222356
+    },
+    {
+      "layer": 1,
+      "cosine": 0.98588526,
+      "relative_l2": 0.16788109
+    },
+    {
+      "layer": 2,
+      "cosine": 0.9876936,
+      "relative_l2": 0.15640077
+    },
+    {
+      "layer": 3,
+      "cosine": 0.98316246,
+      "relative_l2": 0.18286124
+    },
+    {
+      "layer": 4,
+      "cosine": 0.95312005,
+      "relative_l2": 0.30422828
+    },
+    {
+      "layer": 5,
+      "cosine": 0.9794095,
+      "relative_l2": 0.20237868
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9754833,
+      "relative_l2": 0.2241214
+    },
+    {
+      "layer": 7,
+      "cosine": 0.97319233,
+      "relative_l2": 0.23608549
+    },
+    {
+      "layer": 8,
+      "cosine": 0.97924876,
+      "relative_l2": 0.20781489
+    },
+    {
+      "layer": 9,
+      "cosine": 0.97939134,
+      "relative_l2": 0.20642069
+    },
+    {
+      "layer": 10,
+      "cosine": 0.9842415,
+      "relative_l2": 0.17987734
+    },
+    {
+      "layer": 11,
+      "cosine": 0.9848253,
+      "relative_l2": 0.17546272
+    },
+    {
+      "layer": 12,
+      "cosine": 0.98276126,
+      "relative_l2": 0.1870699
+    },
+    {
+      "layer": 13,
+      "cosine": 0.9802656,
+      "relative_l2": 0.1985513
+    },
+    {
+      "layer": 14,
+      "cosine": 0.9817479,
+      "relative_l2": 0.19082919
+    },
+    {
+      "layer": 15,
+      "cosine": 0.98781306,
+      "relative_l2": 0.15617824
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 8.81073e-13,
+    "passed": true
+  }
+}

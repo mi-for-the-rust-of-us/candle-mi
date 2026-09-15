@@ -1,0 +1,202 @@
+{
+  "model": "meta-llama/Llama-3.2-1B",
+  "pair": "p4-b-to-a",
+  "donor_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers when,\n",
+  "recipient_prompt": "The sun goes up, the sun goes down,\nThe moon shines bright above the town.\nNobody knows or remembers who,\n",
+  "donor_word": "when",
+  "recipient_word": "who",
+  "tokens": [
+    "<|begin_of_text|>",
+    "The",
+    " sun",
+    " goes",
+    " up",
+    ",",
+    " the",
+    " sun",
+    " goes",
+    " down",
+    ",\n",
+    "The",
+    " moon",
+    " shines",
+    " bright",
+    " above",
+    " the",
+    " town",
+    ".\n",
+    "Nobody",
+    " knows",
+    " or",
+    " remembers",
+    " who",
+    ",\n"
+  ],
+  "donor_newline_index": 24,
+  "recipient_newline_index": 24,
+  "n_layers": 16,
+  "route": "recompute-per-step",
+  "temperature": 0.7,
+  "seed": 1,
+  "baseline_greedy_line": "The man who built the town",
+  "final_word_slot": 30,
+  "conditions": [
+    {
+      "condition": "baseline",
+      "patch_layers": [],
+      "greedy_line": "The man who built the town",
+      "m3_p_donor": 8.8653184e-7,
+      "m3_p_recipient": 0.0000018292395,
+      "sampled_lines": [
+        "Who planted this town, who built the walls",
+        "And nobody cares",
+        "Mesmerized by the bright lights of the city",
+        "Who wrote the song, but it's kind of special",
+        "Who’s the man with the red face",
+        "But they'll always be a little bit proud",
+        "The little girl that scared the old man",
+        "Who wrote the song, so don't you let it get to you",
+        "Who's the best friend in this town",
+        "The man who lit the town on fire",
+        "Who built the steeple, who sings the hymns",
+        "Became the queen of the night",
+        "Who was the first one to say",
+        "But the giant is the only one",
+        "The love of the immortal soul",
+        "They call him their father’s son",
+        "Or how, or when, or why",
+        "Whose life is spent in dancing on the street",
+        "But when you hear them say, “It’s night",
+        "But I do know, and I’m proud to be",
+        "The sun goes up, the moon goes down",
+        "Or what the history is of the town",
+        "But God is watching over us",
+        "But the old man, the old man's son",
+        "Who lives above the town",
+        "But it’s nice to know a place is still there",
+        "Or where, or what they saw",
+        "Who’s the one and who’s the other",
+        "Or where or when the moon was born",
+        "Or when he was born",
+        "The moon is hiding behind the trees",
+        "The man who built the town",
+        "But they’re gonna tell you who they are",
+        "Or what they have in their heart they say",
+        "But we all do our best to honor the artist our town",
+        "That made the sun go up in the sky",
+        "Or where, the panther runs through the forest",
+        "The man that was at the top of the town",
+        "The people who make up the town",
+        "Or why they took that dead man’s life",
+        "Or where, or why, or when, or how",
+        "And there were no other nights like this",
+        "That’s why we put the date in the moon",
+        "The man who wrote that song",
+        "Who was the one to sing this song",
+        "Is the real hero of the scene",
+        "The man who built the dam, the man who built it",
+        "That long ago was that town",
+        "Or why the sun and the moon",
+        "Who fell for the moon and the stars",
+        "The man or the woman, the boy or the girl",
+        "The black cat, the devil and the wolf",
+        "Or where, or when, the sky was blue",
+        "Or when, or where, or why, or how",
+        "Who in the town works the hardest",
+        "And nobody knows who they are",
+        "If it was she or if it was he",
+        "Or when the full moon was born",
+        "Or what happened just before the storm",
+        "Or how that light got there"
+      ]
+    }
+  ],
+  "layer_trace": [],
+  "newline_divergence": [
+    {
+      "layer": 0,
+      "cosine": 0.9821393,
+      "relative_l2": 0.19108628
+    },
+    {
+      "layer": 1,
+      "cosine": 0.91320455,
+      "relative_l2": 0.43076405
+    },
+    {
+      "layer": 2,
+      "cosine": 0.9309841,
+      "relative_l2": 0.37412238
+    },
+    {
+      "layer": 3,
+      "cosine": 0.9445433,
+      "relative_l2": 0.33113527
+    },
+    {
+      "layer": 4,
+      "cosine": 0.92145884,
+      "relative_l2": 0.40015805
+    },
+    {
+      "layer": 5,
+      "cosine": 0.94257164,
+      "relative_l2": 0.34329733
+    },
+    {
+      "layer": 6,
+      "cosine": 0.9368463,
+      "relative_l2": 0.3536837
+    },
+    {
+      "layer": 7,
+      "cosine": 0.9361415,
+      "relative_l2": 0.36252862
+    },
+    {
+      "layer": 8,
+      "cosine": 0.9351628,
+      "relative_l2": 0.3565516
+    },
+    {
+      "layer": 9,
+      "cosine": 0.8948263,
+      "relative_l2": 0.45003292
+    },
+    {
+      "layer": 10,
+      "cosine": 0.91664034,
+      "relative_l2": 0.40934134
+    },
+    {
+      "layer": 11,
+      "cosine": 0.9230791,
+      "relative_l2": 0.3943041
+    },
+    {
+      "layer": 12,
+      "cosine": 0.8919814,
+      "relative_l2": 0.47035578
+    },
+    {
+      "layer": 13,
+      "cosine": 0.88538545,
+      "relative_l2": 0.48172018
+    },
+    {
+      "layer": 14,
+      "cosine": 0.87238944,
+      "relative_l2": 0.5057292
+    },
+    {
+      "layer": 15,
+      "cosine": 0.9070345,
+      "relative_l2": 0.42539242
+    }
+  ],
+  "identity_check": {
+    "greedy_matches_baseline": true,
+    "max_abs_prob_delta": 0.0,
+    "passed": true
+  }
+}

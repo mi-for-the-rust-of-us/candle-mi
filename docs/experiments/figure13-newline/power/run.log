@@ -1,0 +1,43 @@
+2026-09-14 12:37:33 ### horizon power run start (K=60, seeds: 1 2 3, DRY_RUN=0) ###
+2026-09-14 12:37:33 skip (exists) docs/experiments/figure13-newline/power/replicate_gemma2-2b-426k.json
+2026-09-14 12:37:33 skip (exists) docs/experiments/figure13-newline/power/replicate_llama3.2-1b-524k.json
+2026-09-14 12:37:33 skip (exists) docs/experiments/figure13-newline/power/replicate_gemma2-2b-2.5m.json
+2026-09-14 12:37:33 skip (exists) docs/experiments/figure13-newline/power/replicate_qwen3-0.6b-16k-ation.json
+2026-09-14 12:37:33 ### step 0 done; compare with: python <Figure-13>/scripts/horizon_stats.py --compare <july.json> <replicate.json> ###
+2026-09-14 12:39:08 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_free_s1.json  (95 s)
+2026-09-14 12:40:40 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_new_s1.json  (92 s)
+2026-09-14 12:42:20 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_more_s1.json  (100 s)
+2026-09-14 12:43:53 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_free_s2.json  (93 s)
+2026-09-14 12:45:25 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_new_s2.json  (92 s)
+2026-09-14 12:47:02 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_more_s2.json  (97 s)
+2026-09-14 12:48:34 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_free_s3.json  (92 s)
+2026-09-14 12:50:06 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_new_s3.json  (92 s)
+2026-09-14 12:51:46 done  docs/experiments/figure13-newline/power/fullline_llama3.2-1b-524k_more_s3.json  (100 s)
+2026-09-14 12:58:05 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_about_s1.json  (379 s)
+2026-09-14 13:04:20 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_so_s1.json  (375 s)
+2026-09-14 13:11:01 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_shout_s1.json  (401 s)
+2026-09-14 13:17:15 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_who_s1.json  (374 s)
+2026-09-14 13:23:28 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_about_s2.json  (373 s)
+2026-09-14 13:29:44 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_so_s2.json  (376 s)
+2026-09-14 13:36:27 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_shout_s2.json  (402 s)
+2026-09-14 13:42:46 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_who_s2.json  (379 s)
+2026-09-14 13:48:55 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_about_s3.json  (369 s)
+2026-09-14 13:55:04 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_so_s3.json  (369 s)
+2026-09-14 14:01:47 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_shout_s3.json  (403 s)
+2026-09-14 14:08:09 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-426k_who_s3.json  (382 s)
+2026-09-14 14:14:55 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_about_s1.json  (406 s)
+2026-09-14 14:21:57 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_so_s1.json  (422 s)
+2026-09-14 14:29:23 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_shout_s1.json  (446 s)
+2026-09-14 14:36:22 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_who_s1.json  (419 s)
+2026-09-14 14:43:10 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_about_s2.json  (407 s)
+2026-09-14 14:50:06 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_so_s2.json  (416 s)
+2026-09-14 14:57:31 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_shout_s2.json  (445 s)
+2026-09-14 15:04:21 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_who_s2.json  (410 s)
+2026-09-14 15:11:00 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_about_s3.json  (399 s)
+2026-09-14 15:17:53 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_so_s3.json  (413 s)
+2026-09-14 15:25:18 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_shout_s3.json  (445 s)
+2026-09-14 15:32:25 done  docs/experiments/figure13-newline/power/fullline_gemma2-2b-2.5m_who_s3.json  (427 s)
+2026-09-14 15:33:41 done  docs/experiments/figure13-newline/power/fullline_qwen3-0.6b-16k-ation_ation_s1.json  (76 s)
+2026-09-14 15:35:00 done  docs/experiments/figure13-newline/power/fullline_qwen3-0.6b-16k-ation_ation_s2.json  (79 s)
+2026-09-14 15:36:20 done  docs/experiments/figure13-newline/power/fullline_qwen3-0.6b-16k-ation_ation_s3.json  (80 s)
+2026-09-14 15:36:20 ### ALL DONE ###  analyse with: python <Figure-13>/scripts/horizon_stats.py --pool docs/experiments/figure13-newline/power/fullline_*.json
