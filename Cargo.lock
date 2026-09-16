@@ -1689,9 +1689,9 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b0723112be89f9f8e262368c4c2221c753c747a7efab5aa89dbddd020a9abdc"
+checksum = "7ccef1f8aa2ffe457c2b53cfa3b2a4b47b6ce0e5b8cddc67cd33abdb88e64541"
 dependencies = [
  "anamnesis",
  "dirs",
@@ -1882,9 +1882,9 @@ dependencies = [
 
 [[package]]
 name = "hypomnesis"
-version = "0.2.10"
+version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "572dfa9a7e24ad5b8f9ed7fa9f5f789718f0f634819c2b658d5a6d0084221a1b"
+checksum = "208d4f350bc166045793743e50ead51ec0be5367aa490ad88fd8020ff9f400df"
 dependencies = [
  "libloading 0.9.0",
  "objc2",
