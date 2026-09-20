@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Self-conditioning for `OthelloGpt`**: an optional second forward input
+  carrying the model's own previous clean prediction, the mechanism of Chen,
+  Zhang and Hinton (2022). A masked diffusion model that can see its own draft
+  can revise it, rather than committing irrevocably one position at a time.
+  Requested in `docs/dogfooding-feedbacks/othello-mdlm-needs-a-carry-channel.md`.
+
+  `OthelloGptConfig` gains `self_conditioning: bool`, **off by default**, with a
+  chainable `with_self_conditioning`. It is read from the companion
+  `config.json` under the same key, and absent reads as `false`, so a config
+  written before the feature existed parses unchanged. With the flag on, the
+  model carries a `self_cond_emb` table of `vocab_size + 1` rows whose last row
+  is the reserved `NONE` id, exposed as `OthelloGpt::self_cond_none_id`.
+
+  `OthelloGpt::forward_with_self_cond(input_ids, self_cond_ids, hooks)` is an
+  **inherent method, not a `MIBackend` addition**, per the auxiliary-input policy
+  in `docs/adding-a-model.md`; `MIBackend::forward` is exactly this method with
+  `None`. The embedding is added **before `HookPoint::Embed` fires**, so the
+  logit lens and every capture read the residual stream the logits came from.
+
+  Three properties are guaranteed and tested. The table is **zero-initialised**,
+  so `forward`, `forward_with_self_cond(None)` and an all-`NONE` grid agree bit
+  for bit and a checkpoint trained without the feature keeps its published
+  numbers. Its shape-table entry is **appended last**, so enabling the flag
+  cannot shift the seeded RNG stream for any other tensor. And a checkpoint with
+  no `self_cond_emb.weight` **loads into an enabled config** as zeros rather than
+  failing, at the `VarBuilder`'s dtype and device.
+
+  A malformed carry is rejected, never ignored: wrong dtype, dims differing from
+  `input_ids`, an id past the `NONE` row, or a carry supplied while the feature
+  is off. The id-range check is deliberate rather than redundant, because
+  candle's `index_select` raises `InvalidIndex` on CPU but the CUDA kernel does
+  not bounds-check, which would make an out-of-range id a silent wrong answer on
+  GPU only.
+
 ### Fixed
 
 - **Interventions registered with [`HookSpec::intervene`] are no longer silently

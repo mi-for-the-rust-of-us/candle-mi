@@ -65,10 +65,22 @@ pub struct OthelloGptConfig {
     /// Whether to apply a causal attention mask.  `false` (bidirectional) for
     /// the masked-diffusion world model; `true` for an autoregressive control.
     pub causal: bool,
+    /// Whether the model carries a self-conditioning input: a second token grid
+    /// holding the model's own previous clean prediction, embedded through
+    /// `self_cond_emb` and added to the residual stream before the first hook.
+    ///
+    /// `false` by default, and with it off the forward pass is bit-identical to
+    /// a model built without the feature.  See
+    /// [`forward_with_self_cond`](OthelloGpt::forward_with_self_cond).
+    pub self_conditioning: bool,
 }
 
 impl OthelloGptConfig {
     /// Construct a config from explicit dimensions, deriving `head_dim`.
+    ///
+    /// [`self_conditioning`](Self::self_conditioning) defaults to `false`; set
+    /// the field directly, or use
+    /// [`with_self_conditioning`](Self::with_self_conditioning).
     ///
     /// # Errors
     ///
@@ -97,15 +109,38 @@ impl OthelloGptConfig {
             mlp_ratio: 4,
             norm_eps: 1e-5,
             causal,
+            self_conditioning: false,
         })
+    }
+
+    /// Enable or disable the self-conditioning input, consuming `self`.
+    ///
+    /// Chainable alternative to setting the field, kept so that turning the
+    /// feature on does not require naming every other field:
+    ///
+    /// ```
+    /// use candle_mi::OthelloGptConfig;
+    /// let cfg = OthelloGptConfig::new(62, 60, 8, 8, 512, false)?
+    ///     .with_self_conditioning(true);
+    /// assert!(cfg.self_conditioning);
+    /// # Ok::<(), candle_mi::MIError>(())
+    /// ```
+    #[must_use]
+    pub const fn with_self_conditioning(mut self, enabled: bool) -> Self {
+        self.self_conditioning = enabled;
+        self
     }
 
     /// Parse an [`OthelloGptConfig`] from a companion `config.json` value.
     ///
     /// The converter (`scripts/convert_othello_mdlm.py`) writes this file from
     /// the checkpoint's `config` dict, so the keys mirror `OthelloMDLMConfig`:
-    /// `vocab_size`, `block_size`, `n_layer`, `n_head`, `n_embd`, and the
-    /// optional `causal` (default `false`).
+    /// `vocab_size`, `block_size`, `n_layer`, `n_head`, `n_embd`, the optional
+    /// `causal` (default `false`), and the optional `self_conditioning`
+    /// (default `false`).
+    ///
+    /// Both optional keys read as `false` when absent, so a `config.json`
+    /// written before either existed parses unchanged.
     ///
     /// # Errors
     ///
@@ -119,7 +154,9 @@ impl OthelloGptConfig {
         let n_head = get_usize(config, "n_head")?;
         let n_embd = get_usize(config, "n_embd")?;
         let causal = get_bool_or(config, "causal", false);
+        let self_conditioning = get_bool_or(config, "self_conditioning", false);
         Self::new(vocab_size, block_size, n_layer, n_head, n_embd, causal)
+            .map(|c| c.with_self_conditioning(self_conditioning))
     }
 }
 
@@ -401,6 +438,11 @@ impl OthelloBlock {
 pub struct OthelloGpt {
     /// Token embedding (`tok_emb.weight`).
     tok_emb: Embedding,
+    /// Self-conditioning embedding (`self_cond_emb.weight`):
+    /// `[vocab_size + 1, n_embd]`, present only when
+    /// [`OthelloGptConfig::self_conditioning`] is set.  Row `vocab_size` is the
+    /// reserved `NONE` id.
+    self_cond_emb: Option<Embedding>,
     /// Learned absolute positional embedding (`pos_emb.weight`):
     /// `[block_size, n_embd]`.
     pos_emb: Tensor,
@@ -439,6 +481,14 @@ impl OthelloGpt {
     /// For a from-scratch trainable model use [`init`](Self::init), which
     /// applies the GPT-2 recipe from an explicit seed.
     ///
+    /// **A checkpoint predating self-conditioning still loads.** When
+    /// [`self_conditioning`](OthelloGptConfig::self_conditioning) is set but the
+    /// checkpoint has no `self_cond_emb.weight`, the table is created as exact
+    /// zeros at the `VarBuilder`'s dtype and device rather than failing. That is
+    /// what lets an anchor checkpoint trained without the table keep its numbers
+    /// to the last digit: a zero table contributes a zero vector at every
+    /// position, so the forward is unchanged.
+    ///
     /// # Errors
     ///
     /// Returns [`MIError::Model`] if any weight
@@ -449,6 +499,24 @@ impl OthelloGpt {
 
         let tok_emb = Embedding::new(vb.pp("tok_emb").get((config.vocab_size, h), "weight")?, h);
         let pos_emb = vb.pp("pos_emb").get((config.block_size, h), "weight")?;
+
+        let self_cond_emb = if config.self_conditioning {
+            // `+ 1` for the reserved `NONE` row at index `vocab_size`.
+            let rows = config.vocab_size + 1;
+            // A safetensors-backed `VarBuilder` errors on a missing tensor, so
+            // the absent case is handled explicitly rather than relying on a
+            // default init (which only a `VarMap` backend provides). Built at
+            // `vb.dtype()`, not `F32`, so a `BF16` model does not silently get
+            // an `F32` table.
+            let weight = if vb.contains_tensor("self_cond_emb.weight") {
+                vb.pp("self_cond_emb").get((rows, h), "weight")?
+            } else {
+                Tensor::zeros((rows, h), vb.dtype(), vb.device())?
+            };
+            Some(Embedding::new(weight, h))
+        } else {
+            None
+        };
 
         let mut blocks = Vec::with_capacity(config.n_layer);
         for i in 0..config.n_layer {
@@ -464,6 +532,7 @@ impl OthelloGpt {
 
         Ok(Self {
             tok_emb,
+            self_cond_emb,
             pos_emb,
             blocks,
             ln_f,
@@ -529,9 +598,6 @@ impl OthelloGpt {
     ///
     /// Returns [`MIError::Model`] on tensor creation failure.
     /// Returns [`MIError::Model`] if `varmap`'s lock is poisoned.
-    // `.bias` / `.weight` are checkpoint tensor-name suffixes, not file
-    // extensions — the case-sensitivity lint does not apply to them.
-    #[allow(clippy::case_sensitive_file_extension_comparisons)]
     pub fn init_with_dtype(
         config: OthelloGptConfig,
         varmap: &VarMap,
@@ -547,7 +613,7 @@ impl OthelloGpt {
                 ))
             })?;
             for (name, dims) in weight_shapes(&config) {
-                let tensor = if name.ends_with(".bias") {
+                let tensor = if is_zero_init(&name) {
                     Tensor::zeros(dims, dtype, device)?
                 } else if is_norm_weight(&name) {
                     Tensor::ones(dims, dtype, device)?
@@ -570,6 +636,141 @@ impl OthelloGpt {
     #[must_use]
     pub const fn config(&self) -> &OthelloGptConfig {
         &self.config
+    }
+
+    /// The reserved `NONE` id for the self-conditioning grid: `vocab_size`.
+    ///
+    /// Use it at positions where the model has no previous prediction, such as
+    /// decode round 0. Its embedding row is zero at creation, so a grid of all
+    /// `NONE` reproduces the no-self-conditioning forward exactly.
+    #[must_use]
+    pub const fn self_cond_none_id(&self) -> u32 {
+        // CAST: usize → u32, vocab sizes are far below u32::MAX (62 upstream)
+        #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
+        {
+            self.config.vocab_size as u32
+        }
+    }
+
+    /// Forward pass with an optional self-conditioning input.
+    ///
+    /// `self_cond_ids` holds the model's own previous clean prediction, one id
+    /// per position, or [`self_cond_none_id`](Self::self_cond_none_id) where
+    /// there is none. It is embedded through `self_cond_emb` and **added to the
+    /// residual stream before [`HookPoint::Embed`] fires**, so the logit lens
+    /// and every capture read the stream the logits actually came from.
+    ///
+    /// This is the mechanism of Chen, Zhang and Hinton (2022): a masked
+    /// diffusion model that can see its own draft can revise it, instead of
+    /// committing irrevocably one position at a time.
+    ///
+    /// [`MIBackend::forward`] is exactly this method with `None`, and with
+    /// `None` -- or with a grid of all `NONE` against a freshly created table --
+    /// the result is bit-identical to a model built without the feature.
+    ///
+    /// The carry is a token grid, so it is detached by construction: no
+    /// gradient flows back through it into the forward that produced it.
+    ///
+    /// # Shapes
+    /// - `input_ids`: `[batch, seq]` `U32`
+    /// - `self_cond_ids`: `[batch, seq]` `U32`, the same dims as `input_ids`,
+    ///   every id in `0..=vocab_size`
+    /// - returns: [`HookCache`] whose output is `[batch, seq, vocab_size]`
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`] if `seq` exceeds
+    /// `block_size`, if `self_cond_ids` is given while
+    /// [`self_conditioning`](OthelloGptConfig::self_conditioning) is off, if it
+    /// is not `U32`, if its dims differ from `input_ids`, or if any id exceeds
+    /// `vocab_size`.
+    /// Returns [`MIError::Intervention`](crate::MIError::Intervention) if a
+    /// registered intervention is invalid at its hook point.
+    pub fn forward_with_self_cond(
+        &self,
+        input_ids: &Tensor,
+        self_cond_ids: Option<&Tensor>,
+        hooks: &HookSpec,
+    ) -> Result<HookCache> {
+        let device = input_ids.device();
+        let (_batch, seq_len) = input_ids.dims2()?;
+        if seq_len > self.config.block_size {
+            return Err(MIError::Model(candle_core::Error::Msg(format!(
+                "seq_len {seq_len} exceeds block_size {} (no positional embedding)",
+                self.config.block_size
+            ))));
+        }
+
+        // Token embedding + learned absolute positions (broadcast over batch).
+        let mut hidden = self.tok_emb.forward(input_ids)?;
+
+        // Self-conditioning, added BEFORE the positional add and before the
+        // `Embed` hook. Skipped entirely when absent, so the no-carry path adds
+        // no op at all rather than adding a zero — `x + 0.0` is bitwise `x` for
+        // every finite `x` except `-0.0`, and "bit-identical" should not rest on
+        // that.
+        if let Some(ids) = self_cond_ids {
+            let table = self.self_cond_emb.as_ref().ok_or_else(|| {
+                MIError::Model(candle_core::Error::Msg(
+                    "self_cond_ids given but self_conditioning is off in the config \
+                     (enable it with OthelloGptConfig::with_self_conditioning)"
+                        .to_string(),
+                ))
+            })?;
+            self.validate_self_cond(ids, input_ids)?;
+            hidden = hidden.add(&table.forward(ids)?)?;
+        }
+
+        let pos = self.pos_emb.narrow(0, 0, seq_len)?;
+        hidden = hidden.broadcast_add(&pos)?;
+
+        let mut cache = HookCache::new(Tensor::zeros(1, DType::F32, device)?);
+        hook_point(&mut hidden, HookPoint::Embed, hooks, &mut cache)?;
+
+        for (layer_idx, block) in self.blocks.iter().enumerate() {
+            hidden = block.forward(&hidden, layer_idx, hooks, &mut cache)?;
+        }
+
+        let logits = self.head_forward(&hidden, hooks, &mut cache)?;
+        cache.set_output(logits);
+        Ok(cache)
+    }
+
+    /// Reject a malformed self-conditioning grid before it reaches the lookup.
+    ///
+    /// The id-range check is not redundant with candle's own. `index_select`
+    /// raises `InvalidIndex` on CPU, but the CUDA kernel does not bounds-check,
+    /// so an out-of-range id there reads whatever follows the table: a silent
+    /// wrong answer on GPU only, which is the failure mode this crate can least
+    /// afford. The cost is one `max_all` plus a scalar read, not a full copy.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`] if `ids` is not
+    /// `U32`, has different dims from `input_ids`, or contains an id greater
+    /// than `vocab_size`.
+    fn validate_self_cond(&self, ids: &Tensor, input_ids: &Tensor) -> Result<()> {
+        if ids.dtype() != DType::U32 {
+            return Err(MIError::Model(candle_core::Error::Msg(format!(
+                "self_cond_ids dtype {:?} is not U32",
+                ids.dtype()
+            ))));
+        }
+        if ids.dims() != input_ids.dims() {
+            return Err(MIError::Model(candle_core::Error::Msg(format!(
+                "self_cond_ids dims {:?} differ from input_ids dims {:?}",
+                ids.dims(),
+                input_ids.dims()
+            ))));
+        }
+        let max_id: u32 = ids.flatten_all()?.max_all()?.to_vec0()?;
+        let none_id = self.self_cond_none_id();
+        if max_id > none_id {
+            return Err(MIError::Model(candle_core::Error::Msg(format!(
+                "self_cond_ids contains id {max_id} (max allowed {none_id}, the NONE row)"
+            ))));
+        }
+        Ok(())
     }
 
     /// Final `LayerNorm` then untied head, with the `FinalNorm` hook.
@@ -612,30 +813,7 @@ impl MIBackend for OthelloGpt {
     }
 
     fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
-        let device = input_ids.device();
-        let (_batch, seq_len) = input_ids.dims2()?;
-        if seq_len > self.config.block_size {
-            return Err(MIError::Model(candle_core::Error::Msg(format!(
-                "seq_len {seq_len} exceeds block_size {} (no positional embedding)",
-                self.config.block_size
-            ))));
-        }
-
-        // Token embedding + learned absolute positions (broadcast over batch).
-        let mut hidden = self.tok_emb.forward(input_ids)?;
-        let pos = self.pos_emb.narrow(0, 0, seq_len)?;
-        hidden = hidden.broadcast_add(&pos)?;
-
-        let mut cache = HookCache::new(Tensor::zeros(1, DType::F32, device)?);
-        hook_point(&mut hidden, HookPoint::Embed, hooks, &mut cache)?;
-
-        for (layer_idx, block) in self.blocks.iter().enumerate() {
-            hidden = block.forward(&hidden, layer_idx, hooks, &mut cache)?;
-        }
-
-        let logits = self.head_forward(&hidden, hooks, &mut cache)?;
-        cache.set_output(logits);
-        Ok(cache)
+        self.forward_with_self_cond(input_ids, None, hooks)
     }
 
     fn project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor> {
@@ -687,13 +865,41 @@ fn weight_shapes(config: &OthelloGptConfig) -> Vec<(String, Vec<usize>)> {
     shapes.push(("ln_f.bias".to_string(), vec![h]));
     shapes.push(("head.weight".to_string(), vec![config.vocab_size, h]));
 
+    // Appended LAST, deliberately. The table's order is what makes `init`'s
+    // seeded draws reproducible, so a new entry inserted anywhere else would
+    // shift the RNG stream for every tensor after it and silently change the
+    // weights a given seed produces. `self_cond_emb` is zero-initialized and so
+    // draws nothing today, but placing it at the end means that stays true even
+    // if its init rule is ever changed. See `seeded-init-rng-stability.md`.
+    if config.self_conditioning {
+        shapes.push((SELF_COND_WEIGHT.to_string(), vec![config.vocab_size + 1, h]));
+    }
+
     shapes
 }
+
+/// Checkpoint key of the self-conditioning table, used by the shape table, the
+/// loader and the initializer so the three cannot disagree.
+const SELF_COND_WEIGHT: &str = "self_cond_emb.weight";
 
 /// Whether `name` is a `LayerNorm` weight — initialized to ones by
 /// [`OthelloGpt::init`] (GPT-2 recipe), unlike embedding/linear weights.
 fn is_norm_weight(name: &str) -> bool {
     name == "ln_f.weight" || name.ends_with(".ln1.weight") || name.ends_with(".ln2.weight")
+}
+
+/// Whether `name` is initialized to exact zeros by [`OthelloGpt::init`].
+///
+/// Biases, per the GPT-2 recipe, plus the self-conditioning table. The latter
+/// is not a style choice: a zero table makes
+/// [`forward_with_self_cond`](OthelloGpt::forward_with_self_cond) with no carry
+/// bit-identical to [`MIBackend::forward`], which is what lets a checkpoint
+/// trained without the feature keep its published numbers exactly.
+// `.bias` is a checkpoint tensor-name suffix, not a file extension — the
+// case-sensitivity lint does not apply to it.
+#[allow(clippy::case_sensitive_file_extension_comparisons)]
+fn is_zero_init(name: &str) -> bool {
+    name.ends_with(".bias") || name == SELF_COND_WEIGHT
 }
 
 // ---------------------------------------------------------------------------
@@ -1115,5 +1321,250 @@ mod tests {
             assert!((b - 0.0).abs() < 1e-6, "baseline ResidPre(1) should be 0");
             assert!((s - 1.0).abs() < 1e-6, "steered ResidPre(1) should be 1");
         }
+    }
+
+    // -- Self-conditioning -------------------------------------------------
+
+    fn tiny_self_cond_config() -> OthelloGptConfig {
+        tiny_config().with_self_conditioning(true)
+    }
+
+    fn logits_of(cache: &HookCache) -> Vec<f32> {
+        cache.output().flatten_all().unwrap().to_vec1().unwrap()
+    }
+
+    /// The switch-off guarantee, and the reason the table is zero-initialised:
+    /// `forward`, `forward_with_self_cond(None)` and an all-`NONE` grid must
+    /// agree **bit for bit**, so a checkpoint trained without the feature keeps
+    /// its published numbers when the flag is turned on.
+    #[test]
+    fn self_conditioning_off_is_bit_identical() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_self_cond_config(), &varmap, &dev, 7).unwrap();
+        let ids = Tensor::new(&[[1u32, 2, 3, 4]], &dev).unwrap();
+        let hooks = HookSpec::new();
+
+        let none_grid = Tensor::full(model.self_cond_none_id(), (1, 4), &dev).unwrap();
+
+        let a = logits_of(&model.forward(&ids, &hooks).unwrap());
+        let b = logits_of(&model.forward_with_self_cond(&ids, None, &hooks).unwrap());
+        let c = logits_of(
+            &model
+                .forward_with_self_cond(&ids, Some(&none_grid), &hooks)
+                .unwrap(),
+        );
+
+        assert_eq!(a, b, "MIBackend::forward must equal the None path exactly");
+        assert_eq!(
+            a, c,
+            "an all-NONE grid must equal the no-carry forward exactly"
+        );
+    }
+
+    /// The table is wired in, not dead: a non-`NONE` carry moves the logits.
+    /// Paired with the test above, this is what distinguishes "off by default"
+    /// from "silently ignored".
+    #[test]
+    fn non_none_self_cond_changes_logits() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_self_cond_config(), &varmap, &dev, 7).unwrap();
+        let ids = Tensor::new(&[[1u32, 2, 3, 4]], &dev).unwrap();
+        let hooks = HookSpec::new();
+
+        // A freshly created table is zeros, so give one row a signal first.
+        let rows = model.config().vocab_size + 1;
+        let mut filled = vec![0.0f32; rows * model.config().n_embd];
+        // Row 0 only: a constant is enough to make the lookup non-zero, and it
+        // avoids an index-to-float cast that buys the test nothing.
+        for v in filled.iter_mut().take(model.config().n_embd) {
+            *v = 0.25;
+        }
+        {
+            let mut data = varmap.data().lock().unwrap();
+            let t = Tensor::from_vec(filled, (rows, model.config().n_embd), &dev).unwrap();
+            data.insert(SELF_COND_WEIGHT.to_string(), Var::from_tensor(&t).unwrap());
+        }
+        let model = OthelloGpt::load(
+            tiny_self_cond_config(),
+            VarBuilder::from_varmap(&varmap, DType::F32, &dev),
+        )
+        .unwrap();
+
+        let baseline = logits_of(&model.forward(&ids, &hooks).unwrap());
+        // Row 0 is the one we filled; NONE is row `vocab_size`.
+        let carry = Tensor::zeros((1, 4), DType::U32, &dev).unwrap();
+        let treated = logits_of(
+            &model
+                .forward_with_self_cond(&ids, Some(&carry), &hooks)
+                .unwrap(),
+        );
+
+        assert_ne!(baseline, treated, "a non-NONE carry must change the logits");
+    }
+
+    /// Appending `self_cond_emb.weight` **last** in `weight_shapes` must leave
+    /// the seeded RNG stream for every other tensor untouched, so a seed that
+    /// produced a given model before the feature existed still does.
+    #[test]
+    fn self_conditioning_does_not_move_the_seeded_stream() {
+        let dev = Device::Cpu;
+        let dump = |cfg: OthelloGptConfig| -> Vec<(String, Vec<f32>)> {
+            let varmap = VarMap::new();
+            OthelloGpt::init(cfg, &varmap, &dev, 11).unwrap();
+            let mut out: Vec<(String, Vec<f32>)> = varmap
+                .data()
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|(n, v)| {
+                    (
+                        n.clone(),
+                        v.as_tensor().flatten_all().unwrap().to_vec1().unwrap(),
+                    )
+                })
+                .collect();
+            out.sort_by(|a, b| a.0.cmp(&b.0));
+            out
+        };
+
+        let without = dump(tiny_config());
+        let with: Vec<(String, Vec<f32>)> = dump(tiny_self_cond_config())
+            .into_iter()
+            .filter(|(n, _)| n != SELF_COND_WEIGHT)
+            .collect();
+
+        assert_eq!(
+            without, with,
+            "enabling self-conditioning must not change any other tensor for a given seed"
+        );
+    }
+
+    /// A checkpoint saved before the feature existed loads into a
+    /// `self_conditioning: true` config with a zero table, and forwards the same.
+    #[test]
+    fn checkpoint_without_the_table_loads_as_zeros() {
+        let dev = Device::Cpu;
+        // Shapes of the *old* layout: no `self_cond_emb.weight`.
+        let vb = synthetic_var_builder(&tiny_config(), &dev).unwrap();
+        let model = OthelloGpt::load(tiny_self_cond_config(), vb).unwrap();
+
+        let table = model.self_cond_emb.as_ref().expect("table must exist");
+        let values: Vec<f32> = table.embeddings().flatten_all().unwrap().to_vec1().unwrap();
+        assert_eq!(table.embeddings().dims(), &[13, 8], "vocab_size + 1 rows");
+        assert!(
+            values.iter().all(|v| v.abs() < f32::EPSILON),
+            "absent table must be zeros"
+        );
+    }
+
+    /// `backward()` must reach the rows the carry actually used. candle's
+    /// embedding backward produces a gradient for the WHOLE table with zeros in
+    /// unused rows, so this asserts on row *values*, not on `grads.get`.
+    #[test]
+    fn backward_reaches_used_self_cond_rows_only() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_self_cond_config(), &varmap, &dev, 3).unwrap();
+        let ids = Tensor::new(&[[1u32, 2, 3, 4]], &dev).unwrap();
+        // Rows 0 and 5 are used; NONE (row 12) is deliberately absent.
+        let carry = Tensor::new(&[[0u32, 5, 0, 5]], &dev).unwrap();
+
+        let cache = model
+            .forward_with_self_cond(&ids, Some(&carry), &HookSpec::new())
+            .unwrap();
+        let grads = cache.output().sum_all().unwrap().backward().unwrap();
+
+        let table = model.self_cond_emb.as_ref().unwrap().embeddings();
+        let grad = grads
+            .get(table)
+            .expect("self_cond_emb must receive a gradient");
+        let rows: Vec<Vec<f32>> = grad.to_vec2().unwrap();
+
+        let row_sum = |r: &Vec<f32>| r.iter().map(|v| v.abs()).sum::<f32>();
+        assert!(
+            row_sum(&rows[0]) > 0.0,
+            "row 0 was used and must have a gradient"
+        );
+        assert!(
+            row_sum(&rows[5]) > 0.0,
+            "row 5 was used and must have a gradient"
+        );
+        assert!(
+            row_sum(&rows[12]) < f32::EPSILON,
+            "the NONE row was not used and must have a zero gradient"
+        );
+    }
+
+    /// Every rejection path, so none of them can become a silent accept.
+    #[test]
+    fn malformed_self_cond_is_rejected() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_self_cond_config(), &varmap, &dev, 1).unwrap();
+        let ids = Tensor::new(&[[1u32, 2, 3, 4]], &dev).unwrap();
+        let hooks = HookSpec::new();
+
+        // Wrong dtype.
+        let f32_grid = Tensor::zeros((1, 4), DType::F32, &dev).unwrap();
+        assert!(
+            model
+                .forward_with_self_cond(&ids, Some(&f32_grid), &hooks)
+                .is_err(),
+            "a non-U32 grid must be rejected"
+        );
+
+        // Wrong dims.
+        let short = Tensor::zeros((1, 3), DType::U32, &dev).unwrap();
+        assert!(
+            model
+                .forward_with_self_cond(&ids, Some(&short), &hooks)
+                .is_err(),
+            "a grid whose dims differ from input_ids must be rejected"
+        );
+
+        // Out-of-range id (NONE is 12, so 13 is past the table).
+        let oob = Tensor::new(&[[13u32, 0, 0, 0]], &dev).unwrap();
+        assert!(
+            model
+                .forward_with_self_cond(&ids, Some(&oob), &hooks)
+                .is_err(),
+            "an id past the NONE row must be rejected"
+        );
+
+        // Carry supplied while the feature is off.
+        let plain_varmap = VarMap::new();
+        let plain = OthelloGpt::init(tiny_config(), &plain_varmap, &dev, 1).unwrap();
+        let ok_grid = Tensor::zeros((1, 4), DType::U32, &dev).unwrap();
+        assert!(
+            plain
+                .forward_with_self_cond(&ids, Some(&ok_grid), &hooks)
+                .is_err(),
+            "a carry must be rejected when self_conditioning is off, never ignored"
+        );
+    }
+
+    /// The companion `config.json` key round-trips, and is absent-means-off.
+    #[test]
+    fn self_conditioning_parses_from_companion_json() {
+        let base = serde_json::json!({
+            "vocab_size": 62, "block_size": 60, "n_layer": 8,
+            "n_head": 8, "n_embd": 512,
+        });
+        assert!(
+            !OthelloGptConfig::from_hf_config(&base)
+                .unwrap()
+                .self_conditioning,
+            "absent `self_conditioning` must read as false"
+        );
+
+        let mut on = base.clone();
+        on["self_conditioning"] = serde_json::json!(true);
+        assert!(
+            OthelloGptConfig::from_hf_config(&on)
+                .unwrap()
+                .self_conditioning
+        );
     }
 }
