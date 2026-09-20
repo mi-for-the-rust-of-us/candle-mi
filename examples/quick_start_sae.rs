@@ -19,6 +19,15 @@
 //! (`google/gemma-scope-2b-pt-res`) is downloaded automatically via
 //! `hf-fetch-model`.
 
+// Test/example target: these lints are denied crate-wide for library code,
+// where a panic is a bug. Here a failed unwrap IS the failure signal, and
+// indexing a fixture whose shape the test itself fixes cannot go out of
+// bounds. Same allowance as the other 30+ files under tests/ and examples/.
+#![allow(clippy::unwrap_used)]
+#![allow(clippy::expect_used)]
+#![allow(clippy::panic)]
+#![allow(clippy::indexing_slicing)]
+
 use candle_core::{DType, Device, IndexOp};
 use candle_mi::sae::SparseAutoencoder;
 use candle_mi::{

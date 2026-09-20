@@ -20,7 +20,8 @@
 #![allow(
     clippy::doc_markdown,
     clippy::missing_docs_in_private_items,
-    clippy::cast_precision_loss
+    clippy::cast_precision_loss,
+    clippy::indexing_slicing
 )]
 
 use std::path::PathBuf;

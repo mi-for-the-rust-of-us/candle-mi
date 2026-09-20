@@ -41,6 +41,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   and each was mutation-checked by disabling the intervention loop to confirm it
   fails without the fix.
 
+- **CI clippy now lints test and example targets, closing a blind spot that had
+  accumulated 81 deny-level errors.** All 11 clippy lanes ran
+  `cargo clippy --no-default-features --features <X>` with no `--all-targets`,
+  so clippy only ever saw the library. The targets were still *compiled* by the
+  test lanes, just never linted, and `unwrap_used`, `expect_used`, `panic` and
+  `indexing_slicing` are `deny` in `[lints.clippy]`, which applies to every
+  target. `cargo clippy --all-targets` therefore failed on a green `main`.
+
+  Every lane gained `--all-targets`, and the accumulated violations are fixed:
+  eight test and example files gained the same file-level allow header the other
+  30-plus already carry (a failed `unwrap` in a test *is* the failure signal),
+  with the precise lints each file needs rather than a blanket list. Two were
+  fixed properly instead of exempted: `parse_clt_feature` in
+  `examples/steering_convergence.rs` now uses `splitn` + `Option` destructuring
+  rather than `collect()` and `[0]`/`[1]`, per `CONVENTIONS.md`'s preference for
+  explicit handling over an indexing allow; and the rank-3 projection check in
+  `tests/validate_stoicheia.rs` iterates instead of indexing by range.
+
 - **`bench_hook_diagnostic_gpu` and `bench_hook_overhead_gpu` no longer report
   `ok` for a GPU run that never happened.** Both already skipped correctly when
   no CUDA device was found, but a skip is reported as `ok`, indistinguishable

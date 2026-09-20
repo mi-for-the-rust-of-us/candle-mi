@@ -15,6 +15,12 @@
 //!     --weights path/to/rnn_2nd_argmax_h2_n2.safetensors
 //! ```
 
+// Test/example target: these lints are denied crate-wide for library code,
+// where a panic is a bug. Here a failed unwrap IS the failure signal, and
+// indexing a fixture whose shape the test itself fixes cannot go out of
+// bounds. Same allowance as the other 30+ files under tests/ and examples/.
+#![allow(clippy::panic)]
+
 use candle_core::{Device, Tensor};
 use candle_mi::MIBackend;
 use candle_mi::hooks::{HookPoint, HookSpec};

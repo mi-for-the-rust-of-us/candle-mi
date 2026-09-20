@@ -5,6 +5,12 @@
 //! Exercises all six Phase B modules (fast, standardize, piecewise, ablation,
 //! probing, surprise) on the M₂,₂ fixture committed in Phase A.
 
+// Test/example target: these lints are denied crate-wide for library code,
+// where a panic is a bug. Here a failed unwrap IS the failure signal, and
+// indexing a fixture whose shape the test itself fixes cannot go out of
+// bounds. Same allowance as the other 30+ files under tests/ and examples/.
+#![allow(clippy::unwrap_used)]
+
 use candle_core::Device;
 use candle_mi::stoicheia::StoicheiaRnn;
 use candle_mi::stoicheia::ablation;

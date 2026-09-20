@@ -39,6 +39,7 @@
 #![allow(clippy::cast_precision_loss)]
 #![allow(clippy::missing_docs_in_private_items)]
 #![allow(clippy::too_many_lines)]
+#![allow(clippy::indexing_slicing)]
 
 use candle_core::{DType, Device, Tensor};
 use candle_mi::clt::{CltFeatureId, CrossLayerTranscoder};

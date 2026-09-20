@@ -208,16 +208,20 @@ fn parse_clt_feature(s: &str) -> candle_mi::Result<CltFeatureId> {
         )));
     }
     let rest = &s[1..];
-    let parts: Vec<&str> = rest.splitn(2, ':').collect();
-    if parts.len() != 2 {
+    // `.next()` twice rather than `collect()` + `[0]`/`[1]`: CONVENTIONS.md
+    // prefers explicit handling over an indexing allow, and `splitn(2, ..)`
+    // yields one item when there is no ':', which the `else` arm rejects with
+    // the same message the length check used to.
+    let mut parts = rest.splitn(2, ':');
+    let (Some(layer_str), Some(index_str)) = (parts.next(), parts.next()) else {
         return Err(candle_mi::MIError::Config(format!(
             "CLT feature must be \"L<layer>:<index>\", got \"{s}\""
         )));
-    }
-    let layer: usize = parts[0]
+    };
+    let layer: usize = layer_str
         .parse()
         .map_err(|_| candle_mi::MIError::Config(format!("invalid layer number in \"{s}\"")))?;
-    let index: usize = parts[1]
+    let index: usize = index_str
         .parse()
         .map_err(|_| candle_mi::MIError::Config(format!("invalid feature index in \"{s}\"")))?;
     Ok(CltFeatureId { layer, index })

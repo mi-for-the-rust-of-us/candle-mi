@@ -5,6 +5,13 @@
 //! Loads pre-trained weights from `safetensors` fixtures, runs the same
 //! inputs as the `Python` reference, and compares outputs to 6 decimal places.
 
+// Test/example target: these lints are denied crate-wide for library code,
+// where a panic is a bug. Here a failed unwrap IS the failure signal, and
+// indexing a fixture whose shape the test itself fixes cannot go out of
+// bounds. Same allowance as the other 30+ files under tests/ and examples/.
+#![allow(clippy::expect_used)]
+#![allow(clippy::indexing_slicing)]
+
 use candle_core::{Device, IndexOp, Tensor};
 use candle_mi::MIBackend;
 use candle_mi::hooks::HookSpec;
@@ -98,8 +105,8 @@ fn assert_project_to_vocab_preserves_rank(model: &dyn MIBackend, hidden_size: us
     );
 
     let actual: Vec<Vec<Vec<f32>>> = logits.to_vec3().expect("failed to extract logits");
-    for b in 0..batch {
-        for s in 0..seq {
+    for (b, actual_b) in actual.iter().enumerate().take(batch) {
+        for (s, actual_bs) in actual_b.iter().enumerate().take(seq) {
             let position = hidden
                 .i((b, s, ..))
                 .expect("failed to slice position")
@@ -110,7 +117,7 @@ fn assert_project_to_vocab_preserves_rank(model: &dyn MIBackend, hidden_size: us
                 .expect("rank-2 project_to_vocab failed")
                 .to_vec2()
                 .expect("failed to extract rank-2 logits");
-            for (col, (&a, &e)) in actual[b][s].iter().zip(&expected[0]).enumerate() {
+            for (col, (&a, &e)) in actual_bs.iter().zip(&expected[0]).enumerate() {
                 // Tolerance, not equality: the rank-3 path runs a batched gemm
                 // whose accumulation order need not match the rank-2 one.
                 assert_close(a, f64::from(e), &format!("[{b}][{s}][{col}]"), 1e-5);

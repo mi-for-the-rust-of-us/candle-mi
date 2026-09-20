@@ -292,10 +292,20 @@ fn bench_hook_overhead_gpu() {
         // line. That is correct when the crate was built without `cuda` (there
         // is no GPU path compiled in to exercise), but with the feature on it
         // would hide a broken environment behind a green run, so fail loudly.
-        assert!(
-            !cfg!(feature = "cuda"),
-            "built with the `cuda` feature but no CUDA device is available; this test would              otherwise report `ok` without exercising the GPU"
-        );
+        // Two clippy lints disagree about this guard: `assertions_on_constants`
+        // rejects `assert!(!cfg!(..))` because the condition folds at compile
+        // time, and `manual_assert` rejects the `if`/`panic!` form below because
+        // it wants the assert back. The condition really is a compile-time
+        // constant -- checking the build configuration is the whole point -- so
+        // one of the two has to be waived. The `if` is waived here because it
+        // keeps the panic message at the site that produces it, and the
+        // exemption names a single lint rather than a whole file.
+        #[allow(clippy::manual_assert)]
+        if cfg!(feature = "cuda") {
+            panic!(
+                "built with the `cuda` feature but no CUDA device is available;                  this test would otherwise report `ok` without exercising the GPU"
+            );
+        }
         eprintln!("SKIP: built without the `cuda` feature, so there is no GPU path to exercise");
         return;
     };
