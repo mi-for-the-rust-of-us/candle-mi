@@ -71,7 +71,7 @@ use candle_nn::{Embedding, VarBuilder};
 
 use crate::backend::MIBackend;
 use crate::error::{MIError, Result};
-use crate::hooks::{HookCache, HookPoint, HookSpec};
+use crate::hooks::{HookCache, HookPoint, HookSpec, hook_point};
 
 pub use config::{StoicheiaArch, StoicheiaConfig, StoicheiaOutput, StoicheiaTask};
 
@@ -255,20 +255,29 @@ impl MIBackend for StoicheiaRnn {
         // Placeholder output — replaced at the end
         let mut cache = HookCache::new(Tensor::zeros(1, DType::F32, device)?);
 
-        // Pre-scan: determine which timesteps need hook capture.
+        // Pre-scan: determine which timesteps need the hook protocol run.
         // This avoids per-timestep String allocation when hooks are empty
         // (zero-overhead guarantee) or when only specific timesteps are
-        // captured (one allocation per timestep at scan time, not per
+        // hooked (one allocation per timestep at scan time, not per
         // forward pass iteration).
+        //
+        // The scan covers interventions as well as captures: a timestep that is
+        // only intervened still has to build its `HookPoint` in the loop, and
+        // scanning for captures alone is exactly how this backend came to ignore
+        // interventions silently (audit finding 1, v0.2.0).
         let has_hooks = !hooks.is_empty();
-        let (captured_pre_act, captured_hidden) = if has_hooks {
+        let (hooked_pre_act, hooked_hidden) = if has_hooks {
             let pre_act: std::collections::HashSet<usize> = (0..seq_len)
                 .filter(|t| {
-                    hooks.is_captured(&HookPoint::Custom(format!("rnn.hook_pre_activation.{t}")))
+                    let point = HookPoint::Custom(format!("rnn.hook_pre_activation.{t}"));
+                    hooks.is_captured(&point) || hooks.has_intervention_at(&point)
                 })
                 .collect();
             let hid: std::collections::HashSet<usize> = (0..seq_len)
-                .filter(|t| hooks.is_captured(&HookPoint::Custom(format!("rnn.hook_hidden.{t}"))))
+                .filter(|t| {
+                    let point = HookPoint::Custom(format!("rnn.hook_hidden.{t}"));
+                    hooks.is_captured(&point) || hooks.has_intervention_at(&point)
+                })
                 .collect();
             (pre_act, hid)
         } else {
@@ -289,45 +298,55 @@ impl MIBackend for StoicheiaRnn {
             let ih = x_t.matmul(&self.weight_ih.t()?)?;
             // h_{t-1} @ W_hh^T: [batch, H] @ [H, H] → [batch, H]
             let hh = hidden.matmul(&self.weight_hh.t()?)?;
-            let pre_act = (ih + hh)?;
+            let mut pre_act = (ih + hh)?;
 
-            // Hook: pre-activation at timestep t (no allocation if not captured)
-            if captured_pre_act.contains(&t) {
-                cache.store(
+            // Hook: pre-activation at timestep t (no allocation when unhooked)
+            if hooked_pre_act.contains(&t) {
+                hook_point(
+                    &mut pre_act,
                     HookPoint::Custom(format!("rnn.hook_pre_activation.{t}")),
-                    pre_act.clone(),
-                );
+                    hooks,
+                    &mut cache,
+                )?;
             }
 
             // h_t = relu(pre_act)
             hidden = pre_act.relu()?;
 
-            // Hook: hidden state at timestep t (no allocation if not captured)
-            if captured_hidden.contains(&t) {
-                cache.store(
+            // Hook: hidden state at timestep t (no allocation when unhooked).
+            // An intervention here propagates into the next timestep through
+            // the recurrence, which is the point of steering an RNN.
+            if hooked_hidden.contains(&t) {
+                hook_point(
+                    &mut hidden,
                     HookPoint::Custom(format!("rnn.hook_hidden.{t}")),
-                    hidden.clone(),
-                );
+                    hooks,
+                    &mut cache,
+                )?;
             }
         }
 
-        // Hook: final hidden state (allocated only when captured)
+        // Hook: final hidden state (allocated only when hooks are present)
         if has_hooks {
-            let final_hook = HookPoint::Custom("rnn.hook_final_state".into());
-            if hooks.is_captured(&final_hook) {
-                cache.store(final_hook, hidden.clone());
-            }
+            hook_point(
+                &mut hidden,
+                HookPoint::Custom("rnn.hook_final_state".into()),
+                hooks,
+                &mut cache,
+            )?;
         }
 
         // Output projection: [batch, H] @ [H, output_size] → [batch, output_size]
-        let output = hidden.matmul(&self.weight_oh.t()?)?;
+        let mut output = hidden.matmul(&self.weight_oh.t()?)?;
 
-        // Hook: output (allocated only when captured)
+        // Hook: output (allocated only when hooks are present)
         if has_hooks {
-            let output_hook = HookPoint::Custom("rnn.hook_output".into());
-            if hooks.is_captured(&output_hook) {
-                cache.store(output_hook, output.clone());
-            }
+            hook_point(
+                &mut output,
+                HookPoint::Custom("rnn.hook_output".into()),
+                hooks,
+                &mut cache,
+            )?;
         }
 
         // Unsqueeze to [batch, 1, output_size] to match MIBackend convention
@@ -364,13 +383,30 @@ struct AttentionLayer {
 impl AttentionLayer {
     /// Run one attention layer (full bidirectional, single head, no causal mask).
     ///
+    /// The [`HookPoint::AttnScores`] and [`HookPoint::AttnPattern`] hooks fire
+    /// *inside* this function rather than on its return values, because the
+    /// caller receives them only after `attn_output` has already been computed.
+    /// Firing them outside would let an intervention mutate a tensor nothing
+    /// reads, which is the silent no-op this release exists to remove.
+    ///
     /// # Shapes
     /// - `hidden`: `[batch, seq, H]`
-    /// - returns: `(attn_output, scores, pattern)` where
-    ///   - `attn_output`: `[batch, seq, H]`
-    ///   - `scores`: `[batch, 1, seq, seq]` (pre-softmax)
-    ///   - `pattern`: `[batch, 1, seq, seq]` (post-softmax)
-    fn forward(&self, hidden: &Tensor) -> Result<(Tensor, Tensor, Tensor)> {
+    /// - returns: `attn_output` at `[batch, seq, H]`; `scores` and `pattern`
+    ///   (both `[batch, 1, seq, seq]`, pre- and post-softmax) reach the caller
+    ///   through `cache` when captured.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Model`](crate::MIError::Model) on a tensor failure.
+    /// Returns [`MIError::Intervention`](crate::MIError::Intervention) if an
+    /// intervention is invalid at one of the hook points fired here.
+    fn forward(
+        &self,
+        hidden: &Tensor,
+        layer_idx: usize,
+        hooks: &HookSpec,
+        cache: &mut HookCache,
+    ) -> Result<Tensor> {
         let dim = self.hidden_size;
 
         // Project Q, K, V from packed in_proj_weight
@@ -390,12 +426,25 @@ impl AttentionLayer {
         let scores_2d = (query.matmul(&key.t()?)? / scale)?;
 
         // Unsqueeze to [batch, 1, seq, seq] for head dimension
-        let scores = scores_2d.unsqueeze(1)?;
+        let mut scores = scores_2d.unsqueeze(1)?;
+
+        // Hook: AttnScores — fired pre-softmax, so a knockout mask added here
+        // is still seen by the softmax below.
+        hook_point(&mut scores, HookPoint::AttnScores(layer_idx), hooks, cache)?;
 
         // Softmax over last dimension (no causal mask — full bidirectional).
         // Backward-safe dispatch: fused kernel for inference, composed form
         // when the graph is tracked (training over a `VarMap`).
-        let pattern = crate::nn_ops::softmax_last_dim(&scores)?;
+        let mut pattern = crate::nn_ops::softmax_last_dim(&scores)?;
+
+        // Hook: AttnPattern — fired before the weighted sum, so an intervention
+        // here changes what the layer actually attends to.
+        hook_point(
+            &mut pattern,
+            HookPoint::AttnPattern(layer_idx),
+            hooks,
+            cache,
+        )?;
 
         // Weighted sum: pattern @ V
         // [batch, 1, seq, seq] → squeeze → [batch, seq, seq]
@@ -406,7 +455,7 @@ impl AttentionLayer {
         // Output projection: [batch, seq, H] @ [H, H] → [batch, seq, H]
         let projected = attn_out.broadcast_matmul(&self.out_proj_weight.t()?)?;
 
-        Ok((projected, scores, pattern))
+        Ok(projected)
     }
 }
 
@@ -533,44 +582,26 @@ impl MIBackend for StoicheiaTransformer {
         let pos_emb = self.pos_embed.forward(&pos_ids)?;
         let mut hidden = (token_emb + pos_emb)?;
 
-        let has_hooks = !hooks.is_empty();
-
         // Hook: Embed
-        if has_hooks && hooks.is_captured(&HookPoint::Embed) {
-            cache.store(HookPoint::Embed, hidden.clone());
-        }
+        hook_point(&mut hidden, HookPoint::Embed, hooks, &mut cache)?;
 
         // Attention layers with residual connections
         for (i, attn) in self.attns.iter().enumerate() {
             // Hook: ResidPre
-            if has_hooks && hooks.is_captured(&HookPoint::ResidPre(i)) {
-                cache.store(HookPoint::ResidPre(i), hidden.clone());
-            }
+            hook_point(&mut hidden, HookPoint::ResidPre(i), hooks, &mut cache)?;
 
-            let (attn_out, scores, pattern) = attn.forward(&hidden)?;
+            // `AttnScores` and `AttnPattern` fire inside this call; see
+            // `AttentionLayer::forward`.
+            let mut attn_out = attn.forward(&hidden, i, hooks, &mut cache)?;
 
-            // Hook: AttnScores
-            if has_hooks && hooks.is_captured(&HookPoint::AttnScores(i)) {
-                cache.store(HookPoint::AttnScores(i), scores);
-            }
-
-            // Hook: AttnPattern
-            if has_hooks && hooks.is_captured(&HookPoint::AttnPattern(i)) {
-                cache.store(HookPoint::AttnPattern(i), pattern);
-            }
-
-            // Hook: AttnOut
-            if has_hooks && hooks.is_captured(&HookPoint::AttnOut(i)) {
-                cache.store(HookPoint::AttnOut(i), attn_out.clone());
-            }
+            // Hook: AttnOut — the sublayer contribution, before the residual add
+            hook_point(&mut attn_out, HookPoint::AttnOut(i), hooks, &mut cache)?;
 
             // Residual connection
             hidden = (hidden + attn_out)?;
 
             // Hook: ResidPost
-            if has_hooks && hooks.is_captured(&HookPoint::ResidPost(i)) {
-                cache.store(HookPoint::ResidPost(i), hidden.clone());
-            }
+            hook_point(&mut hidden, HookPoint::ResidPost(i), hooks, &mut cache)?;
         }
 
         // Unembed last position only: [batch, H] → [batch, output_size]
@@ -590,5 +621,158 @@ impl MIBackend for StoicheiaTransformer {
         // stream projects too; it falls through to `matmul` when neither side
         // broadcasts, so the rank-2 path is unchanged.
         Ok(hidden.broadcast_matmul(&self.unembed_weight.t()?)?)
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::indexing_slicing)]
+mod tests {
+    use super::*;
+    use crate::hooks::Intervention;
+
+    /// A 2-hidden, 3-step RNN with non-zero weights, built without a file.
+    fn tiny_rnn() -> StoicheiaRnn {
+        let dev = Device::Cpu;
+        let config = StoicheiaConfig::from_task(StoicheiaTask::Median, 2, 3);
+        StoicheiaRnn {
+            weight_ih: Tensor::new(&[[0.5f32], [-0.25]], &dev).unwrap(),
+            weight_hh: Tensor::new(&[[0.3f32, 0.1], [0.2, 0.4]], &dev).unwrap(),
+            weight_oh: Tensor::new(&[[0.7f32, -0.6]], &dev).unwrap(),
+            config,
+        }
+    }
+
+    /// A 1-layer, 2-hidden attention-only transformer, built without a file.
+    fn tiny_transformer() -> StoicheiaTransformer {
+        let dev = Device::Cpu;
+        let config = StoicheiaConfig::from_task(StoicheiaTask::LongestCycle, 2, 3);
+        let embed_w = Tensor::new(&[[0.4f32, -0.2], [0.1, 0.6], [-0.3, 0.5]], &dev).unwrap();
+        let pos_w = Tensor::new(&[[0.2f32, 0.1], [-0.1, 0.3], [0.5, -0.4]], &dev).unwrap();
+        let attn = AttentionLayer {
+            in_proj_weight: Tensor::new(
+                &[
+                    [0.3f32, 0.1],
+                    [-0.2, 0.4],
+                    [0.5, -0.3],
+                    [0.2, 0.6],
+                    [-0.4, 0.2],
+                    [0.1, -0.5],
+                ],
+                &dev,
+            )
+            .unwrap(),
+            out_proj_weight: Tensor::new(&[[0.6f32, -0.1], [0.3, 0.45]], &dev).unwrap(),
+            hidden_size: 2,
+        };
+        StoicheiaTransformer {
+            embed: Embedding::new(embed_w, 2),
+            pos_embed: Embedding::new(pos_w, 2),
+            attns: vec![attn],
+            unembed_weight: Tensor::new(&[[0.5f32, 0.2], [-0.3, 0.7], [0.1, -0.4]], &dev).unwrap(),
+            config,
+        }
+    }
+
+    fn output_vec(cache: &HookCache) -> Vec<f32> {
+        cache.output().flatten_all().unwrap().to_vec1().unwrap()
+    }
+
+    /// `BACKENDS.md`'s conformance case for `StoicheiaTransformer`.
+    ///
+    /// Until v0.2.0 this backend ran `is_captured` without ever consulting
+    /// `interventions_at`, so this assertion failed silently: the "treated"
+    /// output was the baseline, and any causal experiment measured zero.
+    #[test]
+    fn transformer_honours_intervention_at_resid_post() {
+        let model = tiny_transformer();
+        let dev = Device::Cpu;
+        let ids = Tensor::new(&[[0u32, 1, 2]], &dev).unwrap();
+
+        let baseline = output_vec(&model.forward(&ids, &HookSpec::new()).unwrap());
+
+        let mut hooks = HookSpec::new();
+        hooks.intervene(HookPoint::ResidPost(0), Intervention::Zero);
+        let treated = output_vec(&model.forward(&ids, &hooks).unwrap());
+
+        assert_ne!(
+            baseline, treated,
+            "Intervention::Zero at ResidPost(0) must change the output"
+        );
+    }
+
+    /// The `AttnPattern` hook fires inside `AttentionLayer::forward`, so an
+    /// intervention there must reach the weighted sum. Firing it on the
+    /// returned tensor instead would leave the output untouched.
+    #[test]
+    fn transformer_honours_intervention_inside_attention() {
+        let model = tiny_transformer();
+        let dev = Device::Cpu;
+        let ids = Tensor::new(&[[0u32, 1, 2]], &dev).unwrap();
+
+        let baseline = output_vec(&model.forward(&ids, &HookSpec::new()).unwrap());
+
+        let mut hooks = HookSpec::new();
+        hooks.intervene(HookPoint::AttnPattern(0), Intervention::Zero);
+        let treated = output_vec(&model.forward(&ids, &hooks).unwrap());
+
+        assert_ne!(
+            baseline, treated,
+            "zeroing the attention pattern must change the output"
+        );
+    }
+
+    /// Captures must keep working unchanged alongside the new intervention path.
+    #[test]
+    fn transformer_capture_still_works() {
+        let model = tiny_transformer();
+        let dev = Device::Cpu;
+        let ids = Tensor::new(&[[0u32, 1, 2]], &dev).unwrap();
+
+        let mut hooks = HookSpec::new();
+        hooks.capture(HookPoint::ResidPost(0));
+        hooks.capture(HookPoint::AttnPattern(0));
+        let cache = model.forward(&ids, &hooks).unwrap();
+
+        assert!(cache.get(&HookPoint::ResidPost(0)).is_some());
+        assert!(cache.get(&HookPoint::AttnPattern(0)).is_some());
+    }
+
+    /// The RNN's per-timestep `Custom` hooks are pre-scanned for allocation
+    /// reasons; the scan must cover interventions, not captures alone.
+    #[test]
+    fn rnn_honours_intervention_at_hidden_state() {
+        let model = tiny_rnn();
+        let dev = Device::Cpu;
+        let input = Tensor::new(&[[1.0f32, 2.0, 3.0]], &dev).unwrap();
+
+        let baseline = output_vec(&model.forward(&input, &HookSpec::new()).unwrap());
+
+        let mut hooks = HookSpec::new();
+        hooks.intervene(
+            HookPoint::Custom("rnn.hook_hidden.0".into()),
+            Intervention::Zero,
+        );
+        let treated = output_vec(&model.forward(&input, &hooks).unwrap());
+
+        assert_ne!(
+            baseline, treated,
+            "zeroing the hidden state at t=0 must propagate through the recurrence"
+        );
+    }
+
+    /// With no hooks registered the forward is untouched, so parity baselines
+    /// recorded before v0.2.0 keep their meaning.
+    #[test]
+    fn empty_hookspec_leaves_output_unchanged() {
+        let model = tiny_transformer();
+        let dev = Device::Cpu;
+        let ids = Tensor::new(&[[0u32, 1, 2]], &dev).unwrap();
+
+        let a = output_vec(&model.forward(&ids, &HookSpec::new()).unwrap());
+        let mut unrelated = HookSpec::new();
+        unrelated.capture(HookPoint::Embed);
+        let b = output_vec(&model.forward(&ids, &unrelated).unwrap());
+
+        assert_eq!(a, b, "capturing must not perturb the forward pass");
     }
 }

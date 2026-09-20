@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Interventions registered with [`HookSpec::intervene`] are no longer silently
+  ignored by `GenericRwkv`, `StoicheiaRnn` and `StoicheiaTransformer`.** All
+  three captured activations correctly but never consulted `interventions_at`,
+  so `hooks.intervene(HookPoint::ResidPost(0), Intervention::Zero)` ran without
+  error and returned the unmodified baseline. `GenericRwkv` honoured
+  interventions at `Embed` only; both `stoicheia` backends honoured none. The
+  consequence was specific to this crate's purpose: a causal experiment measured
+  an effect of exactly zero and could not distinguish that from a real null.
+  `BACKENDS.md` already listed the conformance case that would have caught it.
+
+  The capture-then-intervene protocol now lives in one place,
+  `crate::hooks::hook_point`, and every backend calls it; the two byte-identical
+  private copies in `diffusion::mdlm` and `diffusion::othello` and the 14 inlined
+  copies across `transformer` are gone. `apply_intervention` was additionally
+  unreachable under the `stoicheia` feature, which is why that backend had no
+  working path to begin with.
+
+  Hook points that expose a **diagnostic read-out** now reject interventions with
+  [`MIError::Intervention`] instead of accepting them and discarding the result:
+  `RwkvState`, `RwkvDecay` and `RwkvEffectiveAttn` are computed after the
+  recurrence that produced them, so an edit there could never reach a
+  computation. The error names the supported alternative
+  (`HookSpec::set_state_knockout` / `set_state_steering`, which act inside the
+  WKV recurrence). `StoicheiaTransformer`'s `AttnScores` and `AttnPattern` hooks
+  moved *inside* `AttentionLayer::forward` for the same reason, so an
+  intervention there now reaches the weighted sum rather than a dead tensor.
+
+  Behaviour with no interventions registered is unchanged, so existing parity
+  baselines keep their meaning. Five regression tests cover the fixed backends,
+  and each was mutation-checked by disabling the intervention loop to confirm it
+  fails without the fix.
+
 - **`bench_hook_diagnostic_gpu` and `bench_hook_overhead_gpu` no longer report
   `ok` for a GPU run that never happened.** Both already skipped correctly when
   no CUDA device was found, but a skip is reported as `ok`, indistinguishable

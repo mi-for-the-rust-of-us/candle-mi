@@ -18,7 +18,7 @@ use candle_nn::{Embedding, LayerNorm, Linear, VarBuilder};
 
 use crate::backend::MIBackend;
 use crate::error::{MIError, Result};
-use crate::hooks::{HookCache, HookPoint, HookSpec};
+use crate::hooks::{HookCache, HookPoint, HookSpec, hook_point};
 
 use super::config::MdlmConfig;
 use super::rope::MdlmRope;
@@ -44,35 +44,6 @@ const FREQ_EMBED: usize = 256;
 fn modulate(x: &Tensor, shift: &Tensor, scale: &Tensor) -> Result<Tensor> {
     let scaled = x.broadcast_mul(&(scale + 1.0)?)?;
     Ok(scaled.broadcast_add(shift)?)
-}
-
-/// Apply the standard capture-then-intervene hook protocol at `point`.
-///
-/// Mirrors the per-hook-point block used throughout
-/// `GenericTransformer`: the activation is cloned
-/// into the cache when captured, then each registered intervention is applied
-/// in turn (mutating `tensor` in place).
-///
-/// # Errors
-///
-/// Returns [`MIError::Model`] if an intervention's
-/// tensor operation fails.
-// The by-value `HookPoint` lets call sites pass a freshly-built variant without
-// `&`; capturing still needs one clone either way.
-#[allow(clippy::needless_pass_by_value)]
-fn hook_point(
-    tensor: &mut Tensor,
-    point: HookPoint,
-    hooks: &HookSpec,
-    cache: &mut HookCache,
-) -> Result<()> {
-    if hooks.is_captured(&point) {
-        cache.store(point.clone(), tensor.clone());
-    }
-    for intervention in hooks.interventions_at(&point) {
-        *tensor = crate::hooks::apply_intervention(tensor, &point, intervention)?;
-    }
-    Ok(())
 }
 
 /// Load a weight-only `LayerNorm` (no bias, mean-subtracting, `eps`).

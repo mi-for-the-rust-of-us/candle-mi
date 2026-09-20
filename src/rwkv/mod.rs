@@ -24,7 +24,7 @@ use candle_nn::{Embedding, Linear, VarBuilder};
 
 use crate::backend::MIBackend;
 use crate::error::Result;
-use crate::hooks::{HookCache, HookPoint, HookSpec};
+use crate::hooks::{HookCache, HookPoint, HookSpec, hook_point, hook_point_readonly};
 
 use self::norm::LayerNorm;
 pub use config::{RwkvConfig, RwkvLoraDims, RwkvVersion, SUPPORTED_RWKV_MODEL_TYPES};
@@ -1662,12 +1662,7 @@ impl MIBackend for GenericRwkv {
         let mut cache = HookCache::new(Tensor::zeros(1, DType::F32, device)?);
 
         // Hook: Embed
-        if hooks.is_captured(&HookPoint::Embed) {
-            cache.store(HookPoint::Embed, hidden.clone());
-        }
-        for intervention in hooks.interventions_at(&HookPoint::Embed) {
-            hidden = crate::hooks::apply_intervention(&hidden, &HookPoint::Embed, intervention)?;
-        }
+        hook_point(&mut hidden, HookPoint::Embed, hooks, &mut cache)?;
 
         // --- Prepare state intervention ---
         // Pre-compute position sets for O(1) lookup in the WKV loop.
@@ -1685,9 +1680,12 @@ impl MIBackend for GenericRwkv {
 
         for (layer_idx, block) in self.blocks.iter().enumerate() {
             // Hook: ResidPre
-            if hooks.is_captured(&HookPoint::ResidPre(layer_idx)) {
-                cache.store(HookPoint::ResidPre(layer_idx), hidden.clone());
-            }
+            hook_point(
+                &mut hidden,
+                HookPoint::ResidPre(layer_idx),
+                hooks,
+                &mut cache,
+            )?;
 
             // Only compute effective attention if requested for this layer
             let compute_eff_attn = hooks.is_captured(&HookPoint::RwkvEffectiveAttn(layer_idx));
@@ -1720,19 +1718,42 @@ impl MIBackend for GenericRwkv {
 
             hidden = new_hidden;
 
-            // Hook: RwkvState — capture the WKV state after update
-            if hooks.is_captured(&HookPoint::RwkvState(layer_idx)) {
-                cache.store(HookPoint::RwkvState(layer_idx), new_attn_kv.clone());
-            }
+            // Hook: RwkvState — the WKV state after update. Diagnostic: the
+            // recurrence that produced it has already run, and the value is
+            // only written into `state` below, so an edit here would not reach
+            // any computation. State edits have their own API.
+            hook_point_readonly(
+                &new_attn_kv,
+                HookPoint::RwkvState(layer_idx),
+                hooks,
+                &mut cache,
+                "use `HookSpec::set_state_knockout` or \
+                 `HookSpec::set_state_steering`, which act inside the WKV \
+                 recurrence (see HOOKS.md, \"RWKV State Interventions\")",
+            )?;
 
-            // Hook: RwkvDecay — capture the per-timestep decay tensor
-            if hooks.is_captured(&HookPoint::RwkvDecay(layer_idx)) {
-                cache.store(HookPoint::RwkvDecay(layer_idx), decay);
-            }
+            // Hook: RwkvDecay — per-timestep decay, a read-out of the
+            // recurrence that has already consumed it.
+            hook_point_readonly(
+                &decay,
+                HookPoint::RwkvDecay(layer_idx),
+                hooks,
+                &mut cache,
+                "decay is derived from the time-mix weights; steer \
+                 `ResidPre`/`ResidPost` instead",
+            )?;
 
-            // Hook: RwkvEffectiveAttn — capture the effective attention matrix
+            // Hook: RwkvEffectiveAttn — a reconstructed attribution matrix,
+            // never an input to the forward pass.
             if let Some(ea) = eff_attn {
-                cache.store(HookPoint::RwkvEffectiveAttn(layer_idx), ea);
+                hook_point_readonly(
+                    &ea,
+                    HookPoint::RwkvEffectiveAttn(layer_idx),
+                    hooks,
+                    &mut cache,
+                    "effective attention is reconstructed for analysis, not \
+                     consumed by the model; steer `ResidPre`/`ResidPost` instead",
+                )?;
             }
 
             // Store updated state
@@ -1747,18 +1768,19 @@ impl MIBackend for GenericRwkv {
             }
 
             // Hook: ResidPost
-            if hooks.is_captured(&HookPoint::ResidPost(layer_idx)) {
-                cache.store(HookPoint::ResidPost(layer_idx), hidden.clone());
-            }
+            hook_point(
+                &mut hidden,
+                HookPoint::ResidPost(layer_idx),
+                hooks,
+                &mut cache,
+            )?;
         }
 
         // --- Final norm ---
         hidden = self.ln_out.forward(&hidden)?;
 
         // Hook: FinalNorm
-        if hooks.is_captured(&HookPoint::FinalNorm) {
-            cache.store(HookPoint::FinalNorm, hidden.clone());
-        }
+        hook_point(&mut hidden, HookPoint::FinalNorm, hooks, &mut cache)?;
 
         // --- LM head ---
         let logits = self.lm_head.forward(&hidden)?;

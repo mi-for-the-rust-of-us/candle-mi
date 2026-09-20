@@ -33,7 +33,7 @@ use serde_json::Value;
 
 use crate::backend::MIBackend;
 use crate::error::{MIError, Result};
-use crate::hooks::{HookCache, HookPoint, HookSpec};
+use crate::hooks::{HookCache, HookPoint, HookSpec, hook_point};
 
 // ---------------------------------------------------------------------------
 // Config
@@ -143,39 +143,6 @@ fn get_usize(config: &Value, key: &str) -> Result<usize> {
 /// Read an optional boolean config field, falling back to `default` when absent.
 fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
     config.get(key).and_then(Value::as_bool).unwrap_or(default)
-}
-
-// ---------------------------------------------------------------------------
-// Hook helper
-// ---------------------------------------------------------------------------
-
-/// Apply the standard capture-then-intervene hook protocol at `point`.
-///
-/// Mirrors the helper used in
-/// [`mdlm`](super::mdlm): the activation is cloned into the cache when
-/// captured, then each registered intervention is applied in turn (mutating
-/// `tensor` in place).
-///
-/// # Errors
-///
-/// Returns [`MIError::Model`] if an
-/// intervention's tensor operation fails.
-// The by-value `HookPoint` lets call sites pass a freshly-built variant without
-// `&`; capturing still needs one clone either way.
-#[allow(clippy::needless_pass_by_value)]
-fn hook_point(
-    tensor: &mut Tensor,
-    point: HookPoint,
-    hooks: &HookSpec,
-    cache: &mut HookCache,
-) -> Result<()> {
-    if hooks.is_captured(&point) {
-        cache.store(point.clone(), tensor.clone());
-    }
-    for intervention in hooks.interventions_at(&point) {
-        *tensor = crate::hooks::apply_intervention(tensor, &point, intervention)?;
-    }
-    Ok(())
 }
 
 /// Build an additive causal mask of shape `[1, 1, seq_len, seq_len]`.

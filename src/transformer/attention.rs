@@ -10,7 +10,7 @@ use candle_nn::{Linear, RmsNorm, VarBuilder};
 
 use crate::config::{QkvLayout, TransformerConfig};
 use crate::error::Result;
-use crate::hooks::{HookCache, HookPoint, HookSpec};
+use crate::hooks::{HookCache, HookPoint, HookSpec, hook_point};
 
 use super::rope::RopeCache;
 
@@ -242,24 +242,9 @@ impl Attention {
         }
 
         // Hook: capture and/or intervene on Q, K, V after reshape (before RoPE)
-        if hooks.is_captured(&HookPoint::AttnQ(layer_idx)) {
-            cache.store(HookPoint::AttnQ(layer_idx), q.clone());
-        }
-        for intervention in hooks.interventions_at(&HookPoint::AttnQ(layer_idx)) {
-            q = crate::hooks::apply_intervention(&q, &HookPoint::AttnQ(layer_idx), intervention)?;
-        }
-        if hooks.is_captured(&HookPoint::AttnK(layer_idx)) {
-            cache.store(HookPoint::AttnK(layer_idx), k.clone());
-        }
-        for intervention in hooks.interventions_at(&HookPoint::AttnK(layer_idx)) {
-            k = crate::hooks::apply_intervention(&k, &HookPoint::AttnK(layer_idx), intervention)?;
-        }
-        if hooks.is_captured(&HookPoint::AttnV(layer_idx)) {
-            cache.store(HookPoint::AttnV(layer_idx), v.clone());
-        }
-        for intervention in hooks.interventions_at(&HookPoint::AttnV(layer_idx)) {
-            v = crate::hooks::apply_intervention(&v, &HookPoint::AttnV(layer_idx), intervention)?;
-        }
+        hook_point(&mut q, HookPoint::AttnQ(layer_idx), hooks, cache)?;
+        hook_point(&mut k, HookPoint::AttnK(layer_idx), hooks, cache)?;
+        hook_point(&mut v, HookPoint::AttnV(layer_idx), hooks, cache)?;
 
         // --- Apply RoPE ---
         let q = rope.apply(&q, 0)?;
@@ -278,16 +263,7 @@ impl Attention {
         scores = (scores * self.scale)?;
 
         // Hook: AttnScores — capture and/or intervene (knockout)
-        if hooks.is_captured(&HookPoint::AttnScores(layer_idx)) {
-            cache.store(HookPoint::AttnScores(layer_idx), scores.clone());
-        }
-        for intervention in hooks.interventions_at(&HookPoint::AttnScores(layer_idx)) {
-            scores = crate::hooks::apply_intervention(
-                &scores,
-                &HookPoint::AttnScores(layer_idx),
-                intervention,
-            )?;
-        }
+        hook_point(&mut scores, HookPoint::AttnScores(layer_idx), hooks, cache)?;
 
         // Optional soft-capping (Gemma 2)
         if let Some(cap) = self.attn_logit_softcapping {
@@ -313,16 +289,12 @@ impl Attention {
         }
 
         // Hook: AttnPattern — capture and/or intervene (steering)
-        if hooks.is_captured(&HookPoint::AttnPattern(layer_idx)) {
-            cache.store(HookPoint::AttnPattern(layer_idx), pattern.clone());
-        }
-        for intervention in hooks.interventions_at(&HookPoint::AttnPattern(layer_idx)) {
-            pattern = crate::hooks::apply_intervention(
-                &pattern,
-                &HookPoint::AttnPattern(layer_idx),
-                intervention,
-            )?;
-        }
+        hook_point(
+            &mut pattern,
+            HookPoint::AttnPattern(layer_idx),
+            hooks,
+            cache,
+        )?;
 
         // --- Attention output ---
         // CONTIGUOUS: ensure contiguous layout for matmul

@@ -373,7 +373,12 @@ pub enum Intervention {
 /// outside `0..seq_len`.
 /// Returns [`MIError::Intervention`] if an [`Intervention::PatchAt`] value does
 /// not have one of the accepted shapes.
-#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
+#[cfg(any(
+    feature = "transformer",
+    feature = "rwkv",
+    feature = "diffusion",
+    feature = "stoicheia"
+))]
 pub(crate) fn apply_intervention(
     tensor: &Tensor,
     point: &HookPoint,
@@ -399,6 +404,102 @@ pub(crate) fn apply_intervention(
     }
 }
 
+/// Apply the standard capture-then-intervene protocol at one hook point.
+///
+/// Every backend fires this at each of its hook points: the activation is
+/// cloned into `cache` when the point is captured, then each registered
+/// [`Intervention`] is applied in turn, mutating `tensor` in place so the rest
+/// of the forward pass sees the intervened value.
+///
+/// **Both halves are load-bearing.** A backend that captures but never applies
+/// interventions compiles, runs, and silently returns the unmodified baseline
+/// from every causal experiment, so a measured effect of zero is
+/// indistinguishable from a real null. `GenericRwkv` and both `stoicheia`
+/// backends did exactly that until v0.2.0; see
+/// `docs/audit/V0_2_0_AUDIT_2026-09-20.md` finding 1. Sharing one helper is what
+/// keeps a new backend from reintroducing the same silent gap, and
+/// `BACKENDS.md` makes the conformance test that catches it mandatory.
+///
+/// # Shapes
+/// - `tensor`: any shape -- the activation at `point`, mutated in place.
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`] if an intervention's tensor operation fails, for
+/// example an [`Intervention::Add`] whose delta cannot broadcast to the
+/// activation.
+/// Returns [`MIError::Intervention`] if an intervention is invalid at `point`,
+/// such as [`Intervention::PatchAt`] where the activation is not
+/// `[batch, seq_len, hidden]`.
+// The by-value `HookPoint` lets call sites pass a freshly-built variant without
+// `&`; capturing still needs one clone either way.
+#[cfg(any(
+    feature = "transformer",
+    feature = "rwkv",
+    feature = "diffusion",
+    feature = "stoicheia"
+))]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn hook_point(
+    tensor: &mut Tensor,
+    point: HookPoint,
+    hooks: &HookSpec,
+    cache: &mut HookCache,
+) -> Result<()> {
+    if hooks.is_captured(&point) {
+        cache.store(point.clone(), tensor.clone());
+    }
+    for intervention in hooks.interventions_at(&point) {
+        *tensor = apply_intervention(tensor, &point, intervention)?;
+    }
+    Ok(())
+}
+
+/// Capture a diagnostic read-out, and reject any intervention aimed at it.
+///
+/// Some hook points expose a tensor that nothing downstream consumes: RWKV's
+/// [`HookPoint::RwkvState`], [`HookPoint::RwkvDecay`] and
+/// [`HookPoint::RwkvEffectiveAttn`] are computed for observation, and the
+/// forward pass has already used whatever they were derived from. Mutating them
+/// would change nothing.
+///
+/// Such a point must therefore **refuse** an intervention rather than accept one
+/// and discard it. Silently accepting is precisely the failure this release
+/// removes, and relocating it from "the backend forgot" to "the tensor was
+/// dead" would be no better: a causal experiment would still report a null it
+/// never tested. The error names the supported alternative where one exists.
+///
+/// # Shapes
+/// - `tensor`: any shape -- the read-out at `point`; never modified.
+///
+/// # Errors
+///
+/// Returns [`MIError::Intervention`] if any intervention targets `point`.
+// The by-value `HookPoint` matches `hook_point`, so call sites read alike.
+// Gated to `rwkv` because that is the only backend with diagnostic read-out
+// points today; widen the gate when a second one needs it.
+#[cfg(feature = "rwkv")]
+#[allow(clippy::needless_pass_by_value)]
+pub(crate) fn hook_point_readonly(
+    tensor: &Tensor,
+    point: HookPoint,
+    hooks: &HookSpec,
+    cache: &mut HookCache,
+    alternative: &str,
+) -> Result<()> {
+    if hooks.has_intervention_at(&point) {
+        return Err(MIError::Intervention(format!(
+            "hook point `{point}` is a diagnostic read-out and cannot be \
+             intervened on (nothing downstream reads it, so the edit would be \
+             silently discarded); {alternative}"
+        )));
+    }
+    if hooks.is_captured(&point) {
+        cache.store(point, tensor.clone());
+    }
+    Ok(())
+}
+
 /// Overwrite one sequence position of a `[batch, seq_len, hidden]` activation.
 ///
 /// The implementation of [`Intervention::PatchAt`]. Split out of
@@ -419,7 +520,12 @@ pub(crate) fn apply_intervention(
 /// Returns [`MIError::Intervention`] if `seq_len` or `position` exceeds `u32`,
 /// which the selector's index range is built over.
 /// Returns [`MIError::Model`] if the underlying tensor operation fails.
-#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
+#[cfg(any(
+    feature = "transformer",
+    feature = "rwkv",
+    feature = "diffusion",
+    feature = "stoicheia"
+))]
 fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor) -> Result<Tensor> {
     if !point.accepts_positional_patch() {
         return Err(MIError::Intervention(format!(
@@ -1280,7 +1386,12 @@ mod tests {
 
     /// `Intervention::PatchAt` behaviour, nested so one `cfg` gate covers the
     /// lot: `apply_intervention` is compiled only when a backend is enabled.
-    #[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
+    #[cfg(any(
+        feature = "transformer",
+        feature = "rwkv",
+        feature = "diffusion",
+        feature = "stoicheia"
+    ))]
     #[allow(clippy::unwrap_used, clippy::expect_used)]
     mod patch_at {
         use candle_core::{DType, Device, Tensor};
