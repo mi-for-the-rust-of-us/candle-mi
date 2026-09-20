@@ -134,6 +134,7 @@ impl PositionStrategy {
 /// Returned by [`build_contrastive_direction`].  Pass to
 /// [`contrastive_intervention`] (with a signed strength) to obtain an
 /// [`Intervention`] ready to register on a [`HookSpec`].
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct ContrastiveDirection {
     /// Residual-stream layer at which the direction was computed.  The

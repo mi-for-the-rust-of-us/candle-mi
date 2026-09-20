@@ -6,6 +6,7 @@
 //! unembedding matrix to see what the model would predict at that layer.
 
 /// Result of applying logit lens at a single layer.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct LogitLensResult {
     /// Layer index (0-indexed).
@@ -14,7 +15,20 @@ pub struct LogitLensResult {
     pub predictions: Vec<TokenPrediction>,
 }
 
+impl LogitLensResult {
+    /// Build a result for one layer.
+    ///
+    /// The type is `#[non_exhaustive]`, so a struct expression is rejected
+    /// outside this crate; this is the construction path for callers that run
+    /// their own lens and want to reuse the crate's reporting.
+    #[must_use]
+    pub const fn new(layer: usize, predictions: Vec<TokenPrediction>) -> Self {
+        Self { layer, predictions }
+    }
+}
+
 /// A single token prediction from logit lens analysis.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct TokenPrediction {
     /// Token ID in the vocabulary.
@@ -23,6 +37,21 @@ pub struct TokenPrediction {
     pub token: String,
     /// Probability (0.0 to 1.0).
     pub probability: f32,
+}
+
+impl TokenPrediction {
+    /// Build a single prediction.
+    ///
+    /// The type is `#[non_exhaustive]`, so a struct expression is rejected
+    /// outside this crate; this is the construction path.
+    #[must_use]
+    pub const fn new(token_id: u32, token: String, probability: f32) -> Self {
+        Self {
+            token_id,
+            token,
+            probability,
+        }
+    }
 }
 
 /// Full logit lens analysis across all layers.
@@ -36,17 +65,18 @@ pub struct TokenPrediction {
 /// use candle_mi::{LogitLensAnalysis, LogitLensResult, TokenPrediction};
 ///
 /// let mut analysis = LogitLensAnalysis::new("fn main()".into(), 2);
-/// analysis.push(LogitLensResult {
-///     layer: 0,
-///     predictions: vec![TokenPrediction { token_id: 42, token: "main".into(), probability: 0.8 }],
-/// });
-/// analysis.push(LogitLensResult {
-///     layer: 1,
-///     predictions: vec![TokenPrediction { token_id: 42, token: "main".into(), probability: 0.95 }],
-/// });
+/// analysis.push(LogitLensResult::new(
+///     0,
+///     vec![TokenPrediction::new(42, "main".into(), 0.8)],
+/// ));
+/// analysis.push(LogitLensResult::new(
+///     1,
+///     vec![TokenPrediction::new(42, "main".into(), 0.95)],
+/// ));
 /// let tops = analysis.top_predictions();
 /// assert_eq!(tops.len(), 2);
 /// ```
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct LogitLensAnalysis {
     /// Input text that was analyzed.

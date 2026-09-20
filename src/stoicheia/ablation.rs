@@ -15,6 +15,7 @@ use crate::stoicheia::fast::{self, RnnWeights, argmax_f32};
 // ---------------------------------------------------------------------------
 
 /// Result of ablating a single neuron.
+#[non_exhaustive]
 pub struct NeuronAblationResult {
     /// Neuron index (0-indexed).
     pub neuron: usize,
@@ -25,6 +26,7 @@ pub struct NeuronAblationResult {
 }
 
 /// Result of a full single-neuron ablation sweep.
+#[non_exhaustive]
 pub struct AblationSweep {
     /// Baseline accuracy (no ablation).
     pub baseline_accuracy: f32,
@@ -36,6 +38,7 @@ pub struct AblationSweep {
 }
 
 /// Result of ablating a pair of neurons simultaneously.
+#[non_exhaustive]
 pub struct PairAblationResult {
     /// First neuron index.
     pub neuron_a: usize,

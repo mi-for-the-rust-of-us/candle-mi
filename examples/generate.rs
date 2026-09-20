@@ -348,14 +348,13 @@ fn generate(
     let full_text = tokenizer.decode(&tokens)?;
     let generated_text = tokenizer.decode(&generated_tokens)?;
 
-    Ok(GenerationResult {
-        prompt: prompt_text,
+    Ok(GenerationResult::new(
+        prompt_text,
         full_text,
         generated_text,
-        prompt_tokens: prompt_tokens.to_vec(),
+        prompt_tokens.to_vec(),
         generated_tokens,
-        total_tokens: tokens.len(),
-    })
+    ))
 }
 
 // ---------------------------------------------------------------------------

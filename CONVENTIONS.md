@@ -15,6 +15,7 @@ the [Grit — Strict Rust for AI-Assisted Development](https://github.com/PCfVW/
 | Write a `pub fn` that takes or returns `Tensor` | [Shape docs](#shape-documentation) |
 | Write a `pub fn` that loads large files | [`# Memory` section](#memory-doc-section), [OOM-safe loading](#oom-safe-decoder-loading-pattern) |
 | Write a `pub enum` | [`#[non_exhaustive]`](#non_exhaustive-policy) or [`// EXHAUSTIVE:`](#non_exhaustive-policy) |
+| Write a `pub struct` with `pub` fields | [`#[non_exhaustive]`](#non_exhaustive-policy) plus a construction path, or [`// EXHAUSTIVE:`](#non_exhaustive-policy) |
 | Write an `as` cast | [`// CAST:`](#cast-annotation) |
 | Write `slice[i]` or `slice[a..b]` | [`// INDEX:`](#index-annotation) |
 | Write `.to_dtype(DType::F32)?` | [`// PROMOTE:`](#promote-annotation) |
@@ -192,13 +193,29 @@ to pass shared references.
 
 ---
 
-## When Writing Public Enums
+## When Writing Public Enums and Structs
 
 ### `#[non_exhaustive]` Policy
 
 - Public enums that may gain new variants: `#[non_exhaustive]`.
 - Internal dispatch enums matched exhaustively by this crate:
   `#[allow(clippy::exhaustive_enums)] // EXHAUSTIVE: <reason>`.
+- **Public structs with public fields that may gain fields: `#[non_exhaustive]`.**
+  Config, result and spec types all qualify; adding a field to one of these
+  without the attribute is a breaking change for external struct-literal
+  construction. No lint enforces this, so it is a review item.
+- Value identities that cannot gain a field (a `Copy` id, a newtype) stay
+  literal-constructible and take the same escape hatch as an enum:
+  `// EXHAUSTIVE: <reason>` above the type.
+
+`#[non_exhaustive]` blocks **every** struct expression from outside the crate,
+including the `..Default::default()` functional-update form. Assigning to public
+fields of an existing value still works. So a marked struct must expose some way
+to obtain one — a parser such as `from_hf_config`, a `new`, or `Default` — and
+where callers routinely customise it, chainable `with_*` setters returning
+`Self` are the crate's idiom (`OthelloGptConfig::with_self_conditioning`,
+`DiffusionSamplingConfig::with_seq_len`). Adding the attribute without checking
+that is how a type becomes unusable rather than merely closed.
 
 ---
 

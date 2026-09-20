@@ -125,6 +125,7 @@ impl ActivationPattern {
 // ---------------------------------------------------------------------------
 
 /// Information about a single linear region.
+#[non_exhaustive]
 pub struct RegionInfo {
     /// Number of inputs that fell into this region.
     pub count: usize,
@@ -135,6 +136,7 @@ pub struct RegionInfo {
 }
 
 /// Result of classifying a batch of inputs into linear regions.
+#[non_exhaustive]
 pub struct RegionMap {
     /// Distinct activation patterns observed, with counts and
     /// representatives. Sorted by count descending (most populated

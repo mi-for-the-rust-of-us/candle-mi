@@ -72,6 +72,8 @@ use crate::sparse::{FeatureId, SparseActivations};
 // ---------------------------------------------------------------------------
 
 /// Identifies a single SAE feature by its index within the dictionary.
+// EXHAUSTIVE: a single-field value identity, not a growing record. Same
+// reasoning as `CltFeatureId`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SaeFeatureId {
     /// Feature index within the SAE dictionary (`0..d_sae`).
@@ -125,6 +127,7 @@ pub enum TopKStrategy {
 }
 
 /// Configuration for a Sparse Autoencoder, parsed from `cfg.json`.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct SaeConfig {
     /// Input dimension (must match model hidden size at the hook point).

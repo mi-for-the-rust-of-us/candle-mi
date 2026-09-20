@@ -112,13 +112,10 @@ fn main() -> candle_mi::Result<()> {
     println!("Captured ResidPost({last_layer}): shape {:?}", resid.dims());
 
     // 3. Diffusion SUBS sampler reuse: denoise a short fully-masked board.
-    let cfg = DiffusionSamplingConfig {
-        seq_len: model.config().block_size.min(16),
-        num_steps: 8,
-        temperature: 1.0,
-        top_k: Some(20),
-        seed: 0,
-    };
+    let cfg = DiffusionSamplingConfig::default()
+        .with_seq_len(model.config().block_size.min(16))
+        .with_num_steps(8)
+        .with_top_k(Some(20));
     let trajectory =
         candle_mi::diffusion::generate_trajectory(&model, &device, mask_u32, &[], &cfg)?;
     let revealed = |state: &[u32]| state.iter().filter(|&&t| t != mask_u32).count();

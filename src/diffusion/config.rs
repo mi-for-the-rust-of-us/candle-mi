@@ -17,6 +17,7 @@ use crate::error::{MIError, Result};
 /// Parsed from the upstream `config.json`.  The released `mdlm-owt`
 /// checkpoint is time-independent (`time_conditioning = false`), so the
 /// `DiT` conditioning vector is a constant computed once at load time.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct MdlmConfig {
     /// Hidden dimension (`d_model`; upstream key `hidden_dim`).

@@ -32,6 +32,7 @@ use crate::error::Result;
 use crate::hooks::HookSpec;
 
 /// Configuration for masked-diffusion ancestral sampling.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct DiffusionSamplingConfig {
     /// Total sequence length, including any prompt prefix.
@@ -55,6 +56,58 @@ impl Default for DiffusionSamplingConfig {
             top_k: None,
             seed: 0,
         }
+    }
+}
+
+impl DiffusionSamplingConfig {
+    /// Set the total sequence length, consuming `self`.
+    ///
+    /// These chainable setters exist because the struct is
+    /// `#[non_exhaustive]`: outside this crate a struct expression is rejected,
+    /// **including** the `..Default::default()` form, so
+    /// [`default`](Default::default) plus setters is the construction path.
+    /// Assigning to the public fields of an existing value also works.
+    ///
+    /// ```
+    /// use candle_mi::DiffusionSamplingConfig;
+    /// let cfg = DiffusionSamplingConfig::default()
+    ///     .with_seq_len(16)
+    ///     .with_num_steps(16)
+    ///     .with_top_k(Some(50));
+    /// assert_eq!(cfg.seq_len, 16);
+    /// ```
+    #[must_use]
+    pub const fn with_seq_len(mut self, seq_len: usize) -> Self {
+        self.seq_len = seq_len;
+        self
+    }
+
+    /// Set the number of denoising steps, consuming `self`.
+    #[must_use]
+    pub const fn with_num_steps(mut self, num_steps: usize) -> Self {
+        self.num_steps = num_steps;
+        self
+    }
+
+    /// Set the softmax temperature, consuming `self`.
+    #[must_use]
+    pub const fn with_temperature(mut self, temperature: f32) -> Self {
+        self.temperature = temperature;
+        self
+    }
+
+    /// Set the optional top-k truncation, consuming `self`.
+    #[must_use]
+    pub const fn with_top_k(mut self, top_k: Option<usize>) -> Self {
+        self.top_k = top_k;
+        self
+    }
+
+    /// Set the RNG seed, consuming `self`.
+    #[must_use]
+    pub const fn with_seed(mut self, seed: u64) -> Self {
+        self.seed = seed;
+        self
     }
 }
 

@@ -18,7 +18,7 @@
 /// - `3.0`: Triple the attention
 /// - `4.0`: Quadruple the attention
 /// - `6.0`: Six times baseline
-pub const DOSE_LEVELS: [f32; 6] = [0.5, 1.0, 2.0, 3.0, 4.0, 6.0];
+pub const DOSE_LEVELS: &[f32] = &[0.5, 1.0, 2.0, 3.0, 4.0, 6.0];
 
 /// Calibration data for steering experiments.
 ///
@@ -34,6 +34,7 @@ pub const DOSE_LEVELS: [f32; 6] = [0.5, 1.0, 2.0, 3.0, 4.0, 6.0];
 /// let scale = cal.scale_factor_to_source();
 /// assert!((scale - 3.6).abs() < 1e-5);
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 #[must_use]
 pub struct SteeringCalibration {
@@ -117,6 +118,7 @@ impl SteeringCalibration {
 }
 
 /// A single data point on a dose-response curve.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct DoseResponsePoint {
     /// Scale factor applied.
@@ -131,6 +133,7 @@ pub struct DoseResponsePoint {
 ///
 /// Tracks how attention and KL divergence change as the steering
 /// scale factor varies from low (dampening) to high (amplifying).
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct DoseResponseCurve {
     /// Sample identifier.

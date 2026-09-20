@@ -40,6 +40,7 @@ pub enum NeuronRole {
 // ---------------------------------------------------------------------------
 
 /// Result of probing a single neuron.
+#[non_exhaustive]
 pub struct NeuronProbeResult {
     /// Neuron index.
     pub neuron: usize,
@@ -51,6 +52,7 @@ pub struct NeuronProbeResult {
 }
 
 /// Probe results for all neurons in a model.
+#[non_exhaustive]
 pub struct ProbeReport {
     /// Per-neuron probe results, ordered by neuron index.
     pub neurons: Vec<NeuronProbeResult>,

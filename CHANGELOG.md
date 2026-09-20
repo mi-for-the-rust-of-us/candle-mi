@@ -43,6 +43,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   not bounds-check, which would make an out-of-range id a silent wrong answer on
   GPU only.
 
+### Changed
+
+- **BREAKING: 47 public structs are now `#[non_exhaustive]`**, so adding a field
+  to a config, result or spec type stops being a breaking change. Before this,
+  52 public structs carried public fields and exactly **two** were marked, while
+  `TransformerConfig` alone had accreted `o_proj_bias`, `use_qk_norm`,
+  `qk_norm_eps` and `bidirectional` over past releases, each one a silent break.
+  This is the parked v0.2.0 API-hygiene work.
+
+  Verified with `cargo-semver-checks` against published `0.1.24`: exactly one
+  lint class fails, `struct_marked_non_exhaustive`, which is the intended
+  change, and 195 of 196 checks pass.
+
+  **What this means for callers.** `#[non_exhaustive]` rejects every struct
+  expression from outside the crate, **including `..Default::default()`** --
+  the functional-update form does not exempt you, which is easy to assume and
+  wrong. Assigning to public fields of an existing value still works, and every
+  marked type keeps a way to obtain one: a parser (`from_hf_config`,
+  `from_task`), a `new`, or `Default`. Where customisation is routine, chainable
+  `with_*` setters were added: `DiffusionSamplingConfig::with_seq_len`,
+  `with_num_steps`, `with_temperature`, `with_top_k`, `with_seed`, and
+  `OthelloGptConfig::with_mlp_ratio` / `with_norm_eps`.
+
+  New constructors, for types the crate's own examples build: `GenerationResult::new`
+  (which **computes** `total_tokens` rather than accepting it, so it cannot
+  disagree with the token vectors it summarises), `LogitLensResult::new` and
+  `TokenPrediction::new`.
+
+  **Deliberately left literal-constructible**, with an `// EXHAUSTIVE:`
+  justification: `CltFeatureId`, `SaeFeatureId` and `SparseActivations`. These
+  are value identities rather than growing records -- `CltFeatureId` is `Copy`,
+  `Ord`, `Hash`, `Serialize` and is literal-constructed at 13 sites across the
+  examples, and the pair `(layer, index)` is what a CLT feature *is*.
+
+- **BREAKING: `DOSE_LEVELS` is `&[f32]` instead of `[f32; 6]`**
+  (`src/interp/steering.rs`). The array length was part of the public type, so
+  adding a seventh dose would have been a breaking change; every sibling
+  constant in the crate already used a slice. Note that `cargo-semver-checks`
+  does **not** flag this: it has no lint for a public const's type changing, so
+  the machine-verified list is necessary but not sufficient.
+
+- `CONVENTIONS.md` extends the `#[non_exhaustive]` policy from enums to public
+  structs, including the `// EXHAUSTIVE:` escape hatch and the requirement that
+  a marked struct keep a construction path, so the next audit does not re-raise
+  the three exceptions above.
+
 ### Fixed
 
 - **Interventions registered with [`HookSpec::intervene`] are no longer silently

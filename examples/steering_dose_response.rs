@@ -341,7 +341,7 @@ fn run_steering(model: &MIModel, tokenizer: &MITokenizer, prompt: &str) -> candl
     let paris_tokens = tokenizer.encode(" Paris")?;
     let paris_id = paris_tokens.last().copied();
 
-    for &dose in &DOSE_LEVELS {
+    for &dose in DOSE_LEVELS {
         // Build steering spec for this dose level
         let spec = SteeringSpec::scale(dose)
             .layer(target_layer)

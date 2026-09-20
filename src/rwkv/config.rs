@@ -71,6 +71,7 @@ impl fmt::Display for RwkvVersion {
 ///
 /// For RWKV-7 they appear explicitly in `config.json`:
 /// `decay_low_rank_dim`, `a_low_rank_dim`, `v_low_rank_dim`, `gate_low_rank_dim`.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RwkvLoraDims {
     // --- V6 fields ---
@@ -119,6 +120,7 @@ pub struct RwkvLoraDims {
 /// | `rescale_every` | `rescale_every` | Default: 6 |
 /// | `intermediate_size` | `intermediate_size` | Default: `(hidden * 7/2) / 32 * 32` |
 /// | `tie_word_embeddings` | `tie_word_embeddings` | Default: false |
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct RwkvConfig {
     /// Architecture version.

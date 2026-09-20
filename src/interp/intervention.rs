@@ -148,6 +148,7 @@ pub enum HeadSpec {
 ///
 /// Uses `usize::MAX` as a sentinel for "all positions" (expanded at
 /// mask creation time based on actual sequence length).
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AttentionEdge {
     /// Token position that is attending (row in attention matrix).
@@ -180,6 +181,7 @@ impl AttentionEdge {
 ///     .from_to_positions(5, &[0, 1, 2, 3]);
 /// assert_eq!(spec.edges.len(), 4);
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 #[must_use]
 pub struct KnockoutSpec {
@@ -329,6 +331,7 @@ pub enum InterventionType {
 ///     .from_to_positions(5, &[0, 1, 2]);
 /// assert_eq!(spec.edges.len(), 3);
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 #[must_use]
 pub struct SteeringSpec {
@@ -550,6 +553,7 @@ impl From<KnockoutSpec> for SteeringSpec {
 ///
 /// Carries baseline and ablated logits so the caller can compute
 /// KL divergence, logit diffs, and top-changed-token analyses.
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct AblationResult {
     /// Logits from baseline forward pass (no intervention).
@@ -602,6 +606,7 @@ impl AblationResult {
 }
 
 /// Result of a steering experiment.
+#[non_exhaustive]
 #[derive(Debug)]
 #[must_use]
 pub struct SteeringResult {
@@ -1087,6 +1092,7 @@ pub fn measure_attention_to_targets(
 /// State knockout makes specific token positions invisible to all future
 /// tokens by skipping the recurrent state update at those positions.
 /// This is the RNN analogue of all-edge attention knockout in transformers.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 #[must_use]
 pub struct StateKnockoutSpec {
@@ -1185,6 +1191,7 @@ impl Default for StateKnockoutSpec {
 }
 
 /// Result of a state knockout ablation experiment (RWKV-6).
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct StateAblationResult {
     /// Logits from baseline forward pass (no intervention).
@@ -1251,6 +1258,7 @@ impl StateAblationResult {
 /// - `scale = 1.0` → no-op (normal forward pass)
 /// - `scale > 1.0` → amplify the token's state write
 /// - `scale < 1.0` → dampen the token's state write
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 #[must_use]
 pub struct StateSteeringSpec {
@@ -1346,6 +1354,7 @@ impl StateSteeringSpec {
 }
 
 /// Result of a state steering experiment (RWKV-6).
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct StateSteeringResult {
     /// Logits from baseline forward pass (no intervention).
@@ -1400,6 +1409,7 @@ impl StateSteeringResult {
 /// pass adds each vector to the residual at the specified position after the
 /// target layer completes.
 #[cfg(feature = "clt")]
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct CltInjectionSpec {
     /// Per-layer injection entries.
@@ -1408,6 +1418,7 @@ pub struct CltInjectionSpec {
 
 /// A single CLT injection at one layer and position.
 #[cfg(feature = "clt")]
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct CltLayerInjection {
     /// Target layer index (injection happens after this layer completes).
@@ -1492,6 +1503,7 @@ impl Default for CltInjectionSpec {
 
 /// Result of a CLT logit shift test (baseline vs. injected comparison).
 #[cfg(feature = "clt")]
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct CltLogitShiftResult {
     /// Logits from baseline forward pass (no injection).

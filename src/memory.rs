@@ -95,6 +95,7 @@ pub struct MemorySnapshot {
 ///
 /// Computed from a `before` and `after` [`MemorySnapshot`].
 /// Positive deltas mean memory increased; negative means freed.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct MemoryReport {
     /// Snapshot taken before the operation.

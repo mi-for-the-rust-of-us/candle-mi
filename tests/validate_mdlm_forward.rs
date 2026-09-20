@@ -246,13 +246,10 @@ fn mdlm_sampler_invariants() {
 
     // Carry over a 3-token prompt prefix; denoise the rest.
     let prompt: Vec<u32> = vec![464, 3139, 286]; // "The capital of"
-    let cfg = DiffusionSamplingConfig {
-        seq_len: 16,
-        num_steps: 16,
-        temperature: 1.0,
-        top_k: Some(50),
-        seed: 0,
-    };
+    let cfg = DiffusionSamplingConfig::default()
+        .with_seq_len(16)
+        .with_num_steps(16)
+        .with_top_k(Some(50));
 
     let traj1 =
         candle_mi::diffusion::generate_trajectory(&model, &device, mask_id, &prompt, &cfg).unwrap();

@@ -122,6 +122,7 @@ impl MechanisticEstimator for OracleEstimator {
 // ---------------------------------------------------------------------------
 
 /// Result of a surprise accounting measurement.
+#[non_exhaustive]
 pub struct SurpriseReport {
     /// Model accuracy on random inputs (0.0 to 1.0).
     pub model_accuracy: f32,

@@ -27,6 +27,7 @@ use crate::stoicheia::fast::RnnWeights;
 /// - `W_ih[j] = W_ih_orig[j] / s_j` → ±1
 /// - `W_hh[j,k] = W_hh_orig[j,k] * s_k / s_j`
 /// - `W_oh[o,j] = W_oh_orig[o,j] * s_j`
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 #[allow(clippy::similar_names)]
 pub struct StandardizedRnn {

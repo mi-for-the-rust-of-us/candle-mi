@@ -481,7 +481,7 @@ fn build_analysis(
                 .unwrap_or_else(|_| format!("[{id}]"))
         });
 
-        analysis.push(LogitLensResult { layer, predictions });
+        analysis.push(LogitLensResult::new(layer, predictions));
     }
 
     Ok(analysis)

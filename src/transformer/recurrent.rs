@@ -31,6 +31,7 @@ use crate::error::{MIError, Result};
 // ---------------------------------------------------------------------------
 
 /// A single feedback injection between recurrent passes.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct RecurrentFeedbackEntry {
     /// Token position in the sequence to inject feedback at.
@@ -66,6 +67,7 @@ pub struct RecurrentFeedbackEntry {
 /// This means every recurrent pass sees the same clean input with the
 /// nudge applied — the layers process `H₀ + nudge` rather than
 /// iterating on their own output, which would cause degeneration.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct RecurrentPassSpec {
     /// First layer of the recurrent block (inclusive).

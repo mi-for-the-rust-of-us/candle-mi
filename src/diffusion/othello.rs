@@ -44,6 +44,7 @@ use crate::hooks::{HookCache, HookPoint, HookSpec, hook_point};
 /// Mirrors the upstream `OthelloMDLMConfig`.  The released world model is
 /// `vocab_size = 62`, `block_size = 60`, `n_layer = 8`, `n_head = 8`,
 /// `n_embd = 512`, `causal = false`.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct OthelloGptConfig {
     /// Vocabulary size (60 move cells + pad + `[MASK]` for the world model).
@@ -128,6 +129,24 @@ impl OthelloGptConfig {
     #[must_use]
     pub const fn with_self_conditioning(mut self, enabled: bool) -> Self {
         self.self_conditioning = enabled;
+        self
+    }
+
+    /// Override the feed-forward expansion ratio (GPT-2 uses `4`).
+    ///
+    /// [`new`](Self::new) does not take it, and the struct is
+    /// `#[non_exhaustive]`, so this is the construction path for a backbone
+    /// whose MLP is not 4x. Assigning the field on an existing value works too.
+    #[must_use]
+    pub const fn with_mlp_ratio(mut self, mlp_ratio: usize) -> Self {
+        self.mlp_ratio = mlp_ratio;
+        self
+    }
+
+    /// Override the `LayerNorm` epsilon (GPT-2 uses `1e-5`).
+    #[must_use]
+    pub const fn with_norm_eps(mut self, norm_eps: f64) -> Self {
+        self.norm_eps = norm_eps;
         self
     }
 

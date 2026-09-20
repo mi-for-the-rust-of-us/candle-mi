@@ -50,6 +50,10 @@ use crate::clt::gemmascope::GEMMASCOPE_WEIGHTS_REPO;
 // ---------------------------------------------------------------------------
 
 /// Identifies a single CLT feature by its source layer and index within that layer.
+// EXHAUSTIVE: a two-field value identity, not a growing record. It is `Copy`,
+// `Ord`, `Hash` and `Serialize`, and callers construct it by literal all over
+// the examples; `#[non_exhaustive]` would shut that for no benefit, since the
+// pair (layer, index) is what a CLT feature *is* and cannot gain a field.
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
 )]
@@ -75,6 +79,7 @@ impl FeatureId for CltFeatureId {}
 /// Represents a feature's decoder projection score onto a target direction
 /// at a specific downstream layer. Positive scores indicate alignment,
 /// negative scores indicate opposition.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct AttributionEdge {
     /// The CLT feature contributing this edge.
@@ -240,6 +245,7 @@ impl TranscoderSchema {
 }
 
 /// CLT configuration auto-detected from tensor shapes.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct CltConfig {
     /// Number of layers in the base model (26 for Gemma 2 2B).

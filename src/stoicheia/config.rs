@@ -85,6 +85,7 @@ pub enum StoicheiaOutput {
 ///
 /// Use [`from_task`](Self::from_task) to construct with sensible defaults
 /// derived from the task type, matching `AlgZoo`'s Python registry.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct StoicheiaConfig {
     /// Hidden dimension (`d_model` for transformer, RNN hidden size).

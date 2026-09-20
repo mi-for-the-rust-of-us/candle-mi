@@ -33,6 +33,7 @@ pub trait FeatureId:
 /// Generic over the feature identifier type `F`:
 /// - `CltFeatureId` for CLT features (layer + index, requires `clt` feature)
 /// - `SaeFeatureId` for SAE features (index only, requires `sae` feature)
+// EXHAUSTIVE: a newtype over the activation map, with nothing else to carry.
 #[derive(Debug, Clone)]
 pub struct SparseActivations<F: FeatureId> {
     /// Active features with their activation magnitudes, sorted descending.

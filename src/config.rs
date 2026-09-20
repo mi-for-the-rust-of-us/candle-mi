@@ -327,6 +327,7 @@ impl fmt::Display for RopeScaling {
 ///
 /// **Mistral** — reads `sliding_window` (default `None`).  Otherwise
 /// identical to `LLaMA`; `max_position_embeddings` defaults to 32 768.
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 #[allow(clippy::struct_excessive_bools)] // Config structs legitimately have many boolean axes
 pub struct TransformerConfig {

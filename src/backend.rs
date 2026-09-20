@@ -768,6 +768,7 @@ pub fn extract_token_prob(logits: &Tensor, token_id: u32) -> Result<f32> {
 // ---------------------------------------------------------------------------
 
 /// Output of a text generation run with token-level details.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct GenerationResult {
     /// Original prompt text.
@@ -782,6 +783,39 @@ pub struct GenerationResult {
     pub generated_tokens: Vec<u32>,
     /// Total token count (prompt + generated).
     pub total_tokens: usize,
+}
+
+impl GenerationResult {
+    /// Assemble a generation result, deriving `total_tokens`.
+    ///
+    /// The type is `#[non_exhaustive]`, so a struct expression is rejected
+    /// outside this crate; this is the construction path for callers running
+    /// their own decode loop that want the crate's result shape.
+    ///
+    /// `total_tokens` is **computed**, not accepted, so it cannot disagree with
+    /// the two token vectors it summarises.
+    ///
+    /// The three `String` parameters are adjacent and a transposition would
+    /// compile, so they are ordered exactly as the fields are declared:
+    /// `prompt`, then the full text, then the generated portion alone.
+    #[must_use]
+    pub const fn new(
+        prompt: String,
+        full_text: String,
+        generated_text: String,
+        prompt_tokens: Vec<u32>,
+        generated_tokens: Vec<u32>,
+    ) -> Self {
+        let total_tokens = prompt_tokens.len() + generated_tokens.len();
+        Self {
+            prompt,
+            full_text,
+            generated_text,
+            prompt_tokens,
+            generated_tokens,
+            total_tokens,
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

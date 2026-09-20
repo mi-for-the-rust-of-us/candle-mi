@@ -56,13 +56,10 @@ fn main() -> candle_mi::Result<()> {
     let target_pos = prompt.len();
     let n_layers = model.num_layers();
 
-    let config = DiffusionSamplingConfig {
-        seq_len,
-        num_steps: NUM_STEPS,
-        temperature: 1.0,
-        top_k: Some(50),
-        seed: 0,
-    };
+    let config = DiffusionSamplingConfig::default()
+        .with_seq_len(seq_len)
+        .with_num_steps(NUM_STEPS)
+        .with_top_k(Some(50));
     let trajectory = candle_mi::diffusion::generate_trajectory(
         model.backend(),
         model.device(),

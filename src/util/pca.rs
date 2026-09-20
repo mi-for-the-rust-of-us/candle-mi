@@ -21,6 +21,7 @@ use crate::error::Result;
 // ---------------------------------------------------------------------------
 
 /// Result of a PCA decomposition via power iteration.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct PcaResult {
     /// Principal component directions, shape `[k, n_features]`.

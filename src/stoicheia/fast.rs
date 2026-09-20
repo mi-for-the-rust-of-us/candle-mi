@@ -28,6 +28,7 @@ const MAX_H: usize = 32;
 /// Extracted from [`Tensor`](candle_core::Tensor) once at load time, then
 /// used by the fast-path kernel and all analysis modules without further
 /// candle overhead.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 #[allow(clippy::similar_names)]
 pub struct RnnWeights {

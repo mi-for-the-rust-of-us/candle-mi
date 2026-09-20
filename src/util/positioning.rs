@@ -16,6 +16,7 @@
 //! 3. Convert character positions to token indices using the offset map
 
 /// Token with its character offset range.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct TokenWithOffset {
     /// The token string.
@@ -45,6 +46,7 @@ pub struct TokenWithOffset {
 /// // Character 4 ('a' in "add") is in token 2
 /// assert_eq!(encoding.char_to_token(4), Some(2));
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct EncodingWithOffsets {
     /// Token IDs.
@@ -210,6 +212,7 @@ impl EncodingWithOffsets {
 }
 
 /// Result of converting a character position to a token index.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct PositionConversion {
     /// Original character position.
