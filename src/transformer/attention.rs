@@ -5,7 +5,7 @@
 //! Supports grouped-query attention (GQA), multi-head attention (MHA),
 //! and multi-query attention (MQA) via the `num_kv_heads` configuration.
 
-use candle_core::{D, DType, Module, Tensor};
+use candle_core::{D, Module, Tensor};
 use candle_nn::{Linear, RmsNorm, VarBuilder};
 
 use crate::config::{QkvLayout, TransformerConfig};
@@ -275,18 +275,8 @@ impl Attention {
 
         // Softmax
         // PROMOTE: softmax over F16/BF16 can produce NaN; compute in F32
-        let original_dtype = scores.dtype();
-        let scores_f32 = if original_dtype == DType::F32 {
-            scores
-        } else {
-            scores.to_dtype(DType::F32)?
-        };
-        // Backward-safe dispatch: fused kernel for inference, composed form
-        // when the graph is tracked (training over a `VarMap`).
-        let mut pattern = crate::nn_ops::softmax_last_dim(&scores_f32)?;
-        if original_dtype != DType::F32 {
-            pattern = pattern.to_dtype(original_dtype)?;
-        }
+        // Promote/softmax/demote, shared so the three backbones cannot drift.
+        let mut pattern = crate::nn_ops::softmax_last_dim_f32(&scores)?;
 
         // Hook: AttnPattern — capture and/or intervene (steering)
         hook_point(

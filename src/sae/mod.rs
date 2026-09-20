@@ -375,7 +375,7 @@ impl SparseAutoencoder {
         let threshold = st
             .tensor("threshold")
             .ok()
-            .map(|v| tensor_from_view(&v, device))
+            .map(|v| crate::util::safetensors_view::tensor_from_view(&v, device, "SAE"))
             .transpose()?;
 
         // PROMOTE: F32 for numerical stability in matmul and bias add
@@ -896,31 +896,10 @@ impl SparseAutoencoder {
             accumulated = (&accumulated + &scaled)?;
         }
 
-        // Build [1, seq_len, d_in] with vector at `position`.
-        let injection = Tensor::zeros((1, seq_len, d_in), DType::F32, device)?;
-        let scaled_3d = accumulated.unsqueeze(0)?.unsqueeze(0)?; // [1, 1, d_in]
-
-        let before = if position > 0 {
-            Some(injection.narrow(1, 0, position)?)
-        } else {
-            None
-        };
-        let after = if position + 1 < seq_len {
-            Some(injection.narrow(1, position + 1, seq_len - position - 1)?)
-        } else {
-            None
-        };
-
-        let mut parts: Vec<Tensor> = Vec::with_capacity(3);
-        if let Some(b) = before {
-            parts.push(b);
-        }
-        parts.push(scaled_3d);
-        if let Some(a) = after {
-            parts.push(a);
-        }
-
-        let injection = Tensor::cat(&parts, 1)?;
+        // [1, seq_len, d_in] carrying the accumulated vector at `position`.
+        // The shared helper also bounds-checks `position`, which the former
+        // inline narrow/cat did not.
+        let injection = crate::util::inject::position_delta(&accumulated, position, seq_len)?;
 
         let mut hooks = HookSpec::new();
         hooks.intervene(self.config.hook_point.clone(), Intervention::Add(injection));
@@ -1087,39 +1066,12 @@ fn broadcast_bias(bias: &Tensor, target_shape: &[usize]) -> Result<Tensor> {
     Ok(reshaped.broadcast_as(target_shape)?)
 }
 
-/// Convert a safetensors `TensorView` to a candle `Tensor`.
-///
-/// # Shapes
-/// - Preserves the original tensor shape from safetensors.
-///
-/// # Errors
-///
-/// Returns [`MIError::Config`] if the tensor dtype is not supported (BF16, F16, F32).
-/// Returns [`MIError::Model`] on tensor construction failure.
-fn tensor_from_view(view: &safetensors::tensor::TensorView<'_>, device: &Device) -> Result<Tensor> {
-    let shape: Vec<usize> = view.shape().to_vec();
-    #[allow(clippy::wildcard_enum_match_arm)]
-    // EXHAUSTIVE: safetensors exposes many dtypes; SAEs only use float types
-    let dtype = match view.dtype() {
-        safetensors::Dtype::BF16 => DType::BF16,
-        safetensors::Dtype::F16 => DType::F16,
-        safetensors::Dtype::F32 => DType::F32,
-        other => {
-            return Err(MIError::Config(format!(
-                "unsupported SAE tensor dtype: {other:?}"
-            )));
-        }
-    };
-    let tensor = Tensor::from_raw_buffer(view.data(), dtype, &shape, device)?;
-    Ok(tensor)
-}
-
 /// Load a named tensor from safetensors.
 fn load_tensor(st: &SafeTensors<'_>, name: &str, device: &Device) -> Result<Tensor> {
     let view = st
         .tensor(name)
         .map_err(|e| MIError::Config(format!("tensor '{name}' not found: {e}")))?;
-    tensor_from_view(&view, device)
+    crate::util::safetensors_view::tensor_from_view(&view, device, "SAE")
 }
 
 /// Validate that a tensor has the expected shape.

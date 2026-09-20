@@ -296,36 +296,9 @@ pub fn contrastive_intervention(
 /// - [`MIError::Config`] if `direction` is not 1-D `[hidden]`.
 /// - [`MIError::Model`] on tensor construction failure.
 pub fn position_delta(direction: &Tensor, position: usize, seq_len: usize) -> Result<Tensor> {
-    if position >= seq_len {
-        return Err(MIError::Config(format!(
-            "position_delta: position {position} >= seq_len {seq_len}"
-        )));
-    }
-    let dims = direction.dims();
-    if dims.len() != 1 {
-        return Err(MIError::Config(format!(
-            "position_delta: direction must be 1-D [hidden]; got shape {dims:?}"
-        )));
-    }
-
-    // INDEX: dims has length 1, just confirmed above.
-    let hidden = dims.first().copied().unwrap_or(0);
-
-    // Build a [seq_len, hidden] tensor by stacking per-position rows: the
-    // chosen position holds `direction`, all others hold zeros_like(direction).
-    let zero_row = direction.zeros_like()?;
-    // BORROW: rows is a Vec<&Tensor> for Tensor::stack; entries borrow either
-    // `direction` (for the chosen position) or `zero_row` (for all others).
-    let rows: Vec<&Tensor> = (0..seq_len)
-        .map(|i| if i == position { direction } else { &zero_row })
-        .collect();
-    let stacked = Tensor::stack(&rows, 0)?;
-    // Add batch dim -> [1, seq_len, hidden].
-    let with_batch = stacked.unsqueeze(0)?;
-    // EXPLICIT: discard `hidden` after the shape check; tensors carry their
-    // own shape, the local binding existed only to validate dims.
-    let _ = hidden;
-    Ok(with_batch)
+    // Implemented in `crate::util::inject`, which is ungated: `clt` and `sae`
+    // need the same payload shape and each compiles without `steering`.
+    crate::util::inject::position_delta(direction, position, seq_len)
 }
 
 // ---------------------------------------------------------------------------

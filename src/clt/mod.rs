@@ -905,15 +905,17 @@ impl CrossLayerTranscoder {
             &self.config.gemmascope_npz_paths,
         )?;
 
-        let w_enc = tensor_from_view(
+        let w_enc = crate::util::safetensors_view::tensor_from_view(
             &st.tensor(&w_enc_name)
                 .map_err(|e| MIError::Config(format!("tensor '{w_enc_name}' not found: {e}")))?,
             device,
+            "CLT",
         )?;
-        let b_enc = tensor_from_view(
+        let b_enc = crate::util::safetensors_view::tensor_from_view(
             &st.tensor(&b_enc_name)
                 .map_err(|e| MIError::Config(format!("tensor '{b_enc_name}' not found: {e}")))?,
             device,
+            "CLT",
         )?;
 
         let threshold = if self.config.schema.is_jump_relu() {
@@ -923,7 +925,7 @@ impl CrossLayerTranscoder {
             // gate, matching the F32-everywhere precision strategy.
             let threshold_name = format!("threshold_{layer}");
             if let Ok(view) = st.tensor(&threshold_name) {
-                let t = tensor_from_view(&view, device)?;
+                let t = crate::util::safetensors_view::tensor_from_view(&view, device, "CLT")?;
                 // PROMOTE: threshold may be BF16 on disk; encode-path gate
                 // needs F32 to match the F32 pre-activation tensor.
                 Some(t.to_dtype(DType::F32)?)
@@ -1061,7 +1063,7 @@ impl CrossLayerTranscoder {
         let view = st.tensor("W_skip").map_err(|e| {
             MIError::Config(format!("tensor 'W_skip' not found in layer {layer}: {e}"))
         })?;
-        let w_skip = tensor_from_view(&view, device)?;
+        let w_skip = crate::util::safetensors_view::tensor_from_view(&view, device, "CLT")?;
         // PROMOTE: W_skip is BF16 on disk in mntss/transcoder-*; F32 for matmul precision
         let w_skip_f32 = w_skip.to_dtype(DType::F32)?;
         Ok(w_skip_f32)
@@ -1660,38 +1662,20 @@ impl CrossLayerTranscoder {
 
         // Build HookSpec with Intervention::Add at each target layer.
         let mut hooks = HookSpec::new();
-        let d_model = self.config.d_model;
 
         for (target_layer, accumulated) in &per_layer {
-            // Scale by strength.
-            let scaled = (accumulated * f64::from(strength))?;
+            // Scale by strength, on the caller's device. The payload takes its
+            // device from this tensor, so moving it here keeps the documented
+            // contract that the injection lands on `device`. Previously the
+            // zeros were built on `device` and `Tensor::cat` would have errored
+            // on a mismatch; this is the same guarantee, stated positively.
+            let scaled = (accumulated * f64::from(strength))?.to_device(device)?;
 
-            // Build a [1, seq_len, d_model] tensor with the vector at `position`.
-            let mut injection = Tensor::zeros((1, seq_len, d_model), DType::F32, device)?;
-
-            // Place the scaled vector at the target position.
-            let scaled_3d = scaled.unsqueeze(0)?.unsqueeze(0)?; // [1, 1, d_model]
-            let before = if position > 0 {
-                Some(injection.narrow(1, 0, position)?)
-            } else {
-                None
-            };
-            let after = if position + 1 < seq_len {
-                Some(injection.narrow(1, position + 1, seq_len - position - 1)?)
-            } else {
-                None
-            };
-
-            let mut parts: Vec<Tensor> = Vec::with_capacity(3);
-            if let Some(b) = before {
-                parts.push(b);
-            }
-            parts.push(scaled_3d);
-            if let Some(a) = after {
-                parts.push(a);
-            }
-
-            injection = Tensor::cat(&parts, 1)?;
+            // [1, seq_len, d_model] carrying the vector at `position`. The
+            // shared helper also bounds-checks `position`, which the former
+            // inline narrow/cat did not: at `position == seq_len` it silently
+            // produced a `[1, seq_len + 1, d_model]` payload.
+            let injection = crate::util::inject::position_delta(&scaled, position, seq_len)?;
 
             hooks.intervene(
                 HookPoint::ResidPost(*target_layer),
@@ -2605,33 +2589,6 @@ fn decoder_layer_slice(
     }
 }
 
-/// Convert a `safetensors` tensor view to a candle [`Tensor`] on `device`.
-///
-/// Accepts `BF16`, `F16`, and `F32` dtypes — the only float dtypes CLT / PLT
-/// repos are known to use in the wild.
-///
-/// # Errors
-///
-/// Returns [`MIError::Config`] if the tensor dtype is not supported (`BF16`, `F16`, `F32`).
-/// Returns [`MIError::Model`] on tensor construction failure.
-fn tensor_from_view(view: &safetensors::tensor::TensorView<'_>, device: &Device) -> Result<Tensor> {
-    let shape: Vec<usize> = view.shape().to_vec();
-    #[allow(clippy::wildcard_enum_match_arm)]
-    // EXHAUSTIVE: safetensors exposes many dtypes; CLTs only use float types
-    let dtype = match view.dtype() {
-        safetensors::Dtype::BF16 => DType::BF16,
-        safetensors::Dtype::F16 => DType::F16,
-        safetensors::Dtype::F32 => DType::F32,
-        other => {
-            return Err(MIError::Config(format!(
-                "unsupported CLT tensor dtype: {other:?}"
-            )));
-        }
-    };
-    let tensor = Tensor::from_raw_buffer(view.data(), dtype, &shape, device)?;
-    Ok(tensor)
-}
-
 /// Parse a value from a simple YAML file by key.
 ///
 /// No `serde_yaml` dependency — uses line-by-line matching.
@@ -2704,10 +2661,11 @@ fn load_w_dec_safetensors(path: &Path, tensor_name: &str, layer: usize) -> Resul
     let st = SafeTensors::deserialize(&data).map_err(|e| {
         MIError::Config(format!("failed to deserialize decoder layer {layer}: {e}"))
     })?;
-    tensor_from_view(
+    crate::util::safetensors_view::tensor_from_view(
         &st.tensor(tensor_name)
             .map_err(|e| MIError::Config(format!("tensor '{tensor_name}' not found: {e}")))?,
         &Device::Cpu,
+        "CLT",
     )
 }
 

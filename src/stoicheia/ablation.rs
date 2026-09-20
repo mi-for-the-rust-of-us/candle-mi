@@ -8,7 +8,7 @@
 
 use crate::error::Result;
 use crate::stoicheia::config::StoicheiaConfig;
-use crate::stoicheia::fast::{self, RnnWeights, argmax_f32};
+use crate::stoicheia::fast::{self, RnnWeights};
 
 // ---------------------------------------------------------------------------
 // Result types
@@ -104,19 +104,7 @@ pub fn ablate_neurons(
         fast::forward_fast_ablated(weights, inputs, &mut outputs, n_inputs, config, &ablated)?;
 
         // Compute accuracy on ablated outputs
-        let mut correct = 0_usize;
-        for (i, target) in targets.iter().enumerate() {
-            // INDEX: slice bounds valid because outputs.len() == n_inputs * out_size
-            #[allow(clippy::indexing_slicing)]
-            let row = &outputs[i * out_size..(i + 1) * out_size];
-            let pred = argmax_f32(row);
-            if *target == pred {
-                correct += 1;
-            }
-        }
-        // CAST: usize → f32, counts ≤ n_inputs
-        #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
-        let ablated_accuracy = correct as f32 / n_inputs as f32;
+        let ablated_accuracy = fast::accuracy_from_outputs(&outputs, targets, out_size, n_inputs);
 
         results.push(NeuronAblationResult {
             neuron,
@@ -189,19 +177,8 @@ pub fn ablate_neuron_pairs(
 
             fast::forward_fast_ablated(weights, inputs, &mut outputs, n_inputs, config, &ablated)?;
 
-            let mut correct = 0_usize;
-            for (i, target) in targets.iter().enumerate() {
-                // INDEX: slice bounds valid because outputs.len() == n_inputs * out_size
-                #[allow(clippy::indexing_slicing)]
-                let row = &outputs[i * out_size..(i + 1) * out_size];
-                let pred = argmax_f32(row);
-                if *target == pred {
-                    correct += 1;
-                }
-            }
-            // CAST: usize → f32, counts ≤ n_inputs
-            #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
-            let ablated_accuracy = correct as f32 / n_inputs as f32;
+            let ablated_accuracy =
+                fast::accuracy_from_outputs(&outputs, targets, out_size, n_inputs);
             let pair_delta = ablated_accuracy - baseline;
 
             // INDEX: a, b bounded by h
@@ -228,7 +205,10 @@ pub fn ablate_neuron_pairs(
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Used by the expected-value helpers below; the module's own code now goes
+    // through `fast::accuracy_from_outputs` instead.
     use crate::stoicheia::config::{StoicheiaConfig, StoicheiaTask};
+    use crate::stoicheia::fast::argmax_f32;
 
     fn test_weights() -> RnnWeights {
         RnnWeights::new(

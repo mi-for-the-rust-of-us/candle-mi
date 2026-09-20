@@ -212,19 +212,8 @@ impl DiTBlock {
 
         // Softmax in F32 (no-op promote on the F32 default path; defensive for
         // lower-precision loads).
-        let original_dtype = scores.dtype();
-        // PROMOTE: softmax over a lower-precision dtype can produce NaN; compute in F32
-        let scores_f32 = if original_dtype == DType::F32 {
-            scores
-        } else {
-            scores.to_dtype(DType::F32)?
-        };
-        // Backward-safe dispatch: fused kernel for inference, composed form
-        // when the graph is tracked (training over a `VarMap`).
-        let mut pattern = crate::nn_ops::softmax_last_dim(&scores_f32)?;
-        if original_dtype != DType::F32 {
-            pattern = pattern.to_dtype(original_dtype)?;
-        }
+        // Promote/softmax/demote, shared so the three backbones cannot drift.
+        let mut pattern = crate::nn_ops::softmax_last_dim_f32(&scores)?;
         hook_point(
             &mut pattern,
             HookPoint::AttnPattern(layer_idx),

@@ -94,6 +94,37 @@ pub fn softmax_last_dim(xs: &Tensor) -> Result<Tensor> {
     }
 }
 
+/// Softmax over the last dimension, computed in `F32` and returned at the
+/// input's dtype.
+///
+/// The attention pattern of every backbone in the crate is produced this way:
+/// a softmax over `BF16` or `F16` scores can overflow to `NaN`, so the reduction
+/// runs at `F32` and the result is cast back. Three backbones carried their own
+/// copy of this promote/softmax/demote sequence
+/// (`diffusion::mdlm`, `diffusion::othello`, `transformer::attention`); the
+/// sequence is identical in all three, so this is a pure extraction and the
+/// arithmetic is unchanged.
+///
+/// Dispatches through [`softmax_last_dim`], so it stays backward-safe under a
+/// `VarMap` and byte-identical to the fused kernel for inference.
+///
+/// # Shapes
+/// - `scores`: any shape; the softmax is over the last dimension.
+/// - returns: same shape and dtype as `scores`.
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+pub fn softmax_last_dim_f32(scores: &Tensor) -> Result<Tensor> {
+    let original_dtype = scores.dtype();
+    if original_dtype == DType::F32 {
+        return softmax_last_dim(scores);
+    }
+    // PROMOTE: softmax over a lower-precision dtype can produce NaN; compute in F32
+    let pattern = softmax_last_dim(&scores.to_dtype(DType::F32)?)?;
+    Ok(pattern.to_dtype(original_dtype)?)
+}
+
 /// `LayerNorm` forward, differentiable when the graph is tracked.
 ///
 /// `candle_nn::LayerNorm::forward` takes the fused (no-backward) kernel

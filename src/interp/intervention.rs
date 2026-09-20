@@ -134,6 +134,22 @@ pub enum LayerSpec {
     },
 }
 
+impl LayerSpec {
+    /// Whether this specification selects `layer`.
+    ///
+    /// The four `applies_to_layer` methods on the intervention spec types all
+    /// forward here, so a new [`LayerSpec`] variant has one place to be
+    /// handled rather than four that must be kept in step.
+    #[must_use]
+    pub fn contains(&self, layer: usize) -> bool {
+        match self {
+            Self::All => true,
+            Self::Specific(layers) => layers.contains(&layer),
+            Self::Range { start, end } => layer >= *start && layer <= *end,
+        }
+    }
+}
+
 /// Specification for which heads to target.
 #[non_exhaustive]
 #[derive(Debug, Clone)]
@@ -262,11 +278,7 @@ impl KnockoutSpec {
     /// Check if this layer should have intervention applied.
     #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
-        match &self.layers {
-            LayerSpec::All => true,
-            LayerSpec::Specific(layers) => layers.contains(&layer),
-            LayerSpec::Range { start, end } => layer >= *start && layer <= *end,
-        }
+        self.layers.contains(layer)
     }
 
     /// Check if this head should have intervention applied.
@@ -425,11 +437,7 @@ impl SteeringSpec {
     /// Check if this layer should have intervention applied.
     #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
-        match &self.layers {
-            LayerSpec::All => true,
-            LayerSpec::Specific(layers) => layers.contains(&layer),
-            LayerSpec::Range { start, end } => layer >= *start && layer <= *end,
-        }
+        self.layers.contains(layer)
     }
 
     /// Check if this head should have intervention applied.
@@ -730,6 +738,28 @@ fn top_changed_impl(
 // ===========================================================================
 // Shared validation helpers
 // ===========================================================================
+
+/// Validate a non-empty position list against the sequence length.
+///
+/// `spec_name` names the calling spec type so the "no positions" message stays
+/// as specific as it was when each spec carried its own copy of this check.
+fn validate_positions(positions: &[usize], seq_len: usize, spec_name: &str) -> Result<()> {
+    for &pos in positions {
+        if pos >= seq_len {
+            return Err(MIError::Intervention(format!(
+                "position {pos} out of range (seq_len is {seq_len})"
+            )));
+        }
+    }
+
+    if positions.is_empty() {
+        return Err(MIError::Intervention(format!(
+            "{spec_name} has no positions specified"
+        )));
+    }
+
+    Ok(())
+}
 
 /// Validate layer specification against model dimensions.
 fn validate_layers(layers: &LayerSpec, n_layers: usize) -> Result<()> {
@@ -1144,11 +1174,7 @@ impl StateKnockoutSpec {
     /// Check if knockout applies to this layer.
     #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
-        match &self.layers {
-            LayerSpec::All => true,
-            LayerSpec::Specific(layers) => layers.contains(&layer),
-            LayerSpec::Range { start, end } => layer >= *start && layer <= *end,
-        }
+        self.layers.contains(layer)
     }
 
     /// Get knockout positions as a `HashSet` for O(1) lookup in the WKV loop.
@@ -1166,19 +1192,7 @@ impl StateKnockoutSpec {
     pub fn validate(&self, n_layers: usize, seq_len: usize) -> Result<()> {
         validate_layers(&self.layers, n_layers)?;
 
-        for &pos in &self.positions {
-            if pos >= seq_len {
-                return Err(MIError::Intervention(format!(
-                    "position {pos} out of range (seq_len is {seq_len})"
-                )));
-            }
-        }
-
-        if self.positions.is_empty() {
-            return Err(MIError::Intervention(
-                "StateKnockoutSpec has no positions specified".into(),
-            ));
-        }
+        validate_positions(&self.positions, seq_len, "StateKnockoutSpec")?;
 
         Ok(())
     }
@@ -1313,11 +1327,7 @@ impl StateSteeringSpec {
     /// Check if steering applies to this layer.
     #[must_use]
     pub fn applies_to_layer(&self, layer: usize) -> bool {
-        match &self.layers {
-            LayerSpec::All => true,
-            LayerSpec::Specific(layers) => layers.contains(&layer),
-            LayerSpec::Range { start, end } => layer >= *start && layer <= *end,
-        }
+        self.layers.contains(layer)
     }
 
     /// Get steering positions as a `HashSet` for O(1) lookup in the WKV loop.
@@ -1335,19 +1345,7 @@ impl StateSteeringSpec {
     pub fn validate(&self, n_layers: usize, seq_len: usize) -> Result<()> {
         validate_layers(&self.layers, n_layers)?;
 
-        for &pos in &self.positions {
-            if pos >= seq_len {
-                return Err(MIError::Intervention(format!(
-                    "position {pos} out of range (seq_len is {seq_len})"
-                )));
-            }
-        }
-
-        if self.positions.is_empty() {
-            return Err(MIError::Intervention(
-                "StateSteeringSpec has no positions specified".into(),
-            ));
-        }
+        validate_positions(&self.positions, seq_len, "StateSteeringSpec")?;
 
         Ok(())
     }

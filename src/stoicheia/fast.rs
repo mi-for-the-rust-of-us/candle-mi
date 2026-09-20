@@ -327,6 +327,39 @@ pub fn forward_fast_traced(
     Ok(())
 }
 
+/// Fraction of rows whose `argmax` matches the target.
+///
+/// `outputs` is the flat `[n_inputs * out_size]` buffer the fast forward fills,
+/// read one `out_size` row per target. Extracted because `accuracy` here and
+/// both ablation sweeps in [`ablation`](super::ablation) computed it with
+/// identical code.
+///
+/// Returns `0.0` when `n_inputs` is zero rather than dividing by it.
+pub(crate) fn accuracy_from_outputs(
+    outputs: &[f32],
+    targets: &[u32],
+    out_size: usize,
+    n_inputs: usize,
+) -> f32 {
+    if n_inputs == 0 {
+        return 0.0;
+    }
+    let mut correct = 0_usize;
+    for (i, target) in targets.iter().enumerate() {
+        // INDEX: slice bounds valid because outputs.len() == n_inputs * out_size
+        #[allow(clippy::indexing_slicing)]
+        let row = &outputs[i * out_size..(i + 1) * out_size];
+        if *target == argmax_f32(row) {
+            correct += 1;
+        }
+    }
+    // CAST: usize → f32, counts are small (<= n_inputs)
+    #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
+    {
+        correct as f32 / n_inputs as f32
+    }
+}
+
 /// Compute model accuracy on a batch of inputs.
 ///
 /// Runs [`forward_fast`], takes argmax of each output row, compares
@@ -358,21 +391,7 @@ pub fn accuracy(
     let mut outputs = vec![0.0_f32; n_inputs * out_size];
     forward_fast(weights, inputs, &mut outputs, n_inputs, config)?;
 
-    let mut correct = 0_usize;
-    for (i, target) in targets.iter().enumerate() {
-        // INDEX: slice bounds valid because outputs.len() == n_inputs * out_size
-        #[allow(clippy::indexing_slicing)]
-        let row = &outputs[i * out_size..(i + 1) * out_size];
-        let pred = argmax_f32(row);
-        if *target == pred {
-            correct += 1;
-        }
-    }
-
-    // CAST: usize → f32, counts are small (≤ n_inputs)
-    #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
-    let acc = correct as f32 / n_inputs as f32;
-    Ok(acc)
+    Ok(accuracy_from_outputs(&outputs, targets, out_size, n_inputs))
 }
 
 // ---------------------------------------------------------------------------

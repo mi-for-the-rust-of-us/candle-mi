@@ -45,6 +45,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Shared helpers replace six clusters of duplicated code.** Per-model forward
+  passes are deliberately untouched: `docs/adding-a-model.md` is explicit that
+  the eight `parse_*` config functions and the two block `forward`s are
+  load-bearing repetition, and they stay that way.
+
+  New: `nn_ops::softmax_last_dim_f32` (the promote/softmax/demote sequence that
+  `diffusion::mdlm`, `diffusion::othello` and `transformer::attention` each
+  carried identically) and `LayerSpec::contains` (four byte-identical
+  `applies_to_layer` bodies; a fifth, on `CltInjectionSpec`, is genuinely
+  different and stays). Internal: `util::inject::position_delta`,
+  `util::safetensors_view::tensor_from_view`, `config::get_usize_in`,
+  `fast::accuracy_from_outputs`, and a shared `validate_positions`.
+
+  `OthelloGpt` drops its private `causal_mask` for `util::masks::create_causal_mask`,
+  which is the same mask and adds the global mask cache. The `MDLM` and
+  `OthelloGpt` config parsers drop their private `get_usize`/`get_usize_or`/`get_bool_or`
+  copies; the shared versions keep the model-naming error messages **and** use
+  `usize::try_from` where the copies used an `as` cast that would truncate rather
+  than error on a 32-bit target.
+
+  Verified as a pure refactor: the `PyTorch` fp32 oracle
+  (`tests/validate_othello_forward.rs`) reports numbers unchanged to every digit
+  on both devices, CPU 4.18e-5 / 2.59e-4 and CUDA 3.37e-5 / 2.44e-4.
+
 - **BREAKING: 47 public structs are now `#[non_exhaustive]`**, so adding a field
   to a config, result or spec type stops being a breaking change. Before this,
   52 public structs carried public fields and exactly **two** were marked, while
@@ -90,6 +114,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the three exceptions above.
 
 ### Fixed
+
+- **`CrossLayerTranscoder::prepare_hook_injection` and `Sae::prepare_hook_injection`
+  now reject an out-of-range `position`** instead of silently building a payload
+  of the wrong length. Both assembled the `[1, seq_len, d]` injection inline with
+  `narrow` + `Tensor::cat` and neither checked the bound: at
+  `position == seq_len` the result was `[1, seq_len + 1, d]`, which then
+  broadcast wrongly where it was added. Both now call the shared
+  `steering::position_delta`, which has always validated this.
+
+  `diakrisis-intervention-dogfood.md` finding 1 reported a user reinventing that
+  helper rather than finding it; the re-export it asked for shipped earlier. This
+  is the same mistake committed *inside* the crate, in two places, and it had a
+  real bug in it.
 
 - **Interventions registered with [`HookSpec::intervene`] are no longer silently
   ignored by `GenericRwkv`, `StoicheiaRnn` and `StoicheiaTransformer`.** All

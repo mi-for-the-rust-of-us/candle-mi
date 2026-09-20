@@ -57,14 +57,14 @@ impl MdlmConfig {
     /// missing or not a non-negative integer, or if `hidden_dim` is not
     /// divisible by `n_heads`.
     pub fn from_hf_config(config: &Value) -> Result<Self> {
-        let hidden_dim = get_usize(config, "hidden_dim")?;
-        let n_heads = get_usize(config, "n_heads")?;
+        let hidden_dim = crate::config::get_usize_in(config, "hidden_dim", "MDLM config")?;
+        let n_heads = crate::config::get_usize_in(config, "n_heads", "MDLM config")?;
         if n_heads == 0 || !hidden_dim.is_multiple_of(n_heads) {
             return Err(MIError::Config(format!(
                 "hidden_dim {hidden_dim} not divisible by n_heads {n_heads}"
             )));
         }
-        let vocab_size = get_usize(config, "vocab_size")?;
+        let vocab_size = crate::config::get_usize_in(config, "vocab_size", "MDLM config")?;
         // The absorbing [MASK] state is the final vocab index (GPT-2's 50257
         // tokens 0..=50256 plus [MASK] = 50257, for vocab_size 50258).
         let mask_token_id = u32::try_from(vocab_size.saturating_sub(1)).map_err(|e| {
@@ -73,55 +73,19 @@ impl MdlmConfig {
 
         Ok(Self {
             hidden_dim,
-            n_blocks: get_usize(config, "n_blocks")?,
+            n_blocks: crate::config::get_usize_in(config, "n_blocks", "MDLM config")?,
             n_heads,
             head_dim: hidden_dim / n_heads,
-            cond_dim: get_usize(config, "cond_dim")?,
+            cond_dim: crate::config::get_usize_in(config, "cond_dim", "MDLM config")?,
             vocab_size,
-            model_length: get_usize_or(config, "model_length", 1024),
+            model_length: crate::config::get_usize_or(config, "model_length", 1024),
             mlp_ratio: 4,
             rope_theta: 10_000.0,
             norm_eps: 1e-5,
             mask_token_id,
-            time_conditioning: get_bool_or(config, "time_conditioning", false),
+            time_conditioning: crate::config::get_bool_or(config, "time_conditioning", false),
         })
     }
-}
-
-/// Read a required non-negative integer config field as `usize`.
-///
-/// # Errors
-///
-/// Returns [`MIError::Config`] if the key is absent or
-/// not a `u64`.
-fn get_usize(config: &Value, key: &str) -> Result<usize> {
-    let value = config
-        .get(key)
-        .and_then(Value::as_u64)
-        .ok_or_else(|| MIError::Config(format!("missing or non-integer `{key}` in MDLM config")))?;
-    // CAST: u64 → usize, model dimensions fit in usize on 64-bit targets
-    #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
-    Ok(value as usize)
-}
-
-/// Read an optional non-negative integer config field as `usize`, falling
-/// back to `default` when absent.
-fn get_usize_or(config: &Value, key: &str, default: usize) -> usize {
-    config
-        .get(key)
-        .and_then(Value::as_u64)
-        .map_or(default, |v| {
-            // CAST: u64 → usize, model dimensions fit in usize on 64-bit targets
-            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
-            {
-                v as usize
-            }
-        })
-}
-
-/// Read an optional boolean config field, falling back to `default` when absent.
-fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
-    config.get(key).and_then(Value::as_bool).unwrap_or(default)
 }
 
 #[cfg(test)]

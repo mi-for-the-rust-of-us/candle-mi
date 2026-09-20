@@ -921,6 +921,31 @@ pub(crate) fn get_usize(config: &Value, key: &str) -> Result<usize> {
         .map_err(|_| MIError::Config(format!("field '{key}' value {val} overflows usize")))
 }
 
+/// Read a required non-negative integer field, naming the config it came from.
+///
+/// Same contract as [`get_usize`], but the message says *which* config was being
+/// parsed (`"MDLM config"`, `"OthelloGpt config"`). The diffusion backends each
+/// carried their own copy of this for that one reason; those copies also used an
+/// `as` cast, which truncates rather than erroring on a 32-bit target. This one
+/// uses `try_from`, so the diagnostic is kept and the truncation is gone.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if the key is absent or not a `u64`, or if the
+/// value does not fit `usize`.
+#[cfg(feature = "diffusion")]
+pub(crate) fn get_usize_in(config: &Value, key: &str, context: &str) -> Result<usize> {
+    let val = config
+        .get(key)
+        .and_then(Value::as_u64)
+        .ok_or_else(|| MIError::Config(format!("missing or non-integer `{key}` in {context}")))?;
+    usize::try_from(val).map_err(|_| {
+        MIError::Config(format!(
+            "field `{key}` value {val} overflows usize in {context}"
+        ))
+    })
+}
+
 /// Extract an optional `usize` field, returning a default if absent.
 pub(crate) fn get_usize_or(config: &Value, key: &str, default: usize) -> usize {
     config

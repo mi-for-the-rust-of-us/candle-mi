@@ -167,57 +167,16 @@ impl OthelloGptConfig {
     /// key is missing or not a non-negative integer, or if `n_embd` is not
     /// divisible by `n_head`.
     pub fn from_hf_config(config: &Value) -> Result<Self> {
-        let vocab_size = get_usize(config, "vocab_size")?;
-        let block_size = get_usize(config, "block_size")?;
-        let n_layer = get_usize(config, "n_layer")?;
-        let n_head = get_usize(config, "n_head")?;
-        let n_embd = get_usize(config, "n_embd")?;
-        let causal = get_bool_or(config, "causal", false);
-        let self_conditioning = get_bool_or(config, "self_conditioning", false);
+        let vocab_size = crate::config::get_usize_in(config, "vocab_size", "OthelloGpt config")?;
+        let block_size = crate::config::get_usize_in(config, "block_size", "OthelloGpt config")?;
+        let n_layer = crate::config::get_usize_in(config, "n_layer", "OthelloGpt config")?;
+        let n_head = crate::config::get_usize_in(config, "n_head", "OthelloGpt config")?;
+        let n_embd = crate::config::get_usize_in(config, "n_embd", "OthelloGpt config")?;
+        let causal = crate::config::get_bool_or(config, "causal", false);
+        let self_conditioning = crate::config::get_bool_or(config, "self_conditioning", false);
         Self::new(vocab_size, block_size, n_layer, n_head, n_embd, causal)
             .map(|c| c.with_self_conditioning(self_conditioning))
     }
-}
-
-/// Read a required non-negative integer config field as `usize`.
-///
-/// # Errors
-///
-/// Returns [`MIError::Config`] if the key is
-/// absent or not a `u64`.
-fn get_usize(config: &Value, key: &str) -> Result<usize> {
-    let value = config.get(key).and_then(Value::as_u64).ok_or_else(|| {
-        MIError::Config(format!(
-            "missing or non-integer `{key}` in OthelloGpt config"
-        ))
-    })?;
-    // CAST: u64 → usize, model dimensions fit in usize on 64-bit targets
-    #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
-    Ok(value as usize)
-}
-
-/// Read an optional boolean config field, falling back to `default` when absent.
-fn get_bool_or(config: &Value, key: &str, default: bool) -> bool {
-    config.get(key).and_then(Value::as_bool).unwrap_or(default)
-}
-
-/// Build an additive causal mask of shape `[1, 1, seq_len, seq_len]`.
-///
-/// Entries above the diagonal are `f32::NEG_INFINITY` (forbidden); entries on
-/// or below the diagonal are `0.0`.  Broadcast-added to the attention scores.
-///
-/// # Shapes
-/// - returns: `[1, 1, seq_len, seq_len]`
-///
-/// # Errors
-///
-/// Returns [`MIError::Model`] on tensor failures.
-fn causal_mask(seq_len: usize, device: &Device, dtype: DType) -> Result<Tensor> {
-    let mask: Vec<f32> = (0..seq_len)
-        .flat_map(|i| (0..seq_len).map(move |j| if j > i { f32::NEG_INFINITY } else { 0.0 }))
-        .collect();
-    let tensor = Tensor::from_vec(mask, (1, 1, seq_len, seq_len), device)?;
-    Ok(tensor.to_dtype(dtype)?)
 }
 
 // ---------------------------------------------------------------------------
@@ -338,26 +297,16 @@ impl OthelloBlock {
         let q = q.contiguous()?;
         let mut scores = (q.matmul(&k_t)? * self.scale)?;
         if self.causal {
-            let mask = causal_mask(seq_len, scores.device(), scores.dtype())?;
+            let mask =
+                crate::util::masks::create_causal_mask(seq_len, scores.device(), scores.dtype())?;
             scores = scores.broadcast_add(&mask)?;
         }
         hook_point(&mut scores, HookPoint::AttnScores(layer_idx), hooks, cache)?;
 
         // Softmax in F32 (no-op promote on the F32 default path; defensive for
         // lower-precision loads).
-        let original_dtype = scores.dtype();
-        let scores_f32 = if original_dtype == DType::F32 {
-            scores
-        } else {
-            // PROMOTE: softmax over a lower-precision dtype can produce NaN; compute in F32
-            scores.to_dtype(DType::F32)?
-        };
-        // Backward-safe dispatch: fused kernel for inference, composed form
-        // when the graph is tracked (training over a `VarMap`).
-        let mut pattern = crate::nn_ops::softmax_last_dim(&scores_f32)?;
-        if original_dtype != DType::F32 {
-            pattern = pattern.to_dtype(original_dtype)?;
-        }
+        // Promote/softmax/demote, shared so the three backbones cannot drift.
+        let mut pattern = crate::nn_ops::softmax_last_dim_f32(&scores)?;
         hook_point(
             &mut pattern,
             HookPoint::AttnPattern(layer_idx),
@@ -1242,7 +1191,7 @@ mod tests {
     #[test]
     fn causal_mask_is_upper_triangular() {
         let device = Device::Cpu;
-        let mask = causal_mask(3, &device, DType::F32).unwrap();
+        let mask = crate::util::masks::create_causal_mask(3, &device, DType::F32).unwrap();
         assert_eq!(mask.dims4().unwrap(), (1, 1, 3, 3));
         let values: Vec<f32> = mask.flatten_all().unwrap().to_vec1().unwrap();
         let neg = f32::NEG_INFINITY;
