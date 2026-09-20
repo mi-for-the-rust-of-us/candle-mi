@@ -72,6 +72,62 @@ Under the crate lints (`unwrap_used`, `expect_used`, `panic`, `indexing_slicing`
 are **deny**), every tensor lookup and head-dim reshape must be fallible: use
 `vb.get(...)?` and `?`, never indexing.
 
+## Models that need more than `input_ids`
+
+`MIBackend::forward(&self, input_ids, hooks)` admits exactly one input tensor.
+That is deliberate: it is the *interpretability* surface, and every generic tool
+in the crate is written against it: `MIModel` (`src/backend.rs`), which owns a
+`Box<dyn MIBackend>` and is what the contrastive-steering helpers take, and the
+free functions `generate` / `generate_trajectory` (`src/diffusion/sample.rs`).
+A backbone whose upstream forward takes a second input therefore has a decision
+to make at port time, and the crate has so far made it three different ways:
+
+| backbone | input beyond `input_ids` | how the crate answers it |
+|---|---|---|
+| `GenericRwkv` | recurrent state, `[batch, heads, head_dim, head_dim]` per layer | **Private.** `RwkvState` (`src/rwkv/mod.rs`) is not `pub`, is zero-initialized on every call, and never crosses the trait. Readable via `HookPoint::RwkvState(i)`. |
+| `GenericMdlm` | diffusion timestep `t` | **Rejected at load.** `time_conditioning = true` is an `MIError::Config`; the adaLN vector is precomputed once at `t = 0` and stored as a field. Time-conditioned checkpoints cannot be loaded at all. |
+| `OthelloGpt` | self-conditioning token grid, `[batch, seq]` `U32` | **Asked, not yet built** (`docs/dogfooding-feedbacks/othello-mdlm-needs-a-carry-channel.md`). Decided shape: inherent method on the concrete type, trait forward unchanged. |
+
+Trap #5 above says "drop the modulation entirely". That is the right advice when
+the checkpoint does not use the input, and it is why `GenericMdlm` can refuse
+`time_conditioning = true`. This section is what to do when the model genuinely
+needs it.
+
+### The policy, so a fourth port does not invent a fourth answer
+
+1. **Keep it off the trait.** Expose the extra input as an inherent method on the
+   concrete type (`fn forward_with_x(&self, input_ids, x, hooks)`), and make
+   `MIBackend::forward(ids, hooks)` exactly the no-extra-input case, bit for bit.
+   Every existing hook, capture and intervention then keeps working untouched,
+   and no other backend inherits a method it cannot implement.
+2. **Add it before the first hook fires**, for an embedding-level input. Anything
+   added after `HookPoint::Embed` makes the logit lens and every capture read a
+   residual stream the logits did not come from, which is the confound the hook
+   surface exists to rule out.
+3. **Gate it off by default in the config**, and make the gate absent-means-off
+   when parsed from a companion `config.json` (the `get_bool_or` pattern already
+   used for `causal`). Passing the input while the gate is off is an error, never
+   a silent ignore.
+4. **Name it after the mechanism in the literature, not after the caller.** The
+   next reader of the crate knows `self_conditioning`; only one study knows
+   `carry`.
+
+### When to revisit
+
+Do not generalize on a count of backbones. The three inputs in the table have no
+common shape: per-layer float state that is also an output, a scalar expanded
+into every block, a token grid consumed once at the embed site. A union over
+those three would be a switchboard rather than an abstraction, and it would sit
+in the public API where it cannot be removed.
+
+The condition that does force a trait change is narrower: **a crate-level
+function taking `&dyn MIBackend` needs to thread an extra input through.**
+Nothing does today, because every caller needing one owns its own loop. The day
+`generate_trajectory`, or an `MIModel`-taking helper such as
+`build_contrastive_direction` (`src/steering/contrastive.rs`), has to carry one,
+the trait has to grow, and by then there will be three real shapes to design
+against instead of one.
+
 ## Calibrate before claim: the differential test
 
 Port as a *reproduction*, not a re-derivation. Have the PyTorch side emit fp32
