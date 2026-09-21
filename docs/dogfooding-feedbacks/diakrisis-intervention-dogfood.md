@@ -1,5 +1,26 @@
 # Steering helpers: re-export `position_delta`, and gate `steering` with the backends
 
+> **Status: IMPLEMENTED**, both findings, and left unmarked until now. Finding 1 shipped as the
+> recommended one-line re-export (`src/steering/mod.rs`), and `position_delta` is additionally
+> exported at the crate root. Finding 2 shipped as the recommended `any(backend)` gate on
+> `pub mod steering`. This blockquote is late: the folder's own rule is that a report whose status
+> is missing after its asks have shipped reads as open when it is not.
+>
+> **Revisited in v0.2.0 (2026-09-21).** Finding 2's symmetry had quietly broken. v0.2.0 added
+> `stoicheia` to `hooks::apply_intervention`'s cfg, because both `stoicheia` backends began
+> honouring interventions, but `pub mod steering` kept the older three-feature predicate. That
+> reopened exactly this report's asymmetry in the opposite direction: under `--features stoicheia`
+> the applier existed and the builders did not, so a user wanting a single-position
+> `Intervention::Add` would have reinvented `position_delta` again. Both gates now name the same
+> four features, and `src/lib.rs` carries a comment pointing here so the next person to widen one
+> widens the other.
+>
+> Finding 1 has a second postscript worth recording: v0.2.0 found the crate itself had made the
+> mistake this report describes. `CrossLayerTranscoder::prepare_hook_injection` and
+> `Sae::prepare_hook_injection` each built the single-position payload inline instead of calling
+> the helper, and **both copies were missing the bounds check**, so `position == seq_len` produced
+> a `[1, seq_len + 1, d]` payload rather than an error. Both now call `position_delta`.
+
 **Date:** July 12, 2026
 **Source:** askesis `diakrisis` — the Rust replication of the Othello-MDLM study (M3, causal intervention / `elenchos`)
 **Affected area:** `src/steering/mod.rs` (re-exports) + `src/lib.rs` (module gating), relative to `src/hooks.rs`

@@ -86,7 +86,7 @@ to make at port time, and the crate has so far made it three different ways:
 |---|---|---|
 | `GenericRwkv` | recurrent state, `[batch, heads, head_dim, head_dim]` per layer | **Private.** `RwkvState` (`src/rwkv/mod.rs`) is not `pub`, is zero-initialized on every call, and never crosses the trait. Readable via `HookPoint::RwkvState(i)`. |
 | `GenericMdlm` | diffusion timestep `t` | **Rejected at load.** `time_conditioning = true` is an `MIError::Config`; the adaLN vector is precomputed once at `t = 0` and stored as a field. Time-conditioned checkpoints cannot be loaded at all. |
-| `OthelloGpt` | self-conditioning token grid, `[batch, seq]` `U32` | **Asked, not yet built** (`docs/dogfooding-feedbacks/othello-mdlm-needs-a-carry-channel.md`). Decided shape: inherent method on the concrete type, trait forward unchanged. |
+| `OthelloGpt` | self-conditioning token grid, `[batch, seq]` `U32` | **Inherent method**, `forward_with_self_cond`; `MIBackend::forward` is that method with `None`. Shipped v0.2.0, and the worked example of the policy below. |
 
 Trap #5 above says "drop the modulation entirely". That is the right advice when
 the checkpoint does not use the input, and it is why `GenericMdlm` can refuse

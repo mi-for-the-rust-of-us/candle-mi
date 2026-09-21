@@ -325,7 +325,17 @@ pub mod sparse;
 // and applier appear/disappear together. `sparse` stays ungated — it is shared
 // data types (`FeatureId`/`SparseActivations`) consumed by the backend-independent
 // `clt`/`sae` features, not a builder with a backend-gated applier.
-#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
+// Gated on the same predicate as `hooks::apply_intervention`, so the
+// intervention *builders* and the code that *applies* them appear and
+// disappear together (diakrisis-intervention-dogfood.md, finding 2).
+// `stoicheia` joined that predicate in v0.2.0 when both stoicheia backends
+// began honouring interventions; this keeps the two in step.
+#[cfg(any(
+    feature = "transformer",
+    feature = "rwkv",
+    feature = "diffusion",
+    feature = "stoicheia"
+))]
 pub mod steering;
 #[cfg(feature = "stoicheia")]
 pub mod stoicheia;

@@ -173,9 +173,19 @@ pass, in execution order.  All hook points support both **capture** and
 ### RWKV Hook Points
 
 The `GenericRwkv` backend (RWKV-6 Finch and RWKV-7 Goose) exposes these
-hook points.  RWKV hooks are **capture-only** except for `Embed`, which
-also supports interventions.  State modifications use the dedicated
-[State Intervention](#rwkv-state-interventions) API.
+hook points.
+
+**Since v0.2.0**, the residual-stream points (`Embed`, `ResidPre`, `ResidPost`,
+`FinalNorm`) honour interventions like any other backend's.  Before v0.2.0 only
+`Embed` did, and the rest ignored an intervention without error.
+
+The three **diagnostic read-outs** (`RwkvState`, `RwkvDecay`,
+`RwkvEffectiveAttn`) are capture-only, and an intervention aimed at one is now
+**refused** with `MIError::Intervention` rather than silently dropped.  They are
+computed after the recurrence that produced them, so an edit there could not
+reach any computation.  To modify the recurrence itself, use the dedicated
+[State Intervention](#rwkv-state-interventions) API, which the error message
+also points you to.
 
 | Hook Point | String | Shape | Description |
 |------------|--------|-------|-------------|
@@ -233,6 +243,17 @@ the attention-only architecture maps naturally:
 No `MlpPre/Post/Out` (no MLP blocks), no `FinalNorm` (no normalization),
 no `ResidMid` (no MLP means `ResidPost` = after attention). Attention is
 full bidirectional (no causal mask), single-head.
+
+**Since v0.2.0**, every point listed above honours interventions. Before v0.2.0
+both stoicheia backends were capture-only and ignored an intervention without
+error; `hooks::apply_intervention` was not even compiled under the `stoicheia`
+feature. `AttnScores` and `AttnPattern` now fire *inside* the attention layer,
+so an intervention there reaches the weighted sum rather than a value the layer
+had already consumed.
+
+`StoicheiaRnn`'s per-timestep `Custom` points honour interventions too. An edit
+at `rnn.hook_hidden.{t}` propagates into later timesteps through the recurrence,
+which is the point of steering an RNN.
 
 ---
 
@@ -296,6 +317,14 @@ in registration order:
 hooks.intervene(HookPoint::AttnScores(5), Intervention::Scale(0.5));
 hooks.intervene(HookPoint::AttnScores(5), Intervention::Knockout(mask));
 ```
+
+**An intervention is never silently dropped.** Every backend either applies it,
+or returns `MIError::Intervention` explaining why that hook point cannot accept
+one. This matters more here than in most crates: a registered intervention that
+quietly does nothing makes a causal experiment report an effect of exactly zero,
+which is indistinguishable from a genuine null. Three backends behaved that way
+before v0.2.0 (see the RWKV and stoicheia sections above), and
+`BACKENDS.md`'s conformance checklist now requires a test that would catch it.
 
 ### Combining Captures and Interventions
 

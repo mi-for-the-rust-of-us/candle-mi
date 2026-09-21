@@ -43,6 +43,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   not bounds-check, which would make an out-of-range id a silent wrong answer on
   GPU only.
 
+- **`figure13_newline_patch` example** — newline activation patching, the first
+  CLT-free causal probe of the rhyme "planning site". Donor and recipient are a
+  *minimal pair*: two poems identical through line 3 except for that line's
+  final word, which sets a different rhyme. The donor's newline residual is
+  patched into the recipient at [`HookPoint::ResidPost`], one layer at a time
+  for a causal trace and at every layer at once, and the model then composes
+  line 4. Because the instrument replaces a row the model itself produced, a
+  null cannot be attributed to the decoder-derived feature discovery every
+  other probe in this line of work depends on.
+
+  Ships three things beyond the sweep: an **identity control** (patching a
+  prompt from its own row must be a bit-exact no-op) that runs by default,
+  since [`Intervention::PatchAt`] was silently wrong on CUDA before the
+  v0.1.24 fix; a **row-divergence diagnostic** (per-layer cosine and relative
+  L2 between the donor's and recipient's newline rows), without which a null is
+  uninterpretable; and verbatim composed lines, classified downstream by the
+  same CMU-rime Python layer as `figure13_newline_steering`, so the two
+  experiments share one phonology.
+
 ### Changed
 
 - **Shared helpers replace six clusters of duplicated code.** Per-model forward
@@ -114,6 +133,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the three exceptions above.
 
 ### Fixed
+
+- **`steering` is available under the `stoicheia` feature.** The module is gated
+  on the same predicate as `hooks::apply_intervention`, so the intervention
+  builders and the code that applies them appear together
+  (`diakrisis-intervention-dogfood.md`, finding 2). Adding `stoicheia` to the
+  applier's cfg in this release, so both stoicheia backends could honour
+  interventions, left the builders behind on the older three-feature predicate:
+  under `--features stoicheia` a user could register an intervention but not
+  reach `position_delta` to build a single-position payload for it. Both gates
+  now name the same four features.
 
 - **`CrossLayerTranscoder::prepare_hook_injection` and `Sae::prepare_hook_injection`
   now reject an out-of-range `position`** instead of silently building a payload
@@ -194,27 +223,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `bench_hook` entry, and already classifies a skip as `SKIP` rather than
   `PASS`, so "last verified" never advances on one).
 
-### Added
+### Security
 
-- **`figure13_newline_patch` example** — newline activation patching, the first
-  CLT-free causal probe of the rhyme "planning site". Donor and recipient are a
-  *minimal pair*: two poems identical through line 3 except for that line's
-  final word, which sets a different rhyme. The donor's newline residual is
-  patched into the recipient at [`HookPoint::ResidPost`], one layer at a time
-  for a causal trace and at every layer at once, and the model then composes
-  line 4. Because the instrument replaces a row the model itself produced, a
-  null cannot be attributed to the decoder-derived feature discovery every
-  other probe in this line of work depends on.
+- **Two RUSTSEC advisories patched** in transitive dependencies of the
+  `HuggingFace` download path: `h2` 0.4.15 -> 0.4.19 (RUSTSEC-2026-0258,
+  unbounded empty DATA frames) and `rustls` 0.23.41 -> 0.23.45 with
+  `rustls-webpki` 0.103.13 -> 0.103.15 (RUSTSEC-2026-0285, TLS 1.3 handshake
+  messages accepted across encryption-level boundaries, CVSS 5.3).
+  `cargo audit` is clean; the two remaining entries (`instant`, `paste`) are
+  pre-existing unmaintained-crate warnings, already allowed.
 
-  Ships three things beyond the sweep: an **identity control** (patching a
-  prompt from its own row must be a bit-exact no-op) that runs by default,
-  since [`Intervention::PatchAt`] was silently wrong on CUDA before the
-  v0.1.24 fix; a **row-divergence diagnostic** (per-layer cosine and relative
-  L2 between the donor's and recipient's newline rows), without which a null is
-  uninterpretable; and verbatim composed lines, classified downstream by the
-  same CMU-rime Python layer as `figure13_newline_steering`, so the two
-  experiments share one phonology.
-
+  A note for whoever repeats this: a plain `cargo update -p rustls` stops at
+  0.23.43 and prints "available: v0.23.45", which looks like an MSRV block and
+  is not. `rustls` declares `rust-version = "1.71"`. Reaching 0.23.45 also moves
+  the sibling `rustls-webpki`, which a single-package update will not do, so it
+  needs `--precise`. MSRV 1.91 verified green afterwards.
 
 ## [0.1.24] - 2026-09-03
 

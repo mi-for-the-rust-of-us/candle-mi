@@ -317,34 +317,17 @@ fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
     // 2. Embedding
     let mut hidden = self.embed(input_ids)?;
 
-    // 3. Hook: Embed (capture + intervene)
-    if hooks.is_captured(&HookPoint::Embed) {
-        cache.store(HookPoint::Embed, hidden.clone());
-    }
-    for intervention in hooks.interventions_at(&HookPoint::Embed) {
-        hidden = apply_intervention(&hidden, &HookPoint::Embed, intervention)?;
-    }
+    // 3. Every hook point goes through one helper, which captures and then
+    //    applies any registered interventions, in that order.
+    hook_point(&mut hidden, HookPoint::Embed, hooks, &mut cache)?;
 
     // 4. Layer loop
     for i in 0..self.num_layers {
-        // ResidPre capture + intervene
-        if hooks.is_captured(&HookPoint::ResidPre(i)) {
-            cache.store(HookPoint::ResidPre(i), hidden.clone());
-        }
-        let point = HookPoint::ResidPre(i);
-        for intervention in hooks.interventions_at(&point) {
-            hidden = apply_intervention(&hidden, &point, intervention)?;
-        }
+        hook_point(&mut hidden, HookPoint::ResidPre(i), hooks, &mut cache)?;
 
-        // ... your layer logic with hook points at each stage ...
+        // ... your layer logic, firing hook_point at each stage ...
 
-        // ResidPost capture + intervene
-        if hooks.is_captured(&HookPoint::ResidPost(i)) {
-            cache.store(HookPoint::ResidPost(i), hidden.clone());
-        }
-        for intervention in hooks.interventions_at(&HookPoint::ResidPost(i)) {
-            hidden = apply_intervention(&hidden, &HookPoint::ResidPost(i), intervention)?;
-        }
+        hook_point(&mut hidden, HookPoint::ResidPost(i), hooks, &mut cache)?;
     }
 
     // 5. Final logits
@@ -355,19 +338,39 @@ fn forward(&self, input_ids: &Tensor, hooks: &HookSpec) -> Result<HookCache> {
 ```
 
 **Key points:**
-- `apply_intervention()` is a crate-internal helper (`pub(crate)` in
-  `src/hooks.rs`) — if you're implementing a backend inside the crate, use
-  it directly; if outside, implement the intervention logic yourself.
+- **Use `crate::hooks::hook_point`. Do not hand-write capture and intervention
+  separately.** Until v0.2.0 every backend inlined the two halves, and three of
+  six had drifted: `GenericRwkv` applied interventions at `Embed` only, and both
+  `stoicheia` backends applied none at all. They captured correctly, so the gap
+  was invisible: `hooks.intervene(...)` returned no error and the forward
+  returned the untouched baseline, which in a causal experiment is indis-
+  tinguishable from a real null result. One helper is what stops that recurring.
+- **A hook point either honours interventions or refuses them. Never ignores
+  them.** Where a point exposes a *diagnostic read-out* that nothing downstream
+  consumes, use `hook_point_readonly`, which captures and returns
+  `MIError::Intervention` for any intervention aimed at it, naming the supported
+  alternative. RWKV's `RwkvState`, `RwkvDecay` and `RwkvEffectiveAttn` are of
+  this kind: they are computed *after* the recurrence that produced them, so an
+  edit there could never reach a computation. Accepting and discarding would
+  merely relocate the silent no-op from "the backend forgot" to "the tensor was
+  dead".
+- **Fire the hook where the value is still live.** If a sublayer returns a
+  tensor the caller only observes, the hook belongs *inside* that sublayer, not
+  on its return value. `StoicheiaTransformer` had `AttnScores`/`AttnPattern`
+  fired on values its attention had already consumed; they now fire inside
+  `AttentionLayer::forward` so an intervention reaches the weighted sum.
 - **Pass the hook point you are actually at.** `apply_intervention` takes it
   because dim 1 does not mean the same thing everywhere: the sequence in a
   `[batch, seq_len, hidden]` activation, a head in a
   `[batch, n_heads, seq_len, head_dim]` one. `Intervention::PatchAt` uses it to
   refuse a positional write where it would silently overwrite a head, so passing
   the wrong point defeats that guard. See `HookPoint::accepts_positional_patch`.
+  `hook_point` passes it for you.
 - Capture checks (`is_captured`) are cheap `HashSet` lookups — when false,
   the `.clone()` is skipped entirely.
 - Intervention iteration (`interventions_at`) returns an empty iterator
-  when no interventions target that hook point.
+  when no interventions target that hook point, so a forward with an empty
+  `HookSpec` is unchanged.
 
 ### Keep the Forward Differentiable (`nn_ops`)
 
@@ -570,7 +573,7 @@ When adding a new model family, verify:
 - [ ] **Config parsing**: `TransformerConfig::from_hf_config(&json)` produces the correct config for a known model
 - [ ] **Forward pass**: top-5 predictions match Python HuggingFace Transformers (F32 on both sides)
 - [ ] **Hook capture**: all hook points produce tensors with the expected shapes
-- [ ] **Intervention**: `Intervention::Zero` at `ResidPost(0)` changes the output (proves hooks are wired)
+- [ ] **Intervention**: `Intervention::Zero` at `ResidPost(0)` changes the output (proves hooks are wired). **Write this as a real test, not a manual check.** Three backends failed it silently for releases because nothing asserted it; `src/stoicheia/mod.rs` has the pattern, using a synthetic model so it needs no download
 - [ ] **Logit lens**: `project_to_vocab()` produces meaningful predictions at intermediate layers
 - [ ] **Rank preservation**: `project_to_vocab()` accepts both `[batch, hidden_size]` and `[batch, seq, hidden_size]`, and each position of the rank-3 result equals the rank-2 projection of that position
 - [ ] **No regression**: existing model tests still pass (`cargo test --features transformer`)

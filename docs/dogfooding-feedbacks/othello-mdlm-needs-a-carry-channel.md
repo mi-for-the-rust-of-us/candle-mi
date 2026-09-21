@@ -1,5 +1,13 @@
 # `OthelloGpt` needs a second input: the model's own previous prediction (self-conditioning)
 
+> **Status: IMPLEMENTED in v0.2.0** (2026-09-21, commit `9d3502f`), unreleased at time of
+> writing. The channel ships with all three guarantees the Ask asked for, and **under a different
+> name**: `self_conditioning`, not `carry`. Both of the report's own corrections were confirmed
+> against the crate and both are honoured. Nine implementation hazards the Ask did not cover were
+> found during validation; all nine are resolved or answered. **See the closure section at the end
+> of this file**, which also records the two questions the Ask left to the crate and what the crate
+> decided.
+>
 > **Status: ASKED** (2026-09-20), from the canvas leg of askesis. Registration:
 > `askesis/reference/canvas/docs/open-measurements.md`, *"Measurement O — the self-conditioned
 > MDLM"*; the reading that motivates it is devlog `Ph121` (2026-09-20). Written for
@@ -176,3 +184,76 @@ flag, four tests) and it is where the model lives.
   train, that stays true (both see the trained row); if it freezes it at zero, also true. Either
   is fine; the crate should say which.
 
+
+## Crate-side closure (2026-09-21, v0.2.0, commit `9d3502f`)
+
+Written by the crate, not by canvas. The Ask above is left exactly as filed, including the one
+citation it invented and then retracted itself.
+
+### The one divergence: it is called `self_conditioning`
+
+The Ask says `carry_ids`, `carry_emb`, `"carry"`. The crate ships `self_cond_ids`,
+`self_cond_emb.weight`, and the config key `"self_conditioning"`.
+
+This is not a preference. `docs/adding-a-model.md` gained an auxiliary-input policy the day before
+this landed, and rule 4 of it says to name a mechanism after the literature rather than after the
+caller. `carry` is canvas's internal vocabulary; the next reader of the crate will know Chen, Zhang
+and Hinton (2022) as self-conditioning. canvas is free to keep calling its own local variable
+`carry`; only the crate-facing names changed.
+
+**Action for canvas:** the companion `config.json` written by `train::write_companion_config` must
+emit `"self_conditioning"`, not `"carry"`. An unrecognised key reads as `false`, so a mismatch does
+not error, it silently disables the feature. That is the one place this rename can bite.
+
+### The Ask's own two corrections: both confirmed
+
+1. **The add goes before `HookPoint::Embed`.** Confirmed and implemented. It sits after the token
+   embedding and before the positional add, so `Embed` and every later hook see the stream the
+   logits came from.
+2. **The loader precedent was not established.** Confirmed: `othello-mdlm-plain-gpt-loader.md`
+   records no missing-tensor-as-zeros rule. The requirement stood on its own and is met via
+   `VarBuilder::contains_tensor`, which does exist in candle-nn 0.11, so canvas does not need its
+   fallback plan of writing zero tables into old checkpoints.
+
+### The nine hazards found during validation
+
+| # | hazard | disposition |
+|---|---|---|
+| 1 | `weight_shapes`' `else` arm would have given the table a `randn` draw | explicit `is_zero_init` branch; the table is zeroed, and the entry is appended **last** so the seeded RNG stream for every other tensor is untouched whatever the init rule becomes |
+| 2 | `OthelloGptConfig` is a plain `pub struct`; adding a field breaks literals | resolved by the v0.2.0 API pass: the struct is `#[non_exhaustive]` and `new()` kept its arity, with `with_self_conditioning` added |
+| 3 | `HookSpec` is the wrong vehicle for the input | ruled out: `HookSpec`'s own docs guarantee it "holds hook points and intervention descriptions, never activations" |
+| 4 | trait method versus inherent method | inherent, per policy rule 1, so the other five backends do not inherit a method they cannot implement |
+| 5 | `backward_reaches_every_parameter` hard-codes 29 parameters | unaffected: `tiny_config()` stays `self_conditioning: false`. A `true` fixture would have 30 |
+| 6 | the Ask's gradient test is imprecise about candle's embedding backward | candle yields a gradient for the **whole** table with zeros in unused rows, so the shipped test asserts on row *values* and keeps `NONE` out of the batch |
+| 7 | "bit-identical" via an all-`NONE` grid rests on `x + 0.0 == x` | the `None` path skips the add entirely rather than adding a zero, so it is exact by construction; the all-`NONE` path is also asserted, and is exact for every value a real checkpoint holds |
+| 8 | "freeze the `NONE` row at zero" is not free | one table is one `Var`; a row cannot be frozen without a gradient mask. **The `NONE` row trains like any other.** This answers the Ask's closing question |
+| 9 | dtype on the absent-table path | the zero table is built at `vb.dtype()` and `vb.device()`, so a `BF16` model does not silently get an `F32` table |
+
+### One thing the Ask asked for that turned out to matter more than it looked
+
+The id-range check. `candle`'s `index_select` raises `InvalidIndex` on CPU, but **the CUDA kernel
+does not bounds-check**, so an out-of-range id would read past the table: a silent wrong answer on
+GPU only, which is the failure mode this crate can least afford. The check is implemented as one
+`max_all` plus a scalar read rather than a host copy of the grid, because canvas runs two forwards
+per training step. Note this is stricter than the crate treats `input_ids`, which are unvalidated;
+the asymmetry is deliberate.
+
+### Verification
+
+Five tests, each **mutation-checked**: removing the zero-init fails the bit-identical parity test;
+inserting the shape-table entry first instead of last fails the seeded-stream test; accepting the
+carry without adding it fails both the logits and gradient tests. Notably the stream test still
+passes when only the zero-init is removed, which is the point of appending last: the two properties
+are independent and both are load-bearing.
+
+The `PyTorch` fp32 oracle (`tests/validate_othello_forward.rs`) reports the same numbers as before
+the change, to every digit, on both devices: CPU 4.18e-5 / 2.59e-4, CUDA 3.37e-5 / 2.44e-4.
+
+### Not done, and why
+
+**Fixed-point forcing** (the registered follow-up) needs no further crate change, as the Ask says:
+it is the same channel fed from a multi-step rollout. Nothing was added for it.
+
+The Ask's decode-time question about whether the carry should hold `NONE` at masked positions or
+the model's own reading everywhere is a canvas decode choice, as the Ask itself notes. The crate
+takes any grid of valid ids and does not constrain it.

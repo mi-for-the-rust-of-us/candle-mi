@@ -4,10 +4,13 @@
 //! character-to-token positioning, PCA, seeded Gaussian sampling, and the
 //! frozen seeded generator behind it.
 
+// Every consumer of the single-position payload: `steering` (which is gated
+// on the backend set) plus the `clt` and `sae` injectors.
 #[cfg(any(
     feature = "transformer",
     feature = "rwkv",
     feature = "diffusion",
+    feature = "stoicheia",
     feature = "clt",
     feature = "sae"
 ))]

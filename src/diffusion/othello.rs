@@ -652,7 +652,7 @@ impl OthelloGpt {
     /// [`self_conditioning`](OthelloGptConfig::self_conditioning) is off, if it
     /// is not `U32`, if its dims differ from `input_ids`, or if any id exceeds
     /// `vocab_size`.
-    /// Returns [`MIError::Intervention`](crate::MIError::Intervention) if a
+    /// Returns [`MIError::Intervention`] if a
     /// registered intervention is invalid at its hook point.
     pub fn forward_with_self_cond(
         &self,
