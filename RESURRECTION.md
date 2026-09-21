@@ -32,30 +32,30 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-09-21 11:00 — tier **partial (3 of 21: plt_gemma, clt, sae)**
+- **Last run:** 2026-09-21 12:19 — tier **partial (1 of 21: mdlm)**
 - **Toolchain:** rustc 1.98.0 (88d9e12ae 2026-08-18)
 - **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
 | Test | Models | Device(s) | Last verified | Wall-clock | Peak spill | Outcome |
 |---|---|---|---|---|---|---|
-| clt_qwen3 (encoder parity) | bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB) | CPU | 2026-09-02 | 1m59s | none | ✅ PASS |
-| plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-09-21 | 3m01s | none | ✅ PASS |
-| plt_llama (encoder parity) | mntss/transcoder-Llama-3.2-1B (~16 GiB) | CPU | 2026-09-02 | 88.1s | — | ✅ PASS |
-| llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-09-02 | 80.9s | — | ✅ PASS |
-| gemma2 forward | google/gemma-2-2b (gated) | CPU+GPU | 2026-09-02 | 1m40s | — | ✅ PASS |
-| phi3-mini forward | microsoft/Phi-3-mini-4k-instruct | CPU+GPU | 2026-09-02 | 1m32s | — | ✅ PASS |
-| mistral-7b forward | mistralai/Mistral-7B-v0.1 (gated) | CPU+GPU | 2026-09-02 | 1m49s | — | ✅ PASS |
-| qwen3 forward | Qwen/Qwen3-1.7B-Base | CPU+GPU | 2026-09-02 | 1m31s | — | ✅ PASS |
-| qwen2.5-coder forward | Qwen/Qwen2.5-Coder-3B-Instruct | CPU+GPU | 2026-09-02 | 1m36s | — | ✅ PASS |
-| starcoder2 forward | bigcode/starcoder2-3b (gated) | CPU+GPU | 2026-09-02 | 1m35s | — | ✅ PASS |
-| deepseek forward | deepseek-ai/deepseek-coder-1.3b-base | CPU+GPU | 2026-09-02 | 2m23s | — | ✅ PASS |
-| longrope forward | microsoft/Phi-3.5-mini-instruct (~15 GiB) | GPU | 2026-09-02 | 15m22s ⚠️ | 8476 MiB / 13m03s / peak ~23.8 GiB | ✅ PASS |
-| bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-09-02 | 1m43s | — | ✅ PASS |
-| mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-09-02 | 6.1s | — | ✅ PASS |
-| quantized (bnb/AWQ/GPTQ) | medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ | GPU | 2026-09-02 | 3m06s | — | ✅ PASS |
-| clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-09-21 | 4m09s | — | ✅ PASS |
-| sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-09-21 | 3m30s | — | ✅ PASS |
-| memory (VRAM probe) | (none - allocates a GPU tensor) | GPU | 2026-09-02 | 46.9s | — | ✅ PASS |
-| rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-09-02 | 4m20s | — | ✅ PASS |
+| clt_qwen3 (encoder parity) | bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB) | CPU | 2026-09-21 | 2m02s | none | ✅ PASS |
+| plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-09-21 | 2m07s | none | ✅ PASS |
+| plt_llama (encoder parity) | mntss/transcoder-Llama-3.2-1B (~16 GiB) | CPU | 2026-09-21 | 1m33s | — | ✅ PASS |
+| llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-09-21 | 1m55s | — | ✅ PASS |
+| gemma2 forward | google/gemma-2-2b (gated) | CPU+GPU | 2026-09-21 | 1m40s | — | ✅ PASS |
+| phi3-mini forward | microsoft/Phi-3-mini-4k-instruct | CPU+GPU | 2026-09-21 | 89.6s | — | ✅ PASS |
+| mistral-7b forward | mistralai/Mistral-7B-v0.1 (gated) | CPU+GPU | 2026-09-21 | 1m56s | — | ✅ PASS |
+| qwen3 forward | Qwen/Qwen3-1.7B-Base | CPU+GPU | 2026-09-21 | 1m37s | — | ✅ PASS |
+| qwen2.5-coder forward | Qwen/Qwen2.5-Coder-3B-Instruct | CPU+GPU | 2026-09-21 | 1m41s | — | ✅ PASS |
+| starcoder2 forward | bigcode/starcoder2-3b (gated) | CPU+GPU | 2026-09-21 | 1m35s | — | ✅ PASS |
+| deepseek forward | deepseek-ai/deepseek-coder-1.3b-base | CPU+GPU | 2026-09-21 | 2m23s | — | ✅ PASS |
+| longrope forward | microsoft/Phi-3.5-mini-instruct (~15 GiB) | GPU | 2026-09-21 | 15m45s ⚠️ | 8479 MiB / 13m18s / peak ~23.9 GiB | ✅ PASS |
+| bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-09-21 | 1m44s | — | ✅ PASS |
+| mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-09-21 | 6.2s | — | ✅ PASS |
+| quantized (bnb/AWQ/GPTQ) | medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ | GPU | 2026-09-21 | 2m59s | — | ✅ PASS |
+| clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-09-21 | 3m50s | — | ✅ PASS |
+| sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-09-21 | 3m17s | — | ✅ PASS |
+| memory (VRAM probe) | (none - allocates a GPU tensor) | GPU | 2026-09-21 | 47.6s | — | ✅ PASS |
+| rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-09-21 | 4m11s | — | ✅ PASS |
 | anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | 2026-09-02 | 11m37s ⚠️ | none | ✅ PASS |
-| patch_at (CUDA offset-view guard) | (none - OthelloGpt::init from a seed) | GPU | 2026-09-02 | 1m53s | — | ✅ PASS |
+| patch_at (CUDA offset-view guard) | (none - OthelloGpt::init from a seed) | GPU | 2026-09-21 | 1m37s | — | ✅ PASS |
