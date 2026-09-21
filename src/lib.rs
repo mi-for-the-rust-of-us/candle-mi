@@ -409,7 +409,7 @@ pub use sae::{
 };
 
 // Cache
-pub use cache::{ActivationCache, AttentionCache, FullActivationCache, KVCache};
+pub use cache::{ActivationCache, AttentionCache, FullActivationCache};
 
 // Error
 pub use error::{MIError, Result};

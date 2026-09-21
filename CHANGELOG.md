@@ -349,6 +349,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- **BREAKING: `KVCache` is no longer public.** It came from `plip-rs`, where it
+  was live in every `forward_*`. candle-mi's redesign around one hook-aware
+  `MIBackend::forward` orphaned it: the generation helpers re-run a full
+  forward per step and no backbone threads a cache through, so it had **zero
+  callers outside its own unit tests**.
+
+  What made this worth a breaking change rather than benign dead weight is the
+  documentation it carried: "enables efficient token-by-token generation with
+  `O(1)` complexity per token instead of `O(n)`". That describes what a KV
+  cache does in general, not anything this crate implements, so the public API
+  advertised a capability the crate does not have.
+
+  The type is kept, not deleted: the structure is correct and tested, and an
+  incremental-decode path would want exactly this shape. It now lives in the
+  private `cache::kv` module with no re-export, which is what removes it from
+  the public API, and its docs say plainly that nothing uses it. Restoring it
+  is one `pub use` line whenever a caller exists.
+
 - **BREAKING: the `probing` feature is gone.** It gated nothing: there was no
   `cfg(feature = "probing")` anywhere in `src/`, `tests/` or `examples/`, and no
   file imported `linfa` or `ndarray`. Enabling it pulled `linfa`,

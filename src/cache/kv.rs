@@ -1,10 +1,25 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! KV-cache for efficient autoregressive generation.
+//! A key/value cache that **nothing in this crate currently uses**.
 //!
-//! Stores key and value tensors from previous positions so they don't
-//! need to be recomputed at each generation step. This enables efficient
-//! token-by-token generation with O(1) complexity per token instead of O(n).
+//! Inherited from `plip-rs`, candle-mi's predecessor, where it was live in
+//! every `forward_*`. candle-mi's redesign around a single hook-aware
+//! [`MIBackend::forward`](crate::backend::MIBackend::forward) orphaned it: the
+//! generation helpers re-run a full forward per step, and no backbone threads
+//! a cache through. It is retained rather than deleted because the data
+//! structure is correct and tested, and a future incremental-decode path would
+//! want exactly this shape.
+//!
+//! Until such a path exists it is unreachable from outside the crate: `kv` is
+//! a private module and nothing re-exports the type, so the `pub` below is
+//! capped at `cache`'s own subtree. (`pub(crate)` would be identical in effect
+//! and `clippy::redundant_pub_crate` rejects it here.) It was public and
+//! root-re-exported up to v0.1.24, whose
+//! documentation claimed it "enables efficient token-by-token generation with
+//! `O(1)` complexity per token instead of `O(n)`". That described what a KV
+//! cache does in general, not anything candle-mi implements, and advertising
+//! a capability the crate does not have is worse than having no type at all.
+//! Demoted in v0.2.0.
 //!
 //! ## Memory Layout
 //!
@@ -27,16 +42,21 @@ use candle_core::Tensor;
 
 use crate::error::{MIError, Result};
 
-/// KV-cache for efficient autoregressive generation.
+/// Per-layer key/value cache, **not wired into any forward path**.
 ///
-/// Stores the key and value tensors from previous positions so they don't
-/// need to be recomputed at each generation step. Each layer has its own
-/// cache entry.
+/// Stores the key and value tensors from previous positions so they would not
+/// need recomputing at each generation step. No backbone consults it today;
+/// see the module documentation for why it is kept.
 ///
 /// # Shapes
 ///
 /// - `keys[i]`: `[batch, num_kv_heads, seq_len, head_dim]`
 /// - `values[i]`: `[batch, num_kv_heads, seq_len, head_dim]`
+// RETAINED: no caller outside this module's own tests, by design rather than
+// oversight, so `dead_code` would fire on every item here under
+// `#![deny(warnings)]`. The alternative to the allow is deleting a correct,
+// tested structure that an incremental-decode path would have to write again.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct KVCache {
     /// Cached key tensors per layer: `[batch, num_kv_heads, seq_len, head_dim]`.
@@ -45,6 +65,8 @@ pub struct KVCache {
     values: Vec<Option<Tensor>>,
 }
 
+// RETAINED: see the note on the struct; the whole inherent API is unused.
+#[allow(dead_code)]
 impl KVCache {
     /// Create a new empty cache for the given number of layers.
     #[must_use]
