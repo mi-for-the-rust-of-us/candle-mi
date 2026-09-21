@@ -108,7 +108,7 @@ candle-mi is (to our knowledge) the only MI toolkit with hook points for recurre
 cargo run --release --features transformer --example logit_lens -- "meta-llama/Llama-3.2-1B"
 ```
 
-This loads in ~2 seconds and runs in ~112ms on an RTX 5060 Ti (16 GB VRAM) or ~3 seconds on CPU, revealing how factual recall emerges across layers. The same prompt (*"The capital of France is"*) tells three different stories:
+This loads in ~2 seconds and runs in 80-120ms on an RTX 5060 Ti (16 GB VRAM) or ~3 seconds on CPU, revealing how factual recall emerges across layers. (Measured 2026-09-21 over 10 runs: load 2.07-2.31s, forward 80.3-119.8ms, median 82.8ms. The forward spread is bimodal rather than noisy, six runs near 82ms and four near 113ms, which is why a range is quoted instead of a single number. `meta-llama/Llama-3.2-1B` is gated, so this command needs `HF_TOKEN` set even when the model is already cached.) The same prompt (*"The capital of France is"*) tells three different stories:
 
 - **Llama 3.2 1B**: "Paris" appears at layer 11 (69% depth) — typical early factual resolution.
 - **Gemma 2 2B**: "Paris" appears at layer 25 (the very last layer, rank 8) — the model hedges until the end.

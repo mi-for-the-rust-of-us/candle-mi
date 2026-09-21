@@ -173,6 +173,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **The README's logit-lens timing was a single number for a bimodal
+  distribution.** It claimed "~112ms on an RTX 5060 Ti". Re-measured over 10
+  runs: the forward is not noisy around one value, it is bimodal, six runs near
+  82ms and four near 113ms (full range 80.3-119.8ms, median 82.8ms). The old
+  figure was a fair sample of the slow mode, not a stale number, but quoting it
+  alone hid the spread. Now quoted as a range with its provenance. Load time was
+  accurate and is unchanged (2.07-2.31s over the same 10 runs).
+
+  A five-run sample drawn while checking this landed almost entirely in the fast
+  cluster and would have "corrected" the README to ~81ms, which is why the
+  measurement is recorded with its sample size.
+
+- **The README's logit-lens command needs `HF_TOKEN`, which it did not say.**
+  `meta-llama/Llama-3.2-1B` is gated, and the example resolves it through the
+  download path, which authenticates even when the model is already in the
+  local cache. The oracle tests do not hit this because they locate the cached
+  snapshot directly. Documented in the README next to the command.
+
 - **`scripts/resurrect.ps1 -Only a,b` never worked.** `-Only` and `-Skip` were
   typed `[string]`, but at the prompt PowerShell parses an unquoted `a,b` as an
   *array*, so the comma form the script's own header and `CLAUDE.md` both
