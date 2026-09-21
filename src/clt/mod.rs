@@ -633,18 +633,37 @@ impl CrossLayerTranscoder {
             "Downloading first GemmaScope NPZ for dimension probe: \
              {GEMMASCOPE_WEIGHTS_REPO}/{first_npz_relpath} (~288 MiB)"
         );
-        // TODO(hf-fetch-model): the library API to do this without the full
-        // download already exists — anamnesis v0.4.3 ships
-        // `inspect_npz_from_reader<R: Read + Seek>` (Phase 4.7). The missing
-        // piece is an HTTP-range-backed `Read + Seek` adapter for arbitrary
-        // HF files, which `hf-fetch-model` already implements internally for
-        // safetensors. Once exposed publicly, replace the
-        // `download_file_blocking + read_gemmascope_npz_shape` pair below
-        // with `let reader = hf_fetch_model::range_reader(repo, file)?;
-        // let info = anamnesis::inspect_npz_from_reader(reader)?;`. Cuts
-        // `open()` cold-start from ~30 s on a 100 Mbps link to <1 s
-        // (~7 small range requests, well under 100 KiB on a typical
-        // GemmaScope `params.npz`).
+        // TODO(hf-fetch-model): this downloads ~288 MiB to read two integers.
+        // Both halves of the fix now exist publicly, so the blocker this TODO
+        // used to name is gone — but the replacement is NOT the two-liner an
+        // earlier version of this comment sketched. Corrected 2026-09-21:
+        //
+        //   * There is no `hf_fetch_model::range_reader(repo, file)`. That name
+        //     was invented. The real entry point is
+        //     `HttpRangeReader::open(repo_id, revision: Option<&str>,
+        //     filename, token: Option<&str>)`, re-exported at the crate root
+        //     of `hf-fetch-model` >= 0.12.1 (already our floor).
+        //   * It is `async`, and its own docs require it to be called from
+        //     inside a `tokio` runtime and then handed to a blocking context
+        //     (`spawn_blocking`), because its `Read`/`Seek` impls drive async
+        //     requests through a captured runtime handle. `open()` below is
+        //     blocking and already spawns a runtime for the HF API, so there
+        //     is one to borrow — but this is an integration, not a swap.
+        //   * `token` is load-bearing: `GemmaScope` is gated and `HF_TOKEN` is
+        //     not read automatically, so it must come from
+        //     `crate::download::fetch_config_builder()`, never `None`.
+        //
+        // The `.npz` format question is settled, and not by us:
+        // `HttpRangeReader::open_with_limits`' own doc lists `.npz` among the
+        // archive-header paths its default budgets are tuned for ("a handful
+        // of requests, well under 1 MiB"), which independently corroborates
+        // the ~7-requests estimate. Caveat: those budgets are hard limits, and
+        // exceeding them surfaces as a misleading "pathological archive
+        // layout" error — so keep the full download below as a fallback
+        // rather than replacing it outright.
+        //
+        // Pairs with `anamnesis::inspect_npz_from_reader<R: Read + Seek>`.
+        // Expected win: `open()` cold start ~30 s on a 100 Mbps link -> <1 s.
         // BORROW: explicit .to_owned() — hf_fetch_model takes ownership of the repo ID.
         let first_npz_path = hf_fetch_model::download_file_blocking(
             GEMMASCOPE_WEIGHTS_REPO.to_owned(),
