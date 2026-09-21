@@ -36,7 +36,7 @@ Both steps here are version-agnostic, which is exactly why they come first.
   [`CLAUDE.md`](../../CLAUDE.md) §Oracle-suite resurrection for tiers and
   `-Only`/`-Skip` selection. **Never run it concurrently with preflight.**
 - **The full CI mirror.** `./scripts/preflight.ps1 -Ci` — every CI step on
-  **both** `1.88` and `stable`. This is the run that means "green preflight =
+  **both** `1.91` and `stable`. This is the run that means "green preflight =
   green CI".
 
 ### 2. Bump version
@@ -85,7 +85,7 @@ keep in sync here. That is deliberate: see [Drift check](#drift-check).
 git push
 ```
 
-Wait for both matrix entries (MSRV 1.88 and Stable) to report green in the
+Wait for both matrix entries (MSRV 1.91 and Stable) to report green in the
 GitHub Actions UI. Do not proceed until both are ✓.
 
 ### 7. Tag and push

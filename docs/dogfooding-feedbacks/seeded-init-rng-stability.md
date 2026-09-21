@@ -1,5 +1,30 @@
 # Seeded init promises more than `StdRng` backs
 
+> **Status: IMPLEMENTED**, and left unmarked until now. The report recommended option B, freeze
+> the algorithm by having `init` pass `ChaCha8Rng` from `rand_chacha`. What shipped is stronger
+> than B and stops short of C: `src/util/rng.rs` is the crate's single construction point, and it
+> derives the 32-byte key in-crate with `SplitMix64` before calling `ChaCha8Rng::from_seed`,
+> deliberately avoiding `SeedableRng::seed_from_u64` because that convenience carries no stability
+> guarantee of its own. So the frozen span is wider than the report asked for, without owning a
+> PRNG as option C would have. `util::randn` then takes `ChaCha8Rng` concretely rather than
+> `impl Rng`, which makes the frozen generator the only one that can reach the sampler. This
+> blockquote is late: the folder's own rule is that a report whose status is missing after its
+> asks have shipped reads as open when it is not.
+>
+> **Completed in v0.2.0 (2026-09-21).** One step of that span had no test behind it, which the
+> module doc's claim ("no dependency bump can move it") did not distinguish from the rest. The
+> `SplitMix64` derivation was pinned to its published vector; the `ChaCha8` step was not, and the
+> only other test asserted `draw(0) == draw(0)` and `draw(0) != draw(1)`, which hold for any
+> deterministic generator. `seeded_stream_matches_the_chacha8_specification` now pins the first
+> four draws of `seeded(0)` to values derived independently from RFC 8439's block function at 8
+> rounds, so it detects a wrong stream and not merely a changed one. Mutation-checked: keeping the
+> key and advancing the stream leaves both older tests green and fails only the new one.
+>
+> The report's timing argument was also borne out. It warned that switching would change the
+> weights for a given seed exactly once, and that the window was half closed because
+> `canvas_ema_e10` existed on disk. That cost was paid at the switch; nothing since has moved the
+> stream, and the new test is what keeps it that way.
+
 **Date:** July 27, 2026
 **Source:** askesis `canvas` leg — design review of v0.1.20, after publication
 **Affected area:** `src/util/randn.rs`, `OthelloGpt::init` (`src/diffusion/othello.rs`)

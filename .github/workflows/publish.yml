@@ -121,7 +121,7 @@ jobs:
         run: cargo clippy --all-targets --no-default-features --features diffusion -- -W clippy::pedantic
 
       - name: Tests (Diffusion)
-        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward
+        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward --test validate_patch_at
 
       # validate_bidirectional_sampler + validate_bidirectional_forward need
       # transformer + diffusion; both #[ignore], so compile-check them.

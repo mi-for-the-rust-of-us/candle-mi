@@ -561,7 +561,7 @@ Where `A_t` (transition), `B_t` (input), and `C_t` (output) vary by architecture
 | **Effective attention** (RWKV) | ✅ Working (Phase 2) | `[b,h,t,t]` attention-equivalent from WKV recurrence via `HookPoint::RwkvEffectiveAttn`. V6 (prefix-sum) + V7 (backward linear functional) |
 | **Logit lens** | ✅ Infrastructure ready | Per-layer vocab projection via `project_to_vocab` |
 | **Activation caching** | ✅ Working | Per-layer hidden state storage (`ActivationCache`, `FullActivationCache`) |
-| **KV cache** | ✅ Infrastructure ready | Autoregressive generation with intervention (`KVCache`) |
+| **KV cache** | Not implemented | `generate` re-runs a full forward per step. `cache::kv::KVCache` exists but has no caller and is **not public** as of v0.2.0; its docs say so. Restoring it is one `pub use` once an incremental-decode path exists |
 | **Position mapping** | ✅ Working | Character offset ↔ token index conversion (`PositionConversion`) |
 
 ### 5.2 New (required for Melomētis, general-purpose)
