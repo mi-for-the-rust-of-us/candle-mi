@@ -27,9 +27,36 @@ Most HuggingFace transformer models work out of the box via **auto-config** — 
 
 ## Requirements
 
-**Hardware:** candle-mi runs on a single consumer GPU (developed on an RTX 5060 Ti, 16 GB VRAM). Models up to ~7B fit in 16 GB at F32 precision — no H100 cluster required. CPU-only works for small models and tokenizer-only workflows.
+**Hardware:** candle-mi runs on a single consumer GPU (developed on an RTX 5060 Ti, 16 GB VRAM). Models up to ~7B fit in 16 GB at F32 precision — no H100 cluster required. This is a deliberate stance rather than an accident: the crate targets the GPU-poor, not the GPU-less, and `cuda` is a **default feature**. CPU-only builds are supported and tested, but you have to ask for them (see below).
 
 **Toolchain: Rust 1.91 or newer**, edition 2024.
+
+**Build-time: a CUDA toolkit (`nvcc`) on `PATH`**, for the default feature set.
+
+> ⚠️ **Without a CUDA toolkit, `cargo add candle-mi` fails to build, and the error names
+> `nvcc`, not candle-mi.**
+>
+> The default feature set includes `cuda`, which reaches `candle-kernels` (it compiles `.cu`
+> kernels at build time via `cudaforge`) and `cudarc` (whose build script runs
+> `nvcc --version` and panics if it cannot). Both run *before* any candle-mi code, so we
+> cannot catch this and rewrite the message. The failure looks like:
+>
+> ```text
+> error: failed to run custom build command for `cudarc v0.19.8`
+>   `nvcc --version` failed.
+> ```
+>
+> **If you have a CUDA GPU:** install the CUDA toolkit and ensure `nvcc` is on `PATH`.
+>
+> **If you do not, or only want the CPU paths** (tokenizers, small models, the CPU parity
+> lanes), opt out of the default and name the backends you want:
+>
+> ```sh
+> cargo add candle-mi --no-default-features --features transformer
+> ```
+>
+> That configuration is built and tested on every CI run, across both toolchains: it is a
+> supported mode, not a workaround. Add `cuda` back whenever a GPU is available.
 
 > ⚠️ **On an older toolchain, `cargo add candle-mi` does not fail — it silently gives you an old
 > release and never moves you off it.**

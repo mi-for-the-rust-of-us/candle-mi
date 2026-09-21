@@ -420,6 +420,23 @@ name = "stoicheia_analysis"
 required-features = ["stoicheia"]
 
 [features]
+# `cuda` is in `default` deliberately, and has been since the initial scaffold.
+# candle-mi targets the GPU-poor, not the GPU-less: a single consumer card is the
+# whole budget, and the out-of-the-box configuration should be the one the crate is
+# actually for. The cost is real and is documented rather than hidden: without a
+# CUDA toolkit `cargo add candle-mi` fails to BUILD, because `candle-kernels`
+# compiles `.cu` kernels via `cudaforge` and `cudarc`'s build script runs
+# `nvcc --version` and panics. Both run before any candle-mi code, so the failure
+# cannot be intercepted here and the error names `nvcc` rather than this crate.
+#
+# The escape hatch is a supported, CI-tested configuration, not a workaround:
+#   cargo add candle-mi --no-default-features --features transformer
+# `preflight.ps1` builds and tests 46 such lanes per toolchain.
+#
+# Reconsidered 2026-09-21 and kept. Switching `cudarc` to `dynamic-loading` would
+# not help: `candle-kernels` needs `nvcc` regardless, and candle-core exposes no
+# feature to select the loading mode. See README.md `## Requirements` for the
+# user-facing version of this note.
 default = ["cuda", "transformer"]
 cuda = ["candle-core/cuda", "candle-nn/cuda"]
 metal = ["candle-core/metal", "candle-nn/metal"]

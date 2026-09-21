@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The manifest and the README made incompatible promises about CPU-only use.**
+  `README.md` said "CPU-only works for small models and tokenizer-only
+  workflows", which is true of the crate and **unreachable via `cargo add`**:
+  `cuda` is a default feature, and without a CUDA toolkit the build dies before
+  any candle-mi code runs. `candle-kernels` compiles `.cu` kernels through
+  `cudaforge` and calls `detect_compute_cap()`, and `cudarc`'s build script runs
+  `nvcc --version` and panics. Two documents, one of them wrong, and nothing to
+  say which.
+
+  Resolved in favour of the manifest: **`cuda` stays in `default`**, which was
+  the original intent and is the honest expression of what the crate is. It
+  targets the GPU-poor, not the GPU-less, so the out-of-the-box configuration
+  should be the one the crate is actually for. That decision is now a comment at
+  the `default` line, since nothing in the manifest had ever recorded it.
+
+  The failure is documented rather than hidden. `README.md`'s `## Requirements`
+  now states the build-time CUDA toolkit requirement and carries a trap block in
+  the same shape as the existing MSRV silent-downgrade block, with the verbatim
+  error text and the escape hatch:
+
+  ```sh
+  cargo add candle-mi --no-default-features --features transformer
+  ```
+
+  That configuration is verified to build and is covered by 46 preflight lanes
+  per toolchain, so it is a supported mode rather than a workaround.
+
+  No technical interception is possible: `cudarc`'s build script runs before any
+  candle-mi code, and switching it to `dynamic-loading` would not help because
+  `candle-kernels` needs `nvcc` regardless and candle-core exposes no feature to
+  select the loading mode.
+
 ## [0.2.0] - 2026-09-21
 
 ### Added
