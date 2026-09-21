@@ -55,7 +55,7 @@ round-trip by running these before pushing:
 
 ```powershell
 cargo fmt --check
-cargo clippy --features transformer -- -W clippy::pedantic
+cargo clippy --all-targets --features transformer -- -W clippy::pedantic
 cargo test
 ```
 

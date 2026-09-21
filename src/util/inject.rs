@@ -7,11 +7,12 @@
 //! everywhere else. Three call sites needed that shape: contrastive steering,
 //! `CLT` feature injection and `SAE` feature injection.
 //!
-//! This module is **ungated** on purpose. `steering` is compiled only under
-//! `any(transformer, rwkv, diffusion)`, while `clt` and `sae` each compile
-//! standalone, so the shared implementation cannot live in `steering` without
-//! breaking those lanes. The public entry point remains
-//! `steering::contrastive::position_delta`, which delegates here.
+//! This lives in `util`, not in `steering`, because `steering` is gated on the
+//! backend set while `clt` and `sae` each compile standalone: the shared
+//! implementation cannot sit in `steering` without breaking those lanes. The
+//! module's own gate is therefore the union of every consumer, and the public
+//! entry point remains `steering::contrastive::position_delta`, which delegates
+//! here.
 
 use candle_core::Tensor;
 

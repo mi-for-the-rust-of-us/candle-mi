@@ -220,7 +220,6 @@ This is a research-first design: MI analyses need to see everything, and the per
 | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 | `memory` | no | RAM/VRAM reporting (delegated to the [`hypomnesis`](https://crates.io/crates/hypomnesis) crate) |
 | `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |
-| `probing` | no | Linear probing via linfa (experimental) |
 | `training` | no | Checkpointable `AdamW` (`optim::AdamW`) so a run staged across processes resumes with its moments and step counter intact. candle's update rule, with the state reachable; still no training loop, schedule or data loader |
 | `metal` | no | Apple Metal GPU acceleration |
 

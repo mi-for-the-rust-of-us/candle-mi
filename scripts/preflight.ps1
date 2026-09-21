@@ -76,7 +76,7 @@ function Invoke-Cargo {
 
 # Feature sets and the all-software set — keep in sync with ci.yml.
 $featureSets = @("transformer", "rwkv,rwkv-tokenizer", "stoicheia", "clt,transformer", "quantized,transformer", "sae,transformer", "mmap,transformer", "diffusion", "memory", "memory-debug", "training")
-$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,training"
+$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
 
 # Skip the bench_hook_* benches unless -Full (see header note).
 $benchArgs = if ($Full) { @() } else { @("--", "--skip", "bench_hook") }

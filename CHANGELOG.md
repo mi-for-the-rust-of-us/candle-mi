@@ -134,6 +134,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`RoPE` no longer severs the gradient chain.** `candle_nn::rotary_emb::rope`
+  is built with `apply_op3_no_bwd`, so its output records no backprop op and
+  does not even set `track_op`. Every `Q` and `K` in `GenericTransformer` and
+  `GenericMdlm` passes through it, so a `VarMap`-backed forward lost its
+  gradient there: the projections, the embeddings and every earlier layer
+  trained as if frozen, while the loss still fell through the `V` path. This is
+  the same silent failure the `nn_ops` wrappers were introduced for in v0.1.20,
+  and it survived that sweep because the all-parameters-receive-a-gradient test
+  runs on `OthelloGpt`, which uses learned absolute positions and never touches
+  `RoPE`.
+
+  `nn_ops::rope` now dispatches on `Tensor::track_op` like the other wrappers.
+  `rope_slow` produces **identical values**, verified elementwise, so inference
+  is byte-identical and every parity baseline keeps its meaning -- confirmed by
+  the `PyTorch` oracle reporting the same numbers to every digit on both
+  devices.
+
+- **`HookSpec::extend` no longer drops state specs.** It merged captures and
+  interventions but not `state_knockout`/`state_steering`, so merging a spec
+  lost an RWKV state knockout with no error, which then reads as a null result.
+  `is_empty()` counted them, so the type disagreed with itself.
+
+- **`GenericRwkv` gained the intervention conformance test `BACKENDS.md`
+  requires.** The fix earlier in this release shipped with nothing asserting it;
+  the two new tests run against the real RWKV-7 model and cover both the
+  honoured path and the diagnostic-read-out refusal.
+
+- **Two examples still carried the un-bounds-checked payload builder.**
+  `steering_convergence` and `figure13_planning_poems` each had a private copy of
+  the narrow/cat form with the same missing `position >= seq_len` guard; both now
+  call `steering::position_delta`.
+
 - **`scripts/convert_othello_mdlm.py` writes the `self_conditioning` flag.** Its
   `CONFIG_KEYS` never gained the key, so converting a self-conditioned
   checkpoint emitted `self_cond_emb.weight` into the safetensors but omitted the
@@ -265,6 +297,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   is not. `rustls` declares `rust-version = "1.71"`. Reaching 0.23.45 also moves
   the sibling `rustls-webpki`, which a single-package update will not do, so it
   needs `--precise`. MSRV 1.91 verified green afterwards.
+
+### Removed
+
+- **BREAKING: the `probing` feature is gone.** It gated nothing: there was no
+  `cfg(feature = "probing")` anywhere in `src/`, `tests/` or `examples/`, and no
+  file imported `linfa` or `ndarray`. Enabling it pulled `linfa`,
+  `linfa-logistic` and `ndarray` into the build for no behaviour, and it was
+  listed in `[package.metadata.docs.rs]`, so docs.rs compiled them on every
+  build. Removing it drops 176 lines from `Cargo.lock`.
+
+  `stoicheia::probing` is unrelated and unaffected: it is hand-written
+  correlation analysis gated on `stoicheia`, which is part of why the flag was
+  misleading.
 
 ## [0.1.24] - 2026-09-03
 

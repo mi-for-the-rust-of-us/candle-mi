@@ -42,7 +42,12 @@ Every example in candle-mi must follow these conventions. This guide captures le
 #![allow(clippy::too_many_lines)]
 ```
 
-The `#![allow]` block is standard for all examples. Library code uses deny; examples relax these for readability.
+The `#![allow]` block is standard for all examples. **Since v0.2.0 clippy also lints
+example and test targets** (`--all-targets` on every CI lane), so an example that
+indexes a slice, unwraps, expects or panics needs the matching allow as well:
+`clippy::indexing_slicing`, `clippy::unwrap_used`, `clippy::expect_used`,
+`clippy::panic`. Add only the ones the file actually needs; 19 of 42 examples
+currently carry `indexing_slicing`. Library code uses deny; examples relax these for readability.
 
 ## Token Positions
 

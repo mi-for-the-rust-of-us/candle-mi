@@ -319,8 +319,8 @@ impl RopeCache {
         let cos = cos_full.narrow(0, start_pos, seq_len)?;
         let sin = sin_full.narrow(0, start_pos, seq_len)?;
 
-        // CONTIGUOUS: candle_nn::rotary_emb::rope() requires a contiguous input
-        Ok(candle_nn::rotary_emb::rope(&x.contiguous()?, &cos, &sin)?)
+        // CONTIGUOUS: the rope kernel requires a contiguous input
+        crate::nn_ops::rope(&x.contiguous()?, &cos, &sin)
     }
 }
 

@@ -11,9 +11,12 @@
 > honouring interventions, but `pub mod steering` kept the older three-feature predicate. That
 > reopened exactly this report's asymmetry in the opposite direction: under `--features stoicheia`
 > the applier existed and the builders did not, so a user wanting a single-position
-> `Intervention::Add` would have reinvented `position_delta` again. Both gates now name the same
-> four features, and `src/lib.rs` carries a comment pointing here so the next person to widen one
-> widens the other.
+> `Intervention::Add` would have reinvented `position_delta` again. **There are three gates, not
+> two** -- the module, `hooks::apply_intervention`, and the crate-root re-export -- and the first
+> attempt at this fix widened only two of them, so the items resolved at
+> `candle_mi::steering::position_delta` but not at `candle_mi::position_delta` under that one
+> feature. All three now name the same four features, and `src/lib.rs` carries a comment pointing
+> here so the next person to widen one widens the others.
 >
 > Finding 1 has a second postscript worth recording: v0.2.0 found the crate itself had made the
 > mistake this report describes. `CrossLayerTranscoder::prepare_hook_injection` and

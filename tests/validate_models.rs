@@ -210,6 +210,7 @@ fn print_top_k(model_name: &str, device_name: &str, prompt: &str, top_k: &[(Stri
 // LLaMA 3.2 1B
 // ===========================================================================
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn llama_3_2_1b_config_parse() {
     let Some(snapshot) = find_snapshot("meta-llama/Llama-3.2-1B") else {
@@ -233,6 +234,7 @@ fn llama_3_2_1b_config_parse() {
     assert!(!config.mlp_bias);
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn llama_3_2_1b_forward_cpu() {
     if find_snapshot("meta-llama/Llama-3.2-1B").is_none() {
@@ -266,6 +268,7 @@ fn llama_3_2_1b_forward_cpu() {
     assert_eq!(vocab, config.vocab_size);
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 #[serial]
 fn llama_3_2_1b_forward_gpu() {
@@ -290,6 +293,7 @@ fn llama_3_2_1b_forward_gpu() {
 // Gemma 2 2B
 // ===========================================================================
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn gemma_2_2b_config_parse() {
     let Some(snapshot) = find_snapshot("google/gemma-2-2b") else {
@@ -314,6 +318,7 @@ fn gemma_2_2b_config_parse() {
     assert!(config.embedding_scale.is_some());
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn gemma_2_2b_forward_cpu() {
     if find_snapshot("google/gemma-2-2b").is_none() {
@@ -332,6 +337,7 @@ fn gemma_2_2b_forward_cpu() {
     assert_in_top_k(&top10, "Paris", prompt, "Gemma 2 2B CPU");
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 #[serial]
 fn gemma_2_2b_forward_gpu() {
@@ -357,6 +363,7 @@ fn gemma_2_2b_forward_gpu() {
 // StarCoder2 3B
 // ===========================================================================
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn starcoder2_3b_config_parse() {
     let Some(snapshot) = find_snapshot("bigcode/starcoder2-3b") else {
@@ -373,6 +380,7 @@ fn starcoder2_3b_config_parse() {
     assert!(config.mlp_bias);
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn starcoder2_3b_forward_cpu() {
     if find_snapshot("bigcode/starcoder2-3b").is_none() {
@@ -389,6 +397,7 @@ fn starcoder2_3b_forward_cpu() {
     assert_in_top_k(&top5, "hello", prompt, "StarCoder2 3B CPU");
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 #[serial]
 fn starcoder2_3b_forward_gpu() {
@@ -413,6 +422,7 @@ fn starcoder2_3b_forward_gpu() {
 // Qwen2.5 Coder 3B Instruct
 // ===========================================================================
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn qwen2_5_coder_3b_config_parse() {
     let Some(snapshot) = find_snapshot("Qwen/Qwen2.5-Coder-3B-Instruct") else {
@@ -428,6 +438,7 @@ fn qwen2_5_coder_3b_config_parse() {
     assert_eq!(config.num_kv_heads, 2); // GQA with few KV heads
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn qwen2_5_coder_3b_forward_cpu() {
     if find_snapshot("Qwen/Qwen2.5-Coder-3B-Instruct").is_none() {
@@ -444,6 +455,7 @@ fn qwen2_5_coder_3b_forward_cpu() {
     assert_in_top_k(&top5, "Paris", prompt, "Qwen2.5-Coder-3B CPU");
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 #[serial]
 fn qwen2_5_coder_3b_forward_gpu() {
@@ -468,6 +480,7 @@ fn qwen2_5_coder_3b_forward_gpu() {
 // Phi-3 Mini 4K Instruct
 // ===========================================================================
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn phi3_mini_config_parse() {
     let Some(snapshot) = find_snapshot("microsoft/Phi-3-mini-4k-instruct") else {
@@ -484,6 +497,7 @@ fn phi3_mini_config_parse() {
     assert_eq!(config.mlp_layout, candle_mi::MlpLayout::GatedFused);
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn phi3_mini_forward_cpu() {
     if find_snapshot("microsoft/Phi-3-mini-4k-instruct").is_none() {
@@ -500,6 +514,7 @@ fn phi3_mini_forward_cpu() {
     assert_in_top_k(&top5, "Paris", prompt, "Phi-3 Mini CPU");
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 #[serial]
 fn phi3_mini_forward_gpu() {
@@ -561,6 +576,7 @@ fn ensure_mistral_7b_cached() -> Option<std::path::PathBuf> {
     }
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 fn mistral_7b_config_parse() {
     let Some(snapshot) = find_snapshot("mistralai/Mistral-7B-v0.1") else {
@@ -606,6 +622,7 @@ fn mistral_7b_forward_cpu() {
     assert_in_top_k(&top5, "Paris", prompt, "Mistral 7B CPU");
 }
 
+#[ignore = "needs a cached HF model; a skip would otherwise report `ok`"]
 #[test]
 #[serial]
 fn mistral_7b_forward_gpu() {

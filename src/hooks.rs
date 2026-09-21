@@ -834,6 +834,17 @@ impl HookSpec {
         self.captures.extend(other.captures.iter().cloned());
         self.interventions
             .extend(other.interventions.iter().cloned());
+        // State specs are part of a spec's content -- `is_empty` counts them --
+        // so merging has to carry them too. Dropping them silently lost an
+        // RWKV state knockout on merge, which then read as a null result.
+        // `other` wins where both set one, matching the last-writer-wins shape
+        // of `set_state_knockout` / `set_state_steering` themselves.
+        if let Some(spec) = other.state_knockout.clone() {
+            self.state_knockout = Some(spec);
+        }
+        if let Some(spec) = other.state_steering.clone() {
+            self.state_steering = Some(spec);
+        }
         self
     }
 }
@@ -1743,5 +1754,28 @@ mod tests {
 
         // Neither captured nor intervened: no error.
         assert!(reject_intervention_at(&point, &HookSpec::new(), "x").is_ok());
+    }
+
+    /// `extend` must carry state specs, not just captures and interventions.
+    ///
+    /// It dropped them silently until v0.2.0. `is_empty()` counts them, so the
+    /// type disagreed with itself, and a merged spec lost an RWKV state
+    /// knockout with no error -- which then reads as a null result.
+    #[test]
+    fn extend_carries_state_specs() {
+        let mut base = HookSpec::new();
+        base.capture(HookPoint::Embed);
+
+        let mut other = HookSpec::new();
+        other.set_state_knockout(StateKnockoutSpec::new().position(3));
+
+        assert!(base.state_knockout().is_none());
+        base.extend(&other);
+
+        assert!(
+            base.state_knockout().is_some(),
+            "extend must not drop a state knockout"
+        );
+        assert!(base.is_captured(&HookPoint::Embed), "captures still merge");
     }
 }

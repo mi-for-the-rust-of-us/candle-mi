@@ -91,7 +91,7 @@ impl MdlmRope {
         let (_, _, seq_len, _) = x.dims4()?;
         let cos = self.cos.narrow(0, 0, seq_len)?;
         let sin = self.sin.narrow(0, 0, seq_len)?;
-        // CONTIGUOUS: candle_nn::rotary_emb::rope requires a contiguous input
-        Ok(candle_nn::rotary_emb::rope(&x.contiguous()?, &cos, &sin)?)
+        // CONTIGUOUS: the rope kernel requires a contiguous input
+        crate::nn_ops::rope(&x.contiguous()?, &cos, &sin)
     }
 }

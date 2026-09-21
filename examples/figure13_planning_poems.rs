@@ -63,7 +63,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use candle_core::{DType, Device, Tensor};
+use candle_core::{Device, Tensor};
 use clap::Parser;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -897,19 +897,11 @@ fn add_vector_at_position(
     strength: f32,
     device: &Device,
 ) -> candle_mi::Result<()> {
-    let d_model = vector.dims1()?;
     let scaled = (vector * f64::from(strength))?; // [d_model]
-    let scaled_3d = scaled.unsqueeze(0)?.unsqueeze(0)?; // [1, 1, d_model]
-    let zeros = Tensor::zeros((1, seq_len, d_model), DType::F32, device)?;
-    let mut parts: Vec<Tensor> = Vec::with_capacity(3);
-    if position > 0 {
-        parts.push(zeros.narrow(1, 0, position)?);
-    }
-    parts.push(scaled_3d);
-    if position + 1 < seq_len {
-        parts.push(zeros.narrow(1, position + 1, seq_len - position - 1)?);
-    }
-    let injection = Tensor::cat(&parts, 1)?;
+    // Delegates to the crate helper, which bounds-checks `position`. The inline
+    // narrow/cat this replaced did not.
+    let _ = device;
+    let injection = candle_mi::steering::position_delta(&scaled, position, seq_len)?;
     hooks.intervene(
         HookPoint::ResidPost(target_layer),
         Intervention::Add(injection),

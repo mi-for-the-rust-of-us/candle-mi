@@ -119,14 +119,6 @@ hypomnesis = { version = "0.2.9", optional = true, default-features = false, fea
 # hf-fetch-model release that moves its own anamnesis floor.
 anamnesis = { version = "0.7.7", optional = true }
 
-# Windows-only deps. The `probing` feature's linear-probe stack is developed and
-# exercised on Windows, so its crates are gated to `cfg(windows)`.
-[target.'cfg(windows)'.dependencies]
-# Optional: probing
-ndarray = { version = "0.15", optional = true }
-linfa = { version = "0.7", optional = true }
-linfa-logistic = { version = "0.7", optional = true }
-
 [dev-dependencies]
 clap = { version = "4", features = ["derive"] }
 serial_test = "3.4.0"
@@ -447,7 +439,6 @@ stoicheia = ["dep:anamnesis", "anamnesis/pth"]
 quantized = ["dep:anamnesis", "anamnesis/bnb", "anamnesis/awq", "anamnesis/gptq"]
 memory = ["dep:hypomnesis"]
 memory-debug = ["memory", "hypomnesis/debug-output"]
-probing = ["linfa", "linfa-logistic", "ndarray"]
 # Checkpointable `AdamW` (`src/optim.rs`), for training runs staged across
 # process boundaries. Default-OFF on purpose: candle-mi is an interpretability
 # crate first, and an inference-only consumer should not compile an optimizer.
@@ -504,7 +495,7 @@ must_use_candidate        = "warn"      # Rule 17
 # CPU-safe features so the generated docs cover the full public API surface.
 [package.metadata.docs.rs]
 no-default-features = true
-features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "probing", "stoicheia", "training"]
+features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "stoicheia", "training"]
 
 [profile.release]
 lto = true

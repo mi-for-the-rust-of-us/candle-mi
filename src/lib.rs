@@ -56,7 +56,6 @@
 //! | `memory` | no | RAM/VRAM reporting (delegated to the `hypomnesis` crate) |
 //! | `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |
 //! | `stoicheia` | no | `AlgZoo` tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
-//! | `probing` | no | Linear probing via linfa (experimental) |
 //! | `metal` | no | Apple Metal GPU acceleration |
 //!
 //! ## Quick start
@@ -246,7 +245,7 @@
 //!   how to add a new model architecture (auto-config, config parser, or
 //!   custom `MIBackend`).
 //! - [`examples/README.md`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/examples/README.md) —
-//!   23 runnable examples covering inference, logit lens, attention patterns,
+//!   42 runnable examples covering inference, logit lens, attention patterns,
 //!   knockout, steering, activation patching, `CounterFact` replication,
 //!   CLT circuits, SAE encoding, RWKV inference, `AlgZoo` analysis, and more.
 
@@ -434,7 +433,17 @@ pub use interp::steering::{DoseResponseCurve, DoseResponsePoint, SteeringCalibra
 
 // Steering — contrastive activation steering (Maar et al. 2026)
 // Gated with the `steering` module above (needs a backend to apply its output).
-#[cfg(any(feature = "transformer", feature = "rwkv", feature = "diffusion"))]
+// This is a THIRD gate, not a second: the module, `hooks::apply_intervention`
+// and this re-export must all name the same features, or an item resolves at
+// `candle_mi::steering::x` but not at `candle_mi::x` for one feature
+// combination -- which no lane catches, because a missing re-export is not a
+// compile error.
+#[cfg(any(
+    feature = "transformer",
+    feature = "rwkv",
+    feature = "diffusion",
+    feature = "stoicheia"
+))]
 pub use steering::contrastive::{
     ContrastiveDirection, PositionStrategy, build_contrastive_direction, contrastive_intervention,
     position_delta,

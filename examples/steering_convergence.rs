@@ -937,19 +937,11 @@ fn build_position_delta(
     position: usize,
     device: &Device,
 ) -> candle_mi::Result<Tensor> {
-    let zeros = Tensor::zeros((1, seq_len, hidden), DType::F32, device)?;
-    let scaled_3d = vector.to_dtype(DType::F32)?.unsqueeze(0)?.unsqueeze(0)?; // [1, 1, hidden]
-
-    let mut parts: Vec<Tensor> = Vec::with_capacity(3);
-    if position > 0 {
-        parts.push(zeros.narrow(1, 0, position)?);
-    }
-    parts.push(scaled_3d);
-    if position + 1 < seq_len {
-        parts.push(zeros.narrow(1, position + 1, seq_len - position - 1)?);
-    }
-
-    Ok(Tensor::cat(&parts, 1)?)
+    // Delegates to the crate helper, which bounds-checks `position`. The inline
+    // narrow/cat this replaced did not: at `position == seq_len` it produced a
+    // `[1, seq_len + 1, hidden]` payload that then broadcast wrongly.
+    let _ = (hidden, device);
+    candle_mi::steering::position_delta(&vector.to_dtype(DType::F32)?, position, seq_len)
 }
 
 /// Extract logits for the last token position.

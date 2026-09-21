@@ -190,7 +190,7 @@ jobs:
       # below but runs the doctests; transformer is included so the memory and
       # crate-level examples (MIModel::from_pretrained) still compile.
       - name: Doctests (all software features)
-        run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training" --doc
+        run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training" --doc
 
       # Rustdoc, per feature set. `#![deny(warnings)]` promotes
       # rustdoc::broken_intra_doc_links (and friends) to errors, but only for the
@@ -207,7 +207,7 @@ jobs:
           for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" \
                    "quantized,transformer" "sae,transformer" "mmap,transformer" \
                    "diffusion" "memory" "memory-debug" "training" \
-                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training"; do
+                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training"; do
             echo "::group::cargo doc --features '$f'"
             cargo doc --no-default-features ${f:+--features "$f"} --no-deps
             echo "::endgroup::"
@@ -220,4 +220,4 @@ jobs:
       # Check 6 (Rule 15): All software features build
       # Note: cuda/metal features require hardware; test all software features instead
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,training"
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"

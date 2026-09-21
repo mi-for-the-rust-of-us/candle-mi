@@ -28,6 +28,8 @@ use crate::error::Result;
 static FUSED_SOFTMAX_DIFFERENTIABLE: OnceLock<bool> = OnceLock::new();
 /// Whether the installed `candle-nn`'s fused `layer_norm` records a backward op.
 static FUSED_LAYER_NORM_DIFFERENTIABLE: OnceLock<bool> = OnceLock::new();
+/// Whether the installed `candle-nn`'s fused `rotary_emb::rope` records a backward op.
+static FUSED_ROPE_DIFFERENTIABLE: OnceLock<bool> = OnceLock::new();
 
 /// Probes, ONCE per process, whether a fused `candle-nn` op carries gradients.
 ///
@@ -59,6 +61,21 @@ fn fused_carries_gradients(cell: &OnceLock<bool>, run: fn(&Tensor) -> Result<Ten
 /// The softmax probe body: the fused op, applied to the tracked probe tensor.
 fn probe_softmax(xs: &Tensor) -> Result<Tensor> {
     Ok(candle_nn::ops::softmax_last_dim(xs)?)
+}
+
+/// The `RoPE` probe body: the fused op on a minimal `[1, 1, seq, head_dim]` input.
+///
+/// The shared prober hands a `[1, 4]` tensor, which `rope` cannot take, so this
+/// reshapes it to the rank-4 layout and builds `cos`/`sin` of the matching
+/// `[seq, head_dim / 2]` shape. Only op registration is under test, so the
+/// angle values are arbitrary.
+fn probe_rope(xs: &Tensor) -> Result<Tensor> {
+    let device = xs.device();
+    // [1, 4] -> [1, 1, 2, 2]: batch 1, one head, seq 2, head_dim 2.
+    let x = xs.reshape((1, 1, 2, 2))?;
+    let cos = Tensor::ones((2, 1), DType::F32, device)?;
+    let sin = Tensor::zeros((2, 1), DType::F32, device)?;
+    Ok(candle_nn::rotary_emb::rope(&x.contiguous()?, &cos, &sin)?)
 }
 
 /// The layer-norm probe body: the fused op with weight and bias, the gradient-barrier
@@ -171,6 +188,41 @@ pub fn rms_norm(norm: &RmsNorm, xs: &Tensor) -> Result<Tensor> {
         Ok(norm.forward_diff(xs)?)
     } else {
         Ok(norm.forward(xs)?)
+    }
+}
+
+/// Rotary position embedding, differentiable when the graph is tracked.
+///
+/// `candle_nn::rotary_emb::rope` is `apply_op3_no_bwd`, so its output records
+/// **no** backprop op and does not even set `track_op`. Every `Q` and `K` in
+/// `GenericTransformer` (requires `transformer`) and `GenericMdlm` (requires
+/// `diffusion`) passes through it, so before
+/// v0.2.0 a `VarMap`-backed forward lost its gradient at `RoPE`: the
+/// projections, the embeddings and every earlier layer trained as if frozen,
+/// while the loss still fell through the `V` path and the residual stream.
+///
+/// This is the same C1 failure the module doc describes, and it survived the
+/// v0.1.20 sweep because the all-parameters-receive-a-gradient test runs on
+/// `OthelloGpt`, which uses learned absolute positions and never touches
+/// `RoPE`.
+///
+/// `candle_nn::rotary_emb::rope_slow` is the composed equivalent and produces
+/// **identical values**, verified elementwise, so the dispatch costs nothing
+/// but a boolean test and inference stays byte-identical.
+///
+/// # Shapes
+/// - `xs`: `[batch, n_heads, seq_len, head_dim]`
+/// - `cos` / `sin`: `[seq_len, head_dim / 2]`
+/// - returns: `[batch, n_heads, seq_len, head_dim]`
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+pub fn rope(xs: &Tensor, cos: &Tensor, sin: &Tensor) -> Result<Tensor> {
+    if xs.track_op() && !fused_carries_gradients(&FUSED_ROPE_DIFFERENTIABLE, probe_rope) {
+        Ok(candle_nn::rotary_emb::rope_slow(xs, cos, sin)?)
+    } else {
+        Ok(candle_nn::rotary_emb::rope(xs, cos, sin)?)
     }
 }
 
@@ -321,5 +373,57 @@ mod tests {
         assert!(grads.get(&v).is_some());
         let untracked = layer_norm(&ln, &v.as_tensor().detach()).unwrap();
         assert!(max_abs_diff(&tracked, &untracked) < 1e-6);
+    }
+
+    /// Build a `[1, 1, 2, 2]` input plus matching `cos`/`sin` for `rope`.
+    fn rope_inputs() -> (Var, Tensor, Tensor) {
+        let dev = candle_core::Device::Cpu;
+        let x = Tensor::new(&[[[[0.1f32, 0.2], [0.3, 0.4]]]], &dev).unwrap();
+        let v = Var::from_tensor(&x).unwrap();
+        let cos = Tensor::new(&[[0.8f32], [0.6]], &dev).unwrap();
+        let sin = Tensor::new(&[[0.2f32], [0.4]], &dev).unwrap();
+        (v, cos, sin)
+    }
+
+    /// `RoPE` must carry a gradient under a `VarMap`.
+    ///
+    /// The regression: `candle_nn::rotary_emb::rope` is `apply_op3_no_bwd`, so
+    /// a tracked input came out as a graph leaf and `backward()` stopped at
+    /// `RoPE` -- silently, with the loss still falling through the `V` path.
+    /// Every `Q` and `K` in `GenericTransformer` and `GenericMdlm` goes through
+    /// here. The v0.1.20 sweep missed it because the 29/29-gradient test runs on
+    /// `OthelloGpt`, which has learned absolute positions and no `RoPE`.
+    #[test]
+    fn rope_carries_a_gradient_when_tracked() {
+        let (v, cos, sin) = rope_inputs();
+        let tracked = rope(&v.as_tensor().contiguous().unwrap(), &cos, &sin).unwrap();
+
+        assert!(
+            tracked.track_op(),
+            "a tracked input must produce a tracked output"
+        );
+        let grads = tracked.sum_all().unwrap().backward().unwrap();
+        assert!(
+            grads.get(&v).is_some(),
+            "backward() must reach the input through rope"
+        );
+    }
+
+    /// And the tracked path must agree with the fused kernel, so routing every
+    /// backbone through the wrapper cannot move an inference parity baseline.
+    #[test]
+    fn rope_tracked_and_fused_paths_agree() {
+        let (v, cos, sin) = rope_inputs();
+        let tracked = rope(&v.as_tensor().contiguous().unwrap(), &cos, &sin).unwrap();
+        let untracked = rope(&v.as_tensor().detach().contiguous().unwrap(), &cos, &sin).unwrap();
+
+        assert!(
+            !untracked.track_op(),
+            "the detached input must take the fused path"
+        );
+        assert!(
+            max_abs_diff(&tracked, &untracked) < 1e-6,
+            "composed and fused rope must agree"
+        );
     }
 }

@@ -298,6 +298,105 @@ fn print_top_k(device_name: &str, prompt: &str, top_k: &[(u32, String, f32)]) {
 }
 
 // ===========================================================================
+// Intervention conformance (BACKENDS.md testing checklist)
+// ===========================================================================
+
+/// `Intervention::Zero` at `ResidPost(0)` must change the output.
+///
+/// This is `BACKENDS.md`'s conformance item, and until v0.2.0 `GenericRwkv`
+/// failed it silently: it captured correctly but never consulted
+/// `interventions_at` at any point except `Embed`, so a causal experiment
+/// returned the untouched baseline and measured an effect of exactly zero.
+/// Nothing asserted it, which is why it survived several releases.
+#[test]
+#[serial]
+fn rwkv7_intervention_at_resid_post_changes_output() {
+    if find_snapshot(MODEL_ID).is_none() {
+        eprintln!("SKIP: {MODEL_ID} not in HF cache");
+        return;
+    }
+    let device = Device::Cpu;
+    let (model, tokenizer, _config) = load_rwkv7_on_with_dtype(&device, DType::F32);
+
+    let ids = tokenizer.encode("The capital of France is").unwrap();
+    let input = Tensor::new(ids.as_slice(), &device)
+        .unwrap()
+        .unsqueeze(0)
+        .unwrap();
+
+    let baseline: Vec<f32> = model
+        .forward(&input, &HookSpec::new())
+        .unwrap()
+        .output()
+        .flatten_all()
+        .unwrap()
+        .to_vec1()
+        .unwrap();
+
+    let mut hooks = HookSpec::new();
+    hooks.intervene(HookPoint::ResidPost(0), candle_mi::Intervention::Zero);
+    let treated: Vec<f32> = model
+        .forward(&input, &hooks)
+        .unwrap()
+        .output()
+        .flatten_all()
+        .unwrap()
+        .to_vec1()
+        .unwrap();
+
+    assert_ne!(
+        baseline, treated,
+        "Intervention::Zero at ResidPost(0) must change GenericRwkv's output"
+    );
+}
+
+/// A diagnostic read-out refuses an intervention instead of dropping it.
+///
+/// `RwkvEffectiveAttn` is reconstructed only when captured, so an intervention
+/// registered without a capture had nothing to refuse and vanished silently.
+#[test]
+#[serial]
+fn rwkv7_diagnostic_read_out_refuses_an_intervention() {
+    if find_snapshot(MODEL_ID).is_none() {
+        eprintln!("SKIP: {MODEL_ID} not in HF cache");
+        return;
+    }
+    let device = Device::Cpu;
+    let (model, tokenizer, _config) = load_rwkv7_on_with_dtype(&device, DType::F32);
+
+    let ids = tokenizer.encode("Paris").unwrap();
+    let input = Tensor::new(ids.as_slice(), &device)
+        .unwrap()
+        .unsqueeze(0)
+        .unwrap();
+
+    // Intervened, never captured: the case that used to disappear.
+    let mut hooks = HookSpec::new();
+    hooks.intervene(
+        HookPoint::RwkvEffectiveAttn(0),
+        candle_mi::Intervention::Zero,
+    );
+    let err = model
+        .forward(&input, &hooks)
+        .expect_err("a diagnostic read-out must refuse an intervention");
+    let msg = err.to_string();
+    assert!(msg.contains("diagnostic read-out"), "{msg}");
+    // Each read-out names its own alternative; effective attention is not a
+    // state edit, so it points at the residual stream rather than at
+    // `set_state_knockout`.
+    assert!(
+        msg.contains("steer `ResidPre`/`ResidPost` instead"),
+        "must name the alternative: {msg}"
+    );
+    // The message is spliced from a const that once carried a stray newline
+    // from a botched line continuation; it must read as one line.
+    assert!(
+        !msg.contains('\n'),
+        "error message must be a single line: {msg}"
+    );
+}
+
+// ===========================================================================
 // Config parsing
 // ===========================================================================
 

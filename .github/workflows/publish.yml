@@ -164,7 +164,7 @@ jobs:
       # the old transformer+memory-only lane left clt/sae/rwkv doc examples
       # uncovered. Mirrors ci.yml so publish can't ship a broken doctest.
       - name: Doctests (all software features)
-        run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training" --doc
+        run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training" --doc
 
       # Rustdoc, per feature set. Mirrors ci.yml, and matters more here: what
       # docs.rs renders after a publish is the crate's public face, and a broken
@@ -178,7 +178,7 @@ jobs:
           for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" \
                    "quantized,transformer" "sae,transformer" "mmap,transformer" \
                    "diffusion" "memory" "memory-debug" "training" \
-                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,memory,training"; do
+                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training"; do
             echo "::group::cargo doc --features '$f'"
             cargo doc --no-default-features ${f:+--features "$f"} --no-deps
             echo "::endgroup::"
@@ -188,7 +188,7 @@ jobs:
         run: cargo build --no-default-features
 
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,probing,quantized,training"
+        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
 
       # Publish
       - name: Publish to crates.io
