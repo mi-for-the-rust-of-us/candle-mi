@@ -173,6 +173,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`util::rng`'s central claim had no test behind it.** The module states that
+  "every step from `u64` seed to weight bytes is frozen inside this crate, and
+  no dependency bump can move it". Only half of that was tested:
+  `splitmix64_seed_matches_the_reference_vector` genuinely pins the seed
+  derivation against the published `SplitMix64` vector, but the other test
+  asserted only `draw(0) == draw(0)` and `draw(0) != draw(1)`, which hold for
+  any deterministic generator. A silent change in `rand_chacha`'s output would
+  have rewritten every seeded model's weights with the suite green, surfacing
+  later as unexplained drift in an oracle rather than as the bump that caused
+  it.
+
+  `seeded_stream_matches_the_chacha8_specification` now pins the first four
+  `u64` draws of `seeded(0)`. The values are **derived from the `ChaCha8`
+  specification** rather than recorded from the implementation: an independent
+  implementation of RFC 8439's block function at 8 rounds, applied to
+  `splitmix64_seed(0)`, paired little-endian into `u64`s the way
+  `rand_core`'s `BlockRng` does. That derivation independently reproduced the
+  key bytes the existing test already pinned, which is what validates the
+  chain, and it detects a wrong stream as well as a changed one.
+
+  Mutation-checked with the hazard the module itself names: advancing the
+  stream while keeping the key leaves both older tests passing and fails only
+  this one.
+
 - **The README's logit-lens timing was a single number for a bimodal
   distribution.** It claimed "~112ms on an RTX 5060 Ti". Re-measured over 10
   runs: the forward is not noisy around one value, it is bimodal, six runs near

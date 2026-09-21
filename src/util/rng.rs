@@ -74,6 +74,46 @@ mod tests {
         );
     }
 
+    /// Pin the `ChaCha8` step itself, which nothing else does.
+    ///
+    /// `splitmix64_seed_matches_the_reference_vector` freezes the seed
+    /// derivation, and `seeded_streams_are_reproducible_and_seed_dependent`
+    /// freezes nothing: `draw(0) == draw(0)` and `draw(0) != draw(1)` hold for
+    /// *any* deterministic generator, so both would stay green if
+    /// `rand_chacha` changed its output entirely. That left the module's claim
+    /// -- that no dependency bump can move the seed-to-weight-bytes path --
+    /// resting on an untested link. A silent upstream change would rewrite
+    /// every seeded model's weights with the suite passing, surfacing much
+    /// later as numeric drift in an oracle rather than as the bump that caused
+    /// it.
+    ///
+    /// The values below are **derived from the `ChaCha8` specification**, not
+    /// recorded from this implementation: an independent implementation of the
+    /// block function (RFC 8439's `ChaCha`, 8 rounds, 64-bit counter and 64-bit
+    /// nonce both zero) applied to `splitmix64_seed(0)`, with 32-bit output
+    /// words paired little-endian into `u64`s the way `rand_core`'s `BlockRng`
+    /// does. Recording the implementation's own output would only detect
+    /// change, not correctness; this detects both. Same discipline as the
+    /// `SplitMix64` vector above, and the fact that that derivation reproduced
+    /// the already-pinned key bytes is what validates the chain.
+    #[test]
+    fn seeded_stream_matches_the_chacha8_specification() {
+        let mut rng = seeded(0);
+        let draws: Vec<u64> = (0..4).map(|_| rng.r#gen::<u64>()).collect();
+
+        assert_eq!(
+            draws,
+            vec![
+                0xBF94_D133_2D8E_E5E8,
+                0x3A73_8775_A6DA_5A01,
+                0x3D46_FF10_C143_EE06,
+                0x17C6_AB23_E9F6_424F,
+            ],
+            "the ChaCha8 stream for seed 0 moved; every seeded model's weights \
+             just changed. Check for a rand_chacha bump before touching this."
+        );
+    }
+
     /// A frozen generator must reproduce its stream from the seed alone, and
     /// distinct seeds must not collide.
     #[test]
