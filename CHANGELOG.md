@@ -53,8 +53,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   null cannot be attributed to the decoder-derived feature discovery every
   other probe in this line of work depends on.
 
-  Ships three things beyond the sweep: an **identity control** (patching a
-  prompt from its own row must be a bit-exact no-op) that runs by default,
+  Ships four things beyond the sweep. A **mid-line control** (`--patch-offset
+  N`) that patches `N` tokens *before* the line-3 newline instead of at it,
+  which localizes any effect found: under a minimal pair the donor's mid-line
+  row is identical to the recipient's, so the control is a genuine no-op test
+  rather than a perturbation of unrelated state. That only holds because donor
+  rows are captured at the **same offset the recipient is patched at**; taking
+  them always at the newline made the control write a row the donor never had
+  there, which looked like a result and was an artifact. An **identity control**
+  (patching a prompt from its own row must be a bit-exact no-op) that runs by
+  default,
   since [`Intervention::PatchAt`] was silently wrong on CUDA before the
   v0.1.24 fix; a **row-divergence diagnostic** (per-layer cosine and relative
   L2 between the donor's and recipient's newline rows), without which a null is
@@ -102,6 +110,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the valid list rather than passing vacuously over zero lanes. Removing the
   underlying cause, `cuda` in `default`, is recorded in
   `docs/roadmaps/v0.3.0-api-ergonomics.md` as a breaking change for v0.3.0.
+
+- **`hf-fetch-model` floor `0.12.0` to `0.12.1`.** A required dependency, so the
+  floor moves any consumer that also depends on it directly. Freshness only:
+  0.12.1 adds quant-aware fit planning (`inspect --group-by`, `hf-fm quants
+  --fits`, `inspect --cache-headers`), none of which candle-mi calls today. **No
+  MSRV change** and **no `anamnesis` lockstep bump** (still `^0.7.7`), so unlike
+  the 0.11.x and 0.12.0 moves this one carries no duplicate-`anamnesis` hazard.
+  `hypomnesis` moved `0.2.10` to `0.2.11` in the lockfile at the same time,
+  transitively via `hf-fetch-model`; candle-mi's own declared floor stays
+  `0.2.9`.
+
+  Worth recording for the release after this one: 0.12.1 is also the version
+  whose `inspect::inspect_npz` the `GemmaScope` change above now depends on, so
+  this freshness bump turned out to be load-bearing after the fact.
 
 - **Shared helpers replace six clusters of duplicated code.** Per-model forward
   passes are deliberately untouched: `docs/adding-a-model.md` is explicit that
