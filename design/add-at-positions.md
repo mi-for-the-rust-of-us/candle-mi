@@ -15,7 +15,8 @@ However, MI experiments often need **heterogeneous per-position injection**:
 - Inject CLT feature "Paris" at position 3 and feature "Berlin" at position 7 in a single forward pass, then study how the model resolves the conflict through attention patterns.
 - Multi-site interaction studies: inject different steering vectors at different positions simultaneously to test whether features are independent or interact. Currently requires exponentially many single-position forward passes.
 - [K-BERT](https://arxiv.org/abs/1909.07606) (Liu et al., 2019) pioneered per-position knowledge injection at the embedding layer for encoder-only models. The injection *mechanism* — adding entity embeddings at specific token positions — transfers directly to decoder-only MI experiments.
-- The anacrousis recurrent feedback loop (`inject_feedback_at_position` in `src/transformer/mod.rs:706`) already implements exactly this pattern as a special-case internal helper — building a sparse `[1, seq_len, d_model]` delta tensor and adding it via `broadcast_add`.
+- The anacrousis recurrent feedback loop (`inject_feedback_at_position` in `src/transformer/mod.rs`) already implements exactly this pattern as a special-case internal helper — building a sparse `[1, seq_len, d_model]` delta tensor and adding it via `broadcast_add`.
+- **Update, v0.2.0:** the *single*-position case is now one shared helper, `util::inject::position_delta`, reached publicly as `steering::position_delta`. Contrastive steering, `CLT` injection and `SAE` injection all route through it; two of those three had hand-rolled it and neither bounds-checked the position. That narrows this proposal to what it is actually about: *heterogeneous* per-position injection in a single pass, which the shared helper does not cover.
 
 The pattern is general enough to be a first-class intervention.
 

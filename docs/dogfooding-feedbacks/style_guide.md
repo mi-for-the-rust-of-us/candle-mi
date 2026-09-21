@@ -65,7 +65,11 @@ files and symbols, never just "candle-mi"; a report aimed at the examples rather
 writes `**Affected example:**` instead (`json-output-should-be-self-contained.md`).
 
 The block is not optional. `othello-mdlm-needs-a-carry-channel.md` carries a status blockquote and
-then no metadata at all, which is the one place that report departs from the folder.
+then no metadata at all, which is the one place that report departs from the folder. It was not
+added retroactively when that report was closed, and deliberately so: the folder does not edit a
+reporter's prose after the fact, for the same reason it does not edit a wrong recommendation out of
+one (see "The crate's side of the loop" below). Write the block when you file; nobody will add it
+for you later.
 
 Add `**Platform:**` when an OS or driver behaviour is load-bearing for even one measurement, and
 say which one (`training-throughput-ceiling.md` scopes Windows/WDDM to exactly measurement J2). Add
