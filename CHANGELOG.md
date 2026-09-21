@@ -64,6 +64,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Opening a `GemmaScope` transcoder no longer downloads 288 MiB to read two
+  integers.** `CrossLayerTranscoder::open()` probed layer-0's dimensions by
+  fetching the whole `params.npz`. It now reads the archive's header over HTTP
+  Range via `hf_fetch_model::inspect::inspect_npz`, which is cache-first, so an
+  already-downloaded file still costs no network.
+
+  Measured against `google/gemma-scope-2b-pt-transcoders`, same file and link,
+  minutes apart: **86,037 bytes in 3.63 s, against 302,131,416 bytes in
+  61.97 s.** Eight range requests, 0.028% of the file.
+
+  The full download is **kept as a fallback**, deliberately. A probe can fail
+  for reasons that say nothing about whether the weights are reachable, such as
+  a proxy that strips `Range` headers, and none of those should turn a working
+  `open()` into an error.
+
+  Layer 0 is no longer pre-populated in the path cache on the probe path, so it
+  is fetched lazily like every other layer, and only if that layer is used.
+
+  Findings from the integration are filed upstream as
+  `hf-fetch-model/docs/dogfooding-feedbacks/candle-mi-npz-range-inspect.md`.
+
 - **`scripts/preflight.ps1` gains `-Only` / `-Skip` / `-ListLanes`.** An ad-hoc
   check is now a lane slug (`-Only clt,sae`) instead of a hand-written feature
   string. That is the point: `--no-default-features` drops `cuda` along with

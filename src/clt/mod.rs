@@ -447,7 +447,7 @@ impl CrossLayerTranscoder {
         if matches!(schema, TranscoderSchema::GemmaScopeNpz) {
             #[cfg(feature = "sae")]
             {
-                return Self::open_gemmascope(clt_repo, fetch_config);
+                return Self::open_gemmascope(clt_repo, fetch_config, &rt);
             }
             #[cfg(not(feature = "sae"))]
             {
@@ -587,18 +587,25 @@ impl CrossLayerTranscoder {
     /// 2. Parses the curation `YAML` via [`gemmascope::parse_gemmascope_config`]
     ///    to obtain the per-layer `.npz` paths inside
     ///    `google/gemma-scope-2b-pt-transcoders` (the weights repo).
-    /// 3. Downloads the layer-0 `.npz` (~288 MiB FP32) from the weights
-    ///    repo to probe `(d_model, n_features_per_layer)` from `W_enc`.
-    ///    The on-disk shape is `[d_model, n_features]` — transposed vs
-    ///    the `[n_features, d_model]` convention used by the other
-    ///    schemas.
+    /// 3. Reads `(d_model, n_features_per_layer)` off the layer-0 `.npz`'s
+    ///    `W_enc`. The on-disk shape is `[d_model, n_features]` —
+    ///    transposed vs the `[n_features, d_model]` convention used by the
+    ///    other schemas. The archive is ~288 MiB at `width_16k`, so the
+    ///    fast path reads its header over HTTP Range
+    ///    ([`probe_gemmascope_npz_shape`]) and downloads nothing;
+    ///    a failed probe falls back to downloading the file whole.
     /// 4. Builds [`CltConfig`] and returns the constructed transcoder.
     ///    All other layer NPZs are downloaded lazily.
     ///
-    /// Caller (`open()`) has already classified the schema and built
-    /// `fetch_config`.
+    /// Caller (`open()`) has already classified the schema, built
+    /// `fetch_config`, and created `rt` — which step 3 borrows rather than
+    /// building a second runtime.
     #[cfg(feature = "sae")]
-    fn open_gemmascope(clt_repo: &str, fetch_config: hf_fetch_model::FetchConfig) -> Result<Self> {
+    fn open_gemmascope(
+        clt_repo: &str,
+        fetch_config: hf_fetch_model::FetchConfig,
+        rt: &tokio::runtime::Runtime,
+    ) -> Result<Self> {
         use crate::clt::gemmascope::{GEMMASCOPE_WEIGHTS_REPO, parse_gemmascope_config};
 
         info!(
@@ -621,7 +628,6 @@ impl CrossLayerTranscoder {
         let model_name =
             parse_yaml_value(&yaml_text, "model_name").unwrap_or_else(|| "unknown".to_owned());
         let gemmascope_npz_paths = parse_gemmascope_config(&yaml_text)?;
-        let n_layers = gemmascope_npz_paths.len();
 
         // Step 3: probe layer-0 NPZ to discover dimensions.
         let first_npz_relpath = gemmascope_npz_paths.first().ok_or_else(|| {
@@ -629,41 +635,41 @@ impl CrossLayerTranscoder {
                 "parse_gemmascope_config returned empty paths despite passing validation".into(),
             )
         })?;
+        // Probe the layer-0 archive's header rather than downloading it. The
+        // file is ~288 MiB at `width_16k` and we want two integers out of it,
+        // so the fast path reads the ZIP central directory over HTTP Range
+        // and leaves `encoder_paths[0]` empty; `ensure_encoder_path` then
+        // downloads it lazily, if and only if layer 0 is actually encoded.
+        //
+        // The full download stays as the fallback, deliberately. A probe can
+        // fail for reasons that say nothing about whether the weights are
+        // reachable: a proxy or mirror that ignores `Range` headers, or an
+        // archive laid out so that walking it exceeds the inspector's request
+        // budget. Neither should turn a working `open()` into an error.
+        match probe_gemmascope_npz_shape(rt, GEMMASCOPE_WEIGHTS_REPO, first_npz_relpath) {
+            Ok((n_features_per_layer, d_model)) => {
+                return Ok(Self::assemble_gemmascope(
+                    clt_repo,
+                    fetch_config,
+                    model_name,
+                    gemmascope_npz_paths,
+                    None,
+                    n_features_per_layer,
+                    d_model,
+                ));
+            }
+            Err(e) => {
+                info!(
+                    "Header probe of {GEMMASCOPE_WEIGHTS_REPO}/{first_npz_relpath} \
+                     failed ({e}); falling back to the full download (~288 MiB)"
+                );
+            }
+        }
+
         info!(
             "Downloading first GemmaScope NPZ for dimension probe: \
              {GEMMASCOPE_WEIGHTS_REPO}/{first_npz_relpath} (~288 MiB)"
         );
-        // TODO(hf-fetch-model): this downloads ~288 MiB to read two integers.
-        // Both halves of the fix now exist publicly, so the blocker this TODO
-        // used to name is gone — but the replacement is NOT the two-liner an
-        // earlier version of this comment sketched. Corrected 2026-09-21:
-        //
-        //   * There is no `hf_fetch_model::range_reader(repo, file)`. That name
-        //     was invented. The real entry point is
-        //     `HttpRangeReader::open(repo_id, revision: Option<&str>,
-        //     filename, token: Option<&str>)`, re-exported at the crate root
-        //     of `hf-fetch-model` >= 0.12.1 (already our floor).
-        //   * It is `async`, and its own docs require it to be called from
-        //     inside a `tokio` runtime and then handed to a blocking context
-        //     (`spawn_blocking`), because its `Read`/`Seek` impls drive async
-        //     requests through a captured runtime handle. `open()` below is
-        //     blocking and already spawns a runtime for the HF API, so there
-        //     is one to borrow — but this is an integration, not a swap.
-        //   * `token` is load-bearing: `GemmaScope` is gated and `HF_TOKEN` is
-        //     not read automatically, so it must come from
-        //     `crate::download::fetch_config_builder()`, never `None`.
-        //
-        // The `.npz` format question is settled, and not by us:
-        // `HttpRangeReader::open_with_limits`' own doc lists `.npz` among the
-        // archive-header paths its default budgets are tuned for ("a handful
-        // of requests, well under 1 MiB"), which independently corroborates
-        // the ~7-requests estimate. Caveat: those budgets are hard limits, and
-        // exceeding them surfaces as a misleading "pathological archive
-        // layout" error — so keep the full download below as a fallback
-        // rather than replacing it outright.
-        //
-        // Pairs with `anamnesis::inspect_npz_from_reader<R: Read + Seek>`.
-        // Expected win: `open()` cold start ~30 s on a 100 Mbps link -> <1 s.
         // BORROW: explicit .to_owned() — hf_fetch_model takes ownership of the repo ID.
         let first_npz_path = hf_fetch_model::download_file_blocking(
             GEMMASCOPE_WEIGHTS_REPO.to_owned(),
@@ -678,10 +684,39 @@ impl CrossLayerTranscoder {
         .into_inner();
         let (n_features_per_layer, d_model) = read_gemmascope_npz_shape(&first_npz_path)?;
 
-        // Step 4: assemble the path cache with the layer-0 path pre-populated.
+        Ok(Self::assemble_gemmascope(
+            clt_repo,
+            fetch_config,
+            model_name,
+            gemmascope_npz_paths,
+            Some(first_npz_path),
+            n_features_per_layer,
+            d_model,
+        ))
+    }
+
+    /// Build the `GemmaScope` transcoder once its dimensions are known.
+    ///
+    /// Shared tail of [`open_gemmascope`](Self::open_gemmascope)'s two
+    /// paths. `first_npz_path` is `Some` only when the dimensions came from
+    /// a file that was downloaded anyway, so the path cache can be
+    /// pre-populated; the header-probe path passes `None` and leaves layer 0
+    /// to [`ensure_encoder_path`](Self::ensure_encoder_path) like every
+    /// other layer.
+    #[cfg(feature = "sae")]
+    fn assemble_gemmascope(
+        clt_repo: &str,
+        fetch_config: hf_fetch_model::FetchConfig,
+        model_name: String,
+        gemmascope_npz_paths: Vec<String>,
+        first_npz_path: Option<PathBuf>,
+        n_features_per_layer: usize,
+        d_model: usize,
+    ) -> Self {
+        let n_layers = gemmascope_npz_paths.len();
         let mut encoder_paths: Vec<Option<PathBuf>> = vec![None; n_layers];
         if let Some(slot) = encoder_paths.first_mut() {
-            *slot = Some(first_npz_path);
+            *slot = first_npz_path;
         }
         let decoder_paths: Vec<Option<PathBuf>> = vec![None; n_layers];
 
@@ -699,7 +734,7 @@ impl CrossLayerTranscoder {
             config.n_layers, config.d_model, config.n_features_per_layer, config.n_features_total,
         );
 
-        Ok(Self {
+        Self {
             // BORROW: explicit .to_owned() — store an owned repo ID for lazy downloads.
             repo_id: clt_repo.to_owned(),
             fetch_config,
@@ -708,7 +743,7 @@ impl CrossLayerTranscoder {
             config,
             loaded_encoder: None,
             steering_cache: HashMap::new(),
-        })
+        }
     }
 
     /// Access the auto-detected CLT configuration.
@@ -2728,32 +2763,126 @@ fn load_w_dec_npz(path: &Path, layer: usize) -> Result<Tensor> {
 #[cfg(feature = "sae")]
 fn read_gemmascope_npz_shape(npz_path: &Path) -> Result<(usize, usize)> {
     let info = anamnesis::inspect_npz(npz_path)?;
-    let w_enc = info
+    let source = npz_path.display().to_string();
+    let w_enc_shape = info
         .tensors
         .iter()
         .find(|t| t.name == "W_enc")
-        .ok_or_else(|| {
-            MIError::Config(format!(
-                "tensor 'W_enc' not found in {}",
-                npz_path.display()
-            ))
-        })?;
-    if w_enc.shape.len() != 2 {
+        .map(|t| {
+            // BORROW: explicit .as_slice() — &[usize] view into the owned Vec.
+            t.shape.as_slice()
+        })
+        .ok_or_else(|| MIError::Config(format!("tensor 'W_enc' not found in {source}")))?;
+    gemmascope_dims_from_w_enc_shape(w_enc_shape, &source)
+}
+
+/// Derive `(n_features_per_layer, d_model)` from a `GemmaScope` `W_enc`
+/// shape, whatever read it.
+///
+/// Shared by the two probes that can produce that shape: the local
+/// [`read_gemmascope_npz_shape`] (anamnesis over a cached file) and the
+/// remote [`probe_gemmascope_npz_shape`] (`hf-fetch-model` over HTTP
+/// Range). Both hand in a `[d_model, n_features]` slice and a `source`
+/// string naming where it came from, so the error messages stay specific
+/// without duplicating the validation.
+///
+/// # Shapes
+/// - `w_enc_shape`: `[d_model, n_features_per_layer]`, the transposed
+///   on-disk convention described on [`read_gemmascope_npz_shape`]
+/// - returns: `(n_features_per_layer, d_model)`
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if `w_enc_shape` is not exactly 2-D.
+#[cfg(feature = "sae")]
+fn gemmascope_dims_from_w_enc_shape(w_enc_shape: &[usize], source: &str) -> Result<(usize, usize)> {
+    let [d_model, n_features_per_layer] = *w_enc_shape else {
         return Err(MIError::Config(format!(
-            "expected 2D W_enc, got shape {:?} in {}",
-            w_enc.shape,
-            npz_path.display()
+            "expected 2D W_enc, got shape {w_enc_shape:?} in {source}"
         )));
-    }
-    let d_model = *w_enc
-        .shape
-        .first()
-        .ok_or_else(|| MIError::Config("W_enc shape is empty".into()))?;
-    let n_features_per_layer = *w_enc
-        .shape
-        .get(1)
-        .ok_or_else(|| MIError::Config("W_enc shape has fewer than 2 dimensions".into()))?;
+    };
     Ok((n_features_per_layer, d_model))
+}
+
+/// Probe `(n_features_per_layer, d_model)` from a `GemmaScope` `.npz`
+/// without downloading it, via `hf-fetch-model`'s HTTP Range inspector.
+///
+/// `hf_fetch_model::inspect::inspect_npz` is cache-first: if the file is
+/// already in the `HuggingFace` cache it parses the local copy with no
+/// network at all, and only otherwise opens an `HttpRangeReader` and reads
+/// the `ZIP` central directory plus the per-entry `NPY` headers. Either
+/// way no tensor data crosses the wire, which is the whole point here: the
+/// layer-0 `width_16k` archive is ~288 MiB and we want two integers out of
+/// it.
+///
+/// Must be driven from `rt` rather than a runtime of its own. The call is
+/// `async` and internally hands the reader to `tokio::task::spawn_blocking`
+/// (its `Read`/`Seek` impls drive async requests through a captured
+/// handle), so it needs a multi-threaded runtime with a live blocking
+/// pool — the one [`CrossLayerTranscoder::open`] already built for the
+/// repo listing.
+///
+/// # Errors
+///
+/// Returns [`MIError::Download`] if the Range probe or any range request
+/// fails, which includes a gated repo (HTTP 401/403 when `HF_TOKEN` is
+/// absent or unauthorised) and a server without Range support.
+/// Returns [`MIError::Config`] if the archive parses but carries no 2-D
+/// `W_enc`.
+///
+/// # Memory
+///
+/// Metadata only: a few hundred bytes per array in the archive. No tensor
+/// data is read, allocated, or written to the cache.
+#[cfg(feature = "sae")]
+fn probe_gemmascope_npz_shape(
+    rt: &tokio::runtime::Runtime,
+    repo_id: &str,
+    relpath: &str,
+) -> Result<(usize, usize)> {
+    // The token cannot be recovered from the `FetchConfig` this module was
+    // handed: `FetchConfig`'s fields are `pub(crate)` and it exposes no
+    // accessors, while `inspect_npz` takes a bare `Option<&str>`. Re-reading
+    // the environment mirrors what `fetch_config_builder()`'s
+    // `token_from_env()` did, and is correct for every call path candle-mi
+    // has today, but it would diverge from a token set explicitly through
+    // `FetchConfig::builder().token(..)`. Filed upstream; see
+    // `docs/dogfooding-feedbacks/` in the hf-fetch-model repo.
+    // BORROW: owned String from the environment; .as_deref() hands out the &str.
+    let token = std::env::var("HF_TOKEN").ok();
+
+    let (header, source, stats) = rt
+        .block_on(hf_fetch_model::inspect::inspect_npz(
+            repo_id,
+            relpath,
+            token.as_deref(),
+            None,
+        ))
+        .map_err(|e| {
+            MIError::Download(format!("range-probe of {repo_id}/{relpath} failed: {e}"))
+        })?;
+
+    if let Some(s) = stats {
+        info!(
+            "Probed {repo_id}/{relpath} remotely ({source:?}): \
+             {} range requests, {} bytes fetched",
+            s.requests, s.bytes_fetched,
+        );
+    } else {
+        info!("Probed {repo_id}/{relpath} from the local cache ({source:?})");
+    }
+
+    let full = format!("{repo_id}/{relpath}");
+    let w_enc_shape = header
+        .tensors
+        .iter()
+        .find(|t| t.name == "W_enc")
+        .map(|t| {
+            // BORROW: explicit .as_slice() — &[usize] view into the owned Vec.
+            t.shape.as_slice()
+        })
+        .ok_or_else(|| MIError::Config(format!("tensor 'W_enc' not found in {full}")))?;
+    gemmascope_dims_from_w_enc_shape(w_enc_shape, &full)
 }
 
 // ---------------------------------------------------------------------------
@@ -3870,6 +3999,148 @@ mod tests {
         assert_eq!(filename, "layer_1/width_16k/average_l0_105/params.npz");
         assert_eq!(w_enc_name, "W_enc");
         assert_eq!(b_enc_name, "b_enc");
+    }
+
+    /// The transpose is the whole reason this helper exists: `GemmaScope`
+    /// stores `W_enc` as `[d_model, n_features]` while the other schemas use
+    /// `[n_features, d_model]`. A helper that returned the dimensions in
+    /// file order would silently swap `d_model` and `n_features_per_layer`,
+    /// which for `gemma-2-2b` at `width_16k` means 2304 and 16384 changing
+    /// places, so assert on asymmetric numbers where a swap cannot hide.
+    #[cfg(feature = "sae")]
+    #[test]
+    fn w_enc_shape_is_read_in_gemmascope_transposed_order() {
+        let (n_features_per_layer, d_model) =
+            gemmascope_dims_from_w_enc_shape(&[2304, 16384], "test").unwrap();
+        assert_eq!(d_model, 2304);
+        assert_eq!(n_features_per_layer, 16384);
+    }
+
+    #[cfg(feature = "sae")]
+    #[test]
+    fn w_enc_shape_must_be_exactly_two_dimensional() {
+        for shape in [vec![], vec![2304], vec![1, 2304, 16384]] {
+            let err = gemmascope_dims_from_w_enc_shape(&shape, "src").unwrap_err();
+            let msg = err.to_string();
+            assert!(
+                msg.contains("expected 2D W_enc"),
+                "unexpected message: {msg}"
+            );
+            // The source has to reach the message: a probe failure names a
+            // repo path, a local read names a file, and the two are diagnosed
+            // very differently.
+            assert!(msg.contains("src"), "source missing from message: {msg}");
+        }
+    }
+
+    /// The header-probe path's observable contract. It returns the same
+    /// config as the download path but leaves `encoder_paths[0]` empty, so
+    /// layer 0 is fetched by `ensure_encoder_path` only if it is used. If
+    /// this ever pre-populated the slot with a path that was never
+    /// downloaded, every later read of layer 0 would hit a missing file.
+    #[cfg(feature = "sae")]
+    #[test]
+    fn a_probed_open_leaves_layer_zero_undownloaded() {
+        let paths = vec![
+            "layer_0/width_16k/average_l0_100/params.npz".to_owned(),
+            "layer_1/width_16k/average_l0_105/params.npz".to_owned(),
+        ];
+        let fetch_config = hf_fetch_model::FetchConfig::builder().build().unwrap();
+        let clt = CrossLayerTranscoder::assemble_gemmascope(
+            "mntss/gemma-scope-transcoders",
+            fetch_config,
+            "google/gemma-2-2b".to_owned(),
+            paths,
+            None,
+            16384,
+            2304,
+        );
+
+        assert!(
+            clt.encoder_paths.iter().all(Option::is_none),
+            "the probe path downloads nothing, so no slot may hold a path",
+        );
+        assert_eq!(clt.config.n_layers, 2);
+        assert_eq!(clt.config.d_model, 2304);
+        assert_eq!(clt.config.n_features_per_layer, 16384);
+        assert_eq!(clt.config.n_features_total, 2 * 16384);
+        assert_eq!(clt.config.schema, TranscoderSchema::GemmaScopeNpz);
+    }
+
+    /// Contract test against `hf-fetch-model`, over the real network.
+    ///
+    /// Lives in-module rather than in `tests/` because
+    /// [`probe_gemmascope_npz_shape`] is private; the point is to exercise
+    /// candle-mi's own call, not to re-test the dependency through a copy
+    /// of it. What it pins is the assumption the fast path rests on: that
+    /// reading `W_enc`'s shape out of a 288 MiB archive costs a handful of
+    /// small requests. If `hf-fetch-model` ever regressed to fetching the
+    /// data segment, the dimensions would still be right and only the
+    /// byte bound below would catch it.
+    ///
+    /// Measured 2026-09-21 on an uncached file: 8 requests, 86 037 bytes,
+    /// 3.63 s, against 302 131 416 bytes and 61.97 s for the full
+    /// download of the same file.
+    ///
+    /// `stats` is `None` when the file is already in the `HuggingFace`
+    /// cache, which it will be on any machine that has run the `GemmaScope`
+    /// examples, so the cost assertion is conditional by necessity.
+    #[cfg(feature = "sae")]
+    #[test]
+    #[ignore = "hits the HuggingFace API; run with --ignored"]
+    fn probing_gemmascope_reads_dimensions_without_downloading_weights() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let (n_features_per_layer, d_model) = probe_gemmascope_npz_shape(
+            &rt,
+            GEMMASCOPE_WEIGHTS_REPO,
+            "layer_0/width_16k/average_l0_76/params.npz",
+        )
+        .unwrap();
+
+        // gemma-2-2b at width_16k.
+        assert_eq!(d_model, 2304);
+        assert_eq!(n_features_per_layer, 16384);
+
+        // Repeat the call at the dependency's own level to see the cost.
+        let (_, _, stats) = rt
+            .block_on(hf_fetch_model::inspect::inspect_npz(
+                GEMMASCOPE_WEIGHTS_REPO,
+                "layer_0/width_16k/average_l0_76/params.npz",
+                None,
+                None,
+            ))
+            .unwrap();
+        if let Some(s) = stats {
+            assert!(
+                s.bytes_fetched < 1024 * 1024,
+                "header probe fetched {} bytes; the archive is ~288 MiB and \
+                 this path exists to avoid reading its data segment",
+                s.bytes_fetched,
+            );
+        }
+    }
+
+    /// The download fallback's counterpart: the file is on disk, so the slot
+    /// must be primed rather than re-fetched on first use.
+    #[cfg(feature = "sae")]
+    #[test]
+    fn a_downloaded_open_primes_layer_zero() {
+        let paths = vec!["layer_0/width_16k/average_l0_100/params.npz".to_owned()];
+        let fetch_config = hf_fetch_model::FetchConfig::builder().build().unwrap();
+        let clt = CrossLayerTranscoder::assemble_gemmascope(
+            "mntss/gemma-scope-transcoders",
+            fetch_config,
+            "google/gemma-2-2b".to_owned(),
+            paths,
+            Some(PathBuf::from("/cache/params.npz")),
+            16384,
+            2304,
+        );
+
+        assert_eq!(
+            clt.encoder_paths.first().and_then(Option::as_deref),
+            Some(Path::new("/cache/params.npz")),
+        );
     }
 
     #[test]
