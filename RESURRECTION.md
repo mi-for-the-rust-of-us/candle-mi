@@ -32,14 +32,14 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-09-02 20:40 — tier **partial (1 of 21: anacrousis)**
+- **Last run:** 2026-09-21 11:00 — tier **partial (3 of 21: plt_gemma, clt, sae)**
 - **Toolchain:** rustc 1.98.0 (88d9e12ae 2026-08-18)
 - **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
 | Test | Models | Device(s) | Last verified | Wall-clock | Peak spill | Outcome |
 |---|---|---|---|---|---|---|
 | clt_qwen3 (encoder parity) | bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB) | CPU | 2026-09-02 | 1m59s | none | ✅ PASS |
-| plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-09-02 | 2m01s | none | ✅ PASS |
+| plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-09-21 | 3m01s | none | ✅ PASS |
 | plt_llama (encoder parity) | mntss/transcoder-Llama-3.2-1B (~16 GiB) | CPU | 2026-09-02 | 88.1s | — | ✅ PASS |
 | llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-09-02 | 80.9s | — | ✅ PASS |
 | gemma2 forward | google/gemma-2-2b (gated) | CPU+GPU | 2026-09-02 | 1m40s | — | ✅ PASS |
@@ -53,8 +53,8 @@ pass `-SpillProbe` to sample every entry.
 | bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-09-02 | 1m43s | — | ✅ PASS |
 | mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-09-02 | 6.1s | — | ✅ PASS |
 | quantized (bnb/AWQ/GPTQ) | medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ | GPU | 2026-09-02 | 3m06s | — | ✅ PASS |
-| clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-09-02 | 4m15s | — | ✅ PASS |
-| sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-09-02 | 3m18s | — | ✅ PASS |
+| clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-09-21 | 4m09s | — | ✅ PASS |
+| sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-09-21 | 3m30s | — | ✅ PASS |
 | memory (VRAM probe) | (none - allocates a GPU tensor) | GPU | 2026-09-02 | 46.9s | — | ✅ PASS |
 | rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-09-02 | 4m20s | — | ✅ PASS |
 | anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | 2026-09-02 | 11m37s ⚠️ | none | ✅ PASS |
