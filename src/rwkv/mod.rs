@@ -24,7 +24,12 @@ use candle_nn::{Embedding, Linear, VarBuilder};
 
 use crate::backend::MIBackend;
 use crate::error::Result;
-use crate::hooks::{HookCache, HookPoint, HookSpec, hook_point, hook_point_readonly};
+use crate::hooks::{
+    HookCache, HookPoint, HookSpec, hook_point, hook_point_readonly, reject_intervention_at,
+};
+
+/// What to use instead of intervening on [`HookPoint::RwkvEffectiveAttn`].
+const EFFECTIVE_ATTN_ALTERNATIVE: &str = "effective attention is reconstructed for \n     analysis, not consumed by the model; steer `ResidPre`/`ResidPost` instead";
 
 use self::norm::LayerNorm;
 pub use config::{RwkvConfig, RwkvLoraDims, RwkvVersion, SUPPORTED_RWKV_MODEL_TYPES};
@@ -1743,17 +1748,22 @@ impl MIBackend for GenericRwkv {
                  `ResidPre`/`ResidPost` instead",
             )?;
 
-            // Hook: RwkvEffectiveAttn — a reconstructed attribution matrix,
+            // Hook: RwkvEffectiveAttn: a reconstructed attribution matrix,
             // never an input to the forward pass.
+            //
+            // The refusal is UNCONDITIONAL, unlike the two read-outs above.
+            // `compute_eff_attn` is a capture-only pre-scan, so `eff_attn` is
+            // `None` exactly when the caller intervened here without also
+            // capturing; gating the refusal on `Some` would silently drop that
+            // case, which is the bug class this release removes.
+            reject_intervention_at(
+                &HookPoint::RwkvEffectiveAttn(layer_idx),
+                hooks,
+                EFFECTIVE_ATTN_ALTERNATIVE,
+            )?;
             if let Some(ea) = eff_attn {
-                hook_point_readonly(
-                    &ea,
-                    HookPoint::RwkvEffectiveAttn(layer_idx),
-                    hooks,
-                    &mut cache,
-                    "effective attention is reconstructed for analysis, not \
-                     consumed by the model; steer `ResidPre`/`ResidPost` instead",
-                )?;
+                // `Some` only when captured, by construction of the pre-scan.
+                cache.store(HookPoint::RwkvEffectiveAttn(layer_idx), ea);
             }
 
             // Store updated state

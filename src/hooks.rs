@@ -487,15 +487,37 @@ pub(crate) fn hook_point_readonly(
     cache: &mut HookCache,
     alternative: &str,
 ) -> Result<()> {
-    if hooks.has_intervention_at(&point) {
+    reject_intervention_at(&point, hooks, alternative)?;
+    if hooks.is_captured(&point) {
+        cache.store(point, tensor.clone());
+    }
+    Ok(())
+}
+
+/// Refuse any intervention aimed at a diagnostic read-out, without needing the
+/// tensor itself.
+///
+/// Split out of [`hook_point_readonly`] for read-outs that are **computed only
+/// when captured**, such as [`HookPoint::RwkvEffectiveAttn`]. For those, the
+/// tensor is absent precisely when the caller intervened without capturing, so a
+/// refusal gated on having the tensor would silently drop exactly the case this
+/// contract exists to catch.
+///
+/// # Errors
+///
+/// Returns [`MIError::Intervention`] if any intervention targets `point`.
+#[cfg(feature = "rwkv")]
+pub(crate) fn reject_intervention_at(
+    point: &HookPoint,
+    hooks: &HookSpec,
+    alternative: &str,
+) -> Result<()> {
+    if hooks.has_intervention_at(point) {
         return Err(MIError::Intervention(format!(
             "hook point `{point}` is a diagnostic read-out and cannot be \
              intervened on (nothing downstream reads it, so the edit would be \
              silently discarded); {alternative}"
         )));
-    }
-    if hooks.is_captured(&point) {
-        cache.store(point, tensor.clone());
     }
     Ok(())
 }
@@ -1689,5 +1711,37 @@ mod tests {
             assert!(matches!(err, MIError::Intervention(_)), "got {err:?}");
             assert!(err.to_string().contains("expected [hidden]"), "{err}");
         }
+    }
+
+    /// A diagnostic read-out must refuse an intervention even when nothing
+    /// captured it.
+    ///
+    /// The regression this pins: `RwkvEffectiveAttn` is computed only when it is
+    /// captured, so an intervention registered *without* a capture leaves the
+    /// backend with no tensor to hand `hook_point_readonly`. Gating the refusal
+    /// on having the tensor therefore dropped exactly that intervention in
+    /// silence, which is the failure this whole contract exists to prevent.
+    #[cfg(feature = "rwkv")]
+    #[test]
+    fn a_read_out_refuses_an_intervention_with_no_capture() {
+        let point = HookPoint::RwkvEffectiveAttn(3);
+
+        // Intervened, never captured: must still be refused.
+        let mut hooks = HookSpec::new();
+        hooks.intervene(point.clone(), Intervention::Zero);
+        assert!(
+            !hooks.is_captured(&point),
+            "the test needs an uncaptured point"
+        );
+        let err = reject_intervention_at(&point, &hooks, "steer ResidPost instead").unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("diagnostic read-out"), "{msg}");
+        assert!(
+            msg.contains("steer ResidPost instead"),
+            "alternative must be named: {msg}"
+        );
+
+        // Neither captured nor intervened: no error.
+        assert!(reject_intervention_at(&point, &HookSpec::new(), "x").is_ok());
     }
 }

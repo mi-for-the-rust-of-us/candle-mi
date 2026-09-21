@@ -134,6 +134,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **An intervention at `RwkvEffectiveAttn` is refused rather than dropped, even
+  when nothing captured that point.** The refusal introduced earlier in this
+  release was gated on the tensor existing, but effective attention is computed
+  *only when captured*, so registering an intervention without also capturing
+  left nothing to refuse and the edit vanished silently. That is the exact bug
+  class this release set out to remove, surviving in one spot. The check is now
+  unconditional (`hooks::reject_intervention_at`) and needs no tensor.
+
 - **`steering` is available under the `stoicheia` feature.** The module is gated
   on the same predicate as `hooks::apply_intervention`, so the intervention
   builders and the code that applies them appear together
