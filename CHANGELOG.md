@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-21
+
 ### Added
 
 - **Self-conditioning for `OthelloGpt`**: an optional second forward input
@@ -2722,7 +2724,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.24...HEAD
+[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.24...v0.2.0
 [0.1.24]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.23...v0.1.24
 [0.1.23]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.22...v0.1.23
 [0.1.22]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.21...v0.1.22
