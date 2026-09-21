@@ -37,7 +37,18 @@ import torch
 from safetensors.torch import save_file
 
 # Keys candle-mi's OthelloGptConfig::from_hf_config reads.
-CONFIG_KEYS = ("vocab_size", "block_size", "n_layer", "n_head", "n_embd", "causal")
+CONFIG_KEYS = (
+    "vocab_size",
+    "block_size",
+    "n_layer",
+    "n_head",
+    "n_embd",
+    "causal",
+    # Omitting this writes the self_cond_emb weight tensor without the flag
+    # that makes the loader create the table, so the model would load with
+    # self-conditioning silently off and produce non-self-conditioned logits.
+    "self_conditioning",
+)
 
 
 def main() -> None:
@@ -71,8 +82,17 @@ def main() -> None:
         "n_head": 8,
         "n_embd": 512,
         "causal": False,
+        "self_conditioning": False,
     }
     config = {k: cfg_obj.get(k, defaults[k]) for k in CONFIG_KEYS}
+
+    # A checkpoint trained before the flag existed carries the table but not
+    # the key. Trust the weights over the config in that direction only: a
+    # present table with the flag off loads as a non-self-conditioned model,
+    # which is a silent wrong answer rather than an error.
+    if "self_cond_emb.weight" in tensors and not config["self_conditioning"]:
+        print("note: self_cond_emb.weight present; setting self_conditioning=true")
+        config["self_conditioning"] = True
 
     config_path = args.out_dir / "config.json"
     with open(config_path, "w") as f:

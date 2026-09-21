@@ -476,13 +476,24 @@ impl OthelloGpt {
             // default init (which only a `VarMap` backend provides). Built at
             // `vb.dtype()`, not `F32`, so a `BF16` model does not silently get
             // an `F32` table.
-            let weight = if vb.contains_tensor("self_cond_emb.weight") {
+            let weight = if vb.contains_tensor(SELF_COND_WEIGHT) {
                 vb.pp("self_cond_emb").get((rows, h), "weight")?
             } else {
                 Tensor::zeros((rows, h), vb.dtype(), vb.device())?
             };
             Some(Embedding::new(weight, h))
         } else {
+            // The mirror of the case above, and the more dangerous one: a
+            // checkpoint that *has* the table loaded under a config that says
+            // the feature is off would run as a non-self-conditioned model and
+            // return different logits with no error. Refuse instead.
+            if vb.contains_tensor(SELF_COND_WEIGHT) {
+                return Err(MIError::Config(format!(
+                    "checkpoint contains `{SELF_COND_WEIGHT}` but the config has \
+                     self_conditioning = false; set it to true, or the model would \
+                     silently run without the channel it was trained with"
+                )));
+            }
             None
         };
 

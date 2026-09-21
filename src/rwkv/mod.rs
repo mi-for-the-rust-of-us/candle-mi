@@ -29,7 +29,10 @@ use crate::hooks::{
 };
 
 /// What to use instead of intervening on [`HookPoint::RwkvEffectiveAttn`].
-const EFFECTIVE_ATTN_ALTERNATIVE: &str = "effective attention is reconstructed for \n     analysis, not consumed by the model; steer `ResidPre`/`ResidPost` instead";
+const EFFECTIVE_ATTN_ALTERNATIVE: &str = concat!(
+    "effective attention is reconstructed for analysis, not consumed by the model; ",
+    "steer `ResidPre`/`ResidPost` instead"
+);
 
 use self::norm::LayerNorm;
 pub use config::{RwkvConfig, RwkvLoraDims, RwkvVersion, SUPPORTED_RWKV_MODEL_TYPES};
@@ -1802,5 +1805,28 @@ impl MIBackend for GenericRwkv {
     fn project_to_vocab(&self, hidden: &Tensor) -> Result<Tensor> {
         let normed = self.ln_out.forward(hidden)?;
         Ok(self.lm_head.forward(&normed)?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::EFFECTIVE_ATTN_ALTERNATIVE;
+
+    /// The message is spliced into a user-facing error, so it must be one line.
+    ///
+    /// It was not: a botched line continuation left a literal `escape-n` plus
+    /// five spaces mid-sentence, and the test that exercised the refusal passed
+    /// its own string rather than this constant, so nothing caught it.
+    #[test]
+    fn the_alternative_message_is_a_single_clean_line() {
+        assert!(
+            !EFFECTIVE_ATTN_ALTERNATIVE.contains('\n'),
+            "message must not contain a newline: {EFFECTIVE_ATTN_ALTERNATIVE:?}"
+        );
+        assert!(
+            !EFFECTIVE_ATTN_ALTERNATIVE.contains("  "),
+            "message must not contain run-together indentation: {EFFECTIVE_ATTN_ALTERNATIVE:?}"
+        );
+        assert!(EFFECTIVE_ATTN_ALTERNATIVE.starts_with("effective attention"));
     }
 }

@@ -318,13 +318,22 @@ hooks.intervene(HookPoint::AttnScores(5), Intervention::Scale(0.5));
 hooks.intervene(HookPoint::AttnScores(5), Intervention::Knockout(mask));
 ```
 
-**An intervention is never silently dropped.** Every backend either applies it,
-or returns `MIError::Intervention` explaining why that hook point cannot accept
-one. This matters more here than in most crates: a registered intervention that
-quietly does nothing makes a causal experiment report an effect of exactly zero,
-which is indistinguishable from a genuine null. Three backends behaved that way
-before v0.2.0 (see the RWKV and stoicheia sections above), and
+**At a hook point a backend fires, an intervention is never silently dropped.**
+It is either applied, or refused with `MIError::Intervention` explaining why that
+point cannot accept one. This matters more here than in most crates: a registered
+intervention that quietly does nothing makes a causal experiment report an effect
+of exactly zero, which is indistinguishable from a genuine null. Three backends
+behaved that way before v0.2.0 (see the RWKV and stoicheia sections above), and
 `BACKENDS.md`'s conformance checklist now requires a test that would catch it.
+
+**The guarantee stops at the backend's own hook points, and there is no
+validation of a `HookSpec` against a backend.** Targeting a point a backend never
+fires — `MlpOut(0)` on `GenericRwkv`, which has no MLP, or `FinalNorm` on
+`StoicheiaTransformer`, which has no final norm — is still a no-op, and no error
+says so. The hook-point tables above are the reference for what each backend
+fires; check the spec against the table when a causal result comes back exactly
+zero. Closing this properly needs a `HookSpec::validate_for(&dyn MIBackend)`,
+which does not exist yet.
 
 ### Combining Captures and Interventions
 

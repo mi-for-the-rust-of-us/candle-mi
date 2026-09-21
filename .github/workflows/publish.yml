@@ -46,7 +46,7 @@ jobs:
         run: cargo build --no-default-features --features transformer
 
       - name: Clippy (pedantic)
-        run: cargo clippy --no-default-features --features transformer -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features transformer -- -W clippy::pedantic
 
       - name: Tests
         run: cargo test --no-default-features --features transformer
@@ -55,7 +55,7 @@ jobs:
         run: cargo build --no-default-features --features "rwkv,rwkv-tokenizer"
 
       - name: Clippy (RWKV, pedantic)
-        run: cargo clippy --no-default-features --features "rwkv,rwkv-tokenizer" -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features "rwkv,rwkv-tokenizer" -- -W clippy::pedantic
 
       - name: Tests (RWKV)
         run: cargo test --no-default-features --features "rwkv,rwkv-tokenizer"
@@ -64,7 +64,7 @@ jobs:
         run: cargo build --no-default-features --features stoicheia
 
       - name: Clippy (Stoicheia, pedantic)
-        run: cargo clippy --no-default-features --features stoicheia -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features stoicheia -- -W clippy::pedantic
 
       - name: Tests (Stoicheia)
         run: cargo test --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia
@@ -75,7 +75,7 @@ jobs:
         run: cargo build --no-default-features --features "clt,transformer"
 
       - name: Clippy (CLT, pedantic)
-        run: cargo clippy --no-default-features --features "clt,transformer" -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features "clt,transformer" -- -W clippy::pedantic
 
       - name: Tests (CLT)
         run: cargo test --no-default-features --features "clt,transformer" --lib
@@ -87,7 +87,7 @@ jobs:
         run: cargo build --no-default-features --features "quantized,transformer"
 
       - name: Clippy (Quantized, pedantic)
-        run: cargo clippy --no-default-features --features "quantized,transformer" -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features "quantized,transformer" -- -W clippy::pedantic
 
       - name: Tests (Quantized)
         run: cargo test --no-default-features --features "quantized,transformer" --lib --test validate_quantized_loading
@@ -97,7 +97,7 @@ jobs:
         run: cargo build --no-default-features --features "sae,transformer"
 
       - name: Clippy (SAE, pedantic)
-        run: cargo clippy --no-default-features --features "sae,transformer" -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features "sae,transformer" -- -W clippy::pedantic
 
       # validate_plt_gemma needs clt+sae+transformer together; compile-check it
       # (the test is #[ignore]) so publish can't ship it broken.
@@ -109,7 +109,7 @@ jobs:
         run: cargo build --no-default-features --features "mmap,transformer"
 
       - name: Clippy (mmap, pedantic)
-        run: cargo clippy --no-default-features --features "mmap,transformer" -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features "mmap,transformer" -- -W clippy::pedantic
 
       # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
       # NOT imply `transformer`, so none of the lanes above compile it. Without
@@ -118,7 +118,7 @@ jobs:
         run: cargo build --no-default-features --features diffusion --examples
 
       - name: Clippy (Diffusion, pedantic)
-        run: cargo clippy --no-default-features --features diffusion -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features diffusion -- -W clippy::pedantic
 
       - name: Tests (Diffusion)
         run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward
@@ -134,7 +134,7 @@ jobs:
         run: cargo build --no-default-features --features memory
 
       - name: Clippy (memory, pedantic)
-        run: cargo clippy --no-default-features --features memory -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features memory -- -W clippy::pedantic
 
       - name: Tests (memory)
         run: cargo test --no-default-features --features memory --lib --test validate_memory
@@ -144,7 +144,7 @@ jobs:
         run: cargo build --no-default-features --features memory-debug
 
       - name: Clippy (memory-debug, pedantic)
-        run: cargo clippy --no-default-features --features memory-debug -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features memory-debug -- -W clippy::pedantic
 
       # Checkpointable AdamW (`training`, default-off). Gates real source, so
       # this is a full build + clippy + test lane, not a resolution guard. The
@@ -155,7 +155,7 @@ jobs:
         run: cargo build --no-default-features --features training
 
       - name: Clippy (training, pedantic)
-        run: cargo clippy --no-default-features --features training -- -W clippy::pedantic
+        run: cargo clippy --all-targets --no-default-features --features training -- -W clippy::pedantic
 
       - name: Tests (training)
         run: cargo test --no-default-features --features training --lib --test validate_optim_parity

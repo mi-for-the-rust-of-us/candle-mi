@@ -134,6 +134,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`scripts/convert_othello_mdlm.py` writes the `self_conditioning` flag.** Its
+  `CONFIG_KEYS` never gained the key, so converting a self-conditioned
+  checkpoint emitted `self_cond_emb.weight` into the safetensors but omitted the
+  flag from the companion `config.json`. An absent key reads as `false`, so the
+  model loaded with the channel off and returned non-self-conditioned logits
+  with no error. The converter now also infers the flag from the weights when
+  the checkpoint's own config predates it.
+
+- **`OthelloGpt::load` refuses a checkpoint that carries `self_cond_emb.weight`
+  under a config with `self_conditioning = false`**, the mirror of the case it
+  already handled. Loading it would run a non-self-conditioned model on weights
+  trained with the channel, silently.
+
+- **`publish.yml` and `scripts/preflight.ps1` lint test and example targets.**
+  `--all-targets` was added to `ci.yml`'s 11 clippy lanes earlier in this
+  release but not to the identical lanes in the publish workflow or the
+  preflight mirror, so the release gate kept the blind spot and "green preflight
+  = green CI" no longer held.
+
 - **An intervention at `RwkvEffectiveAttn` is refused rather than dropped, even
   when nothing captured that point.** The refusal introduced earlier in this
   release was gated on the tensor existing, but effective attention is computed

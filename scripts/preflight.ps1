@@ -94,7 +94,7 @@ function Invoke-Lanes {
 
     foreach ($f in $featureSets) {
         Invoke-Cargo "[$Tc] Clippy ($f)" $Tc `
-            @("clippy", "--no-default-features", "--features", $f, "--", "-W", "clippy::pedantic")
+            @("clippy", "--all-targets", "--no-default-features", "--features", $f, "--", "-W", "clippy::pedantic")
     }
 
     # Rustdoc, per feature set, mirroring ci.yml's own loop. `#![deny(warnings)]`

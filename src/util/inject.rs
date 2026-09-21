@@ -42,17 +42,37 @@ pub fn position_delta(direction: &Tensor, position: usize, seq_len: usize) -> Re
         )));
     }
 
-    // Build a [seq_len, hidden] tensor by stacking per-position rows: the
-    // chosen position holds `direction`, all others hold zeros_like(direction).
-    let zero_row = direction.zeros_like()?;
-    // BORROW: rows is a Vec<&Tensor> for Tensor::stack; entries borrow either
-    // `direction` (for the chosen position) or `zero_row` (for all others).
-    let rows: Vec<&Tensor> = (0..seq_len)
-        .map(|i| if i == position { direction } else { &zero_row })
-        .collect();
-    let stacked = Tensor::stack(&rows, 0)?;
-    // Add batch dim -> [1, seq_len, hidden].
-    Ok(stacked.unsqueeze(0)?)
+    // Assemble from at most three blocks rather than stacking `seq_len` rows:
+    // the zeros before the position, the row itself, and the zeros after. The
+    // stacking form built one tensor reference per position, which is fine at
+    // `block_size = 60` and wasteful at a transformer's sequence length, where
+    // this is reached through `CLT`/`SAE` feature injection.
+    let hidden = *dims.first().unwrap_or(&0);
+    let row = direction.reshape((1, 1, hidden))?;
+    let mut parts: Vec<Tensor> = Vec::with_capacity(3);
+    if position > 0 {
+        parts.push(Tensor::zeros(
+            (1, position, hidden),
+            direction.dtype(),
+            direction.device(),
+        )?);
+    }
+    parts.push(row);
+    let after = seq_len - position - 1;
+    if after > 0 {
+        parts.push(Tensor::zeros(
+            (1, after, hidden),
+            direction.dtype(),
+            direction.device(),
+        )?);
+    }
+    // Single-block case: no concatenation needed.
+    if parts.len() == 1 {
+        // INDEX: len checked to be 1 on the line above.
+        #[allow(clippy::indexing_slicing)]
+        return Ok(parts.swap_remove(0));
+    }
+    Ok(Tensor::cat(&parts, 1)?)
 }
 
 #[cfg(test)]
@@ -72,6 +92,38 @@ mod tests {
         assert_eq!(v[0], vec![0.0, 0.0, 0.0]);
         assert_eq!(v[1], vec![1.0, 2.0, 3.0]);
         assert_eq!(v[2], vec![0.0, 0.0, 0.0]);
+    }
+
+    /// The three-block assembly has a branch per edge, so both ends and the
+    /// degenerate single-position case need exercising, not just the middle.
+    #[test]
+    fn places_the_direction_at_either_end_and_in_a_length_one_sequence() {
+        let dev = Device::Cpu;
+        let dir = Tensor::new(&[1.0f32, 2.0], &dev).unwrap();
+
+        // First position: no leading zero block.
+        let v: Vec<Vec<f32>> = position_delta(&dir, 0, 3)
+            .unwrap()
+            .squeeze(0)
+            .unwrap()
+            .to_vec2()
+            .unwrap();
+        assert_eq!(v, vec![vec![1.0, 2.0], vec![0.0, 0.0], vec![0.0, 0.0]]);
+
+        // Last position: no trailing zero block.
+        let v: Vec<Vec<f32>> = position_delta(&dir, 2, 3)
+            .unwrap()
+            .squeeze(0)
+            .unwrap()
+            .to_vec2()
+            .unwrap();
+        assert_eq!(v, vec![vec![0.0, 0.0], vec![0.0, 0.0], vec![1.0, 2.0]]);
+
+        // seq_len == 1: the row alone, no concatenation at all.
+        let out = position_delta(&dir, 0, 1).unwrap();
+        assert_eq!(out.dims(), &[1, 1, 2]);
+        let v: Vec<Vec<f32>> = out.squeeze(0).unwrap().to_vec2().unwrap();
+        assert_eq!(v, vec![vec![1.0, 2.0]]);
     }
 
     /// The bound the three former copies did not check. At `position == seq_len`
