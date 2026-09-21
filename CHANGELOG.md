@@ -173,6 +173,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`scripts/resurrect.ps1 -Only a,b` never worked.** `-Only` and `-Skip` were
+  typed `[string]`, but at the prompt PowerShell parses an unquoted `a,b` as an
+  *array*, so the comma form the script's own header and `CLAUDE.md` both
+  document failed to bind: "Impossible de convertir la valeur en type
+  System.String". Only the quoted `-Only "clt,sae"` bound, and nothing said so.
+  Both are now `[string[]]`, joined back for the resolver, which already split
+  on commas. `-Only clt,sae` and `-Only "clt,sae"` now behave identically, and
+  the two scripts agree, since `preflight.ps1 -Only` takes `[string[]]` too.
+  Found by using it: the v0.2.0 oracle refresh failed to launch.
+
 - **`RoPE` no longer severs the gradient chain.** `candle_nn::rotary_emb::rope`
   is built with `apply_op3_no_bwd`, so its output records no backprop op and
   does not even set `track_op`. Every `Q` and `K` in `GenericTransformer` and

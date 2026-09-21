@@ -82,11 +82,18 @@ param(
     # slugs are the durable one, because inserting an entry renumbers everything
     # after it. Prefer slugs in commit messages and runbooks. Mixing is fine:
     # `-Only 12,sae`. Overrides the tier switches.
-    [string]$Only,
+    #
+    # Typed `[string[]]`, which is load-bearing rather than cosmetic: at the
+    # prompt PowerShell parses an unquoted `a,b` as an ARRAY, so the comma form
+    # this comment documents failed to bind while `-Only` was a bare [string]
+    # ("Impossible de convertir la valeur en type System.String"). Accepting
+    # both shapes means `-Only clt,sae` and `-Only "clt,sae"` behave the same,
+    # and it matches `preflight.ps1 -Only`, which takes `[string[]]` too.
+    [string[]]$Only,
     # Drop these entries from whatever the tier or -Only selected. Same syntax.
     # `-Skip longrope` is the common case: it removes the single 14-minute
     # VRAM-spill step and turns a ~44 min Default run into ~28 min.
-    [string]$Skip,
+    [string[]]$Skip,
     # Print the number/slug map with each entry's tier and last-verified state,
     # then exit. Runs nothing, downloads nothing.
     [switch]$List
@@ -317,13 +324,13 @@ if ($Status) {
 Push-Location $repoRoot
 try {
     $partial = $false
-    if ($Only) { $selected = @(Resolve-Selection -Tokens $Only -All $entries); $partial = $true }
+    if ($Only) { $selected = @(Resolve-Selection -Tokens ($Only -join ',') -All $entries); $partial = $true }
     elseif ($Quick) { $selected = @($entries | Where-Object { $_.Quick }); $tier = 'Quick' }
     elseif ($Full) { $selected = $entries; $tier = 'Full' }
     else { $selected = @($entries | Where-Object { -not $_.FullOnly }); $tier = 'Default' }
 
     if ($Skip) {
-        $dropIds = @(Resolve-Selection -Tokens $Skip -All $entries | ForEach-Object { $_.Id })
+        $dropIds = @(Resolve-Selection -Tokens ($Skip -join ',') -All $entries | ForEach-Object { $_.Id })
         $selected = @($selected | Where-Object { $dropIds -notcontains $_.Id })
         $partial = $true
     }
