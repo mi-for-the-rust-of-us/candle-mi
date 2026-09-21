@@ -410,12 +410,20 @@ try {
         # the actual spill signal: NVML "used" pins near capacity during a spill
         # and so cannot show how far over budget the run went.
         $probe = ($e.Spill -or $SpillProbe) -and $null -ne $hmn
+
+        # Announce sampling in the entry header, not only its absence. The
+        # earlier form warned when `hmn` was missing and said nothing when
+        # sampling was active, so the case worth noticing was the invisible
+        # one: the only evidence was a single line printed at the very top of a
+        # 40-minute run, which is not where anyone is looking when an entry
+        # starts crawling.
+        $probeNote = if ($probe) { ' (spill sampling)' } else { '' }
+
+        Write-Host "`n=== $($e.Name)$skipNote$probeNote ===" -ForegroundColor Yellow
+        Write-Host "cargo $($cargoArgs -join ' ')" -ForegroundColor DarkGray
         if (($e.Spill -or $SpillProbe) -and $null -eq $hmn) {
             Write-Host "  (spill sampling skipped: 'hmn' not on PATH)" -ForegroundColor DarkYellow
         }
-
-        Write-Host "`n=== $($e.Name)$skipNote ===" -ForegroundColor Yellow
-        Write-Host "cargo $($cargoArgs -join ' ')" -ForegroundColor DarkGray
 
         # True end-to-end wall-clock (model load/download + compile + run), unlike
         # cargo's own "finished in Xs" which times only the test-run phase.
