@@ -64,6 +64,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **`scripts/preflight.ps1` gains `-Only` / `-Skip` / `-ListLanes`.** An ad-hoc
+  check is now a lane slug (`-Only clt,sae`) instead of a hand-written feature
+  string. That is the point: `--no-default-features` drops `cuda` along with
+  everything else, because `cuda` is in `default`, so a command written to
+  isolate one feature also silently drops the build to CPU, and nothing in the
+  command says so. The script already knows the right flags for every lane.
+
+  Evidence that this is worth fixing rather than remembering: the repo's own two
+  scripts sit on opposite sides of the flag. `preflight.ps1` passes
+  `--no-default-features` and `resurrect.ps1:388` does not, so the latter's GPU
+  rows are GPU rows only because `cuda` is a default they never name.
+
+  A filtered run skips toolchain freshening, stays on stable unless `-Ci`, and
+  says plainly that it is **not** a push gate. An unknown slug is rejected with
+  the valid list rather than passing vacuously over zero lanes. Removing the
+  underlying cause, `cuda` in `default`, is recorded in
+  `docs/roadmaps/v0.3.0-api-ergonomics.md` as a breaking change for v0.3.0.
+
 - **Shared helpers replace six clusters of duplicated code.** Per-model forward
   passes are deliberately untouched: `docs/adding-a-model.md` is explicit that
   the eight `parse_*` config functions and the two block `forward`s are
