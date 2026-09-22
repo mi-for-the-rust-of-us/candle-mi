@@ -35,14 +35,13 @@
     missing_docs
 )]
 
+mod common;
+
+use common::cuda_device;
+
 use candle_core::{DType, Device, Tensor};
 use candle_mi::{MemoryReport, MemorySnapshot};
 use serial_test::serial;
-
-/// A live CUDA device, or `None` when no GPU is available.
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(Device::is_cuda)
-}
 
 #[test]
 fn cpu_snapshot_is_ram_only() {
@@ -98,6 +97,8 @@ fn cuda_snapshot_is_sane() {
         "CUDA snapshot: ram={:.0} MB, vram={:?} MB / total={:?} MB \
          (reserved={:?} MB), per_process={:?}, gpu={:?}",
         snap.ram_mb(),
+        // CAST: u32 → u64, widening a VRAM reading in MiB to match the assertion's type;
+        // lossless
         snap.vram_mb().map(|v| v as u64),
         snap.vram_total_bytes.map(|t| t / 1_048_576),
         snap.vram_reserved_bytes.map(|r| r / 1_048_576),

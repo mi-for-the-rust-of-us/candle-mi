@@ -45,6 +45,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::cuda_device;
+
 use std::path::PathBuf;
 
 use candle_core::{DType, Device, Tensor};
@@ -64,10 +68,6 @@ fn fixtures_dir() -> Option<PathBuf> {
     let weights = dir.join("weights.safetensors");
     let capture = dir.join("forward_capture.safetensors");
     (weights.is_file() && capture.is_file()).then_some(dir)
-}
-
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(Device::is_cuda)
 }
 
 /// Max absolute element-wise difference between two tensors (computed in CPU

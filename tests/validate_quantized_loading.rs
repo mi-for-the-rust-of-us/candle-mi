@@ -49,6 +49,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::{json_f32, json_u32, json_usize};
+
 use std::path::PathBuf;
 
 use candle_core::{DType, Device, IndexOp, Tensor};
@@ -95,7 +99,7 @@ fn run_quantized_parity(scheme: &str, model_id: &str, oracle_file: &str, bar: f3
     });
     let reference: serde_json::Value = serde_json::from_str(&reference_str).unwrap();
     assert_eq!(reference["model_repo"].as_str().unwrap(), model_id);
-    let ref_vocab = reference["vocab_size"].as_u64().unwrap() as usize;
+    let ref_vocab = json_usize(&reference["vocab_size"]);
     let test_cases = reference["test_cases"].as_array().unwrap();
 
     // Loads via the anamnesis dequant path (quantization_config → dequant → BF16).
@@ -121,7 +125,7 @@ fn run_quantized_parity(scheme: &str, model_id: &str, oracle_file: &str, bar: f3
             .as_array()
             .unwrap()
             .iter()
-            .map(|v| v.as_u64().unwrap() as u32)
+            .map(json_u32)
             .collect();
         let ref_top10 = tc["top_10"].as_array().unwrap();
 
@@ -152,8 +156,8 @@ fn run_quantized_parity(scheme: &str, model_id: &str, oracle_file: &str, bar: f3
             last.iter().enumerate().map(|(i, &v)| (i, v)).collect();
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-        let ref_top1_idx = ref_top10[0]["index"].as_u64().unwrap() as usize;
-        let ref_top1_logit = ref_top10[0]["logit"].as_f64().unwrap() as f32;
+        let ref_top1_idx = json_usize(&ref_top10[0]["index"]);
+        let ref_top1_logit = json_f32(&ref_top10[0]["logit"]);
         println!(
             "  {prompt:?}: oracle top-1 ({ref_top1_idx}, {ref_top1_logit:.4})  candle ({}, {:.4})",
             indexed[0].0, indexed[0].1
@@ -169,8 +173,8 @@ fn run_quantized_parity(scheme: &str, model_id: &str, oracle_file: &str, bar: f3
         // Per-token magnitude (candle's logit for the oracle's token), so a
         // near-tied reordering does not inflate the diff.
         for ref_item in ref_top10 {
-            let ref_idx = ref_item["index"].as_u64().unwrap() as usize;
-            let ref_logit = ref_item["logit"].as_f64().unwrap() as f32;
+            let ref_idx = json_usize(&ref_item["index"]);
+            let ref_logit = json_f32(&ref_item["logit"]);
             let diff = (last[ref_idx] - ref_logit).abs();
             if diff >= bar {
                 failures.push(format!(

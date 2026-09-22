@@ -24,6 +24,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::{cuda_device, find_snapshot, json_usize, safetensors_paths};
+
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::sae::SparseAutoencoder;
 use candle_mi::{
@@ -35,61 +39,6 @@ use serial_test::serial;
 // Helpers (duplicated from validate_clt.rs — Rust integration tests are
 // separate crates, so sharing is not straightforward)
 // ---------------------------------------------------------------------------
-
-fn hf_cache_dir() -> std::path::PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return std::path::PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
-
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0)
-        .ok()
-        .filter(candle_core::Device::is_cuda)
-}
-
-fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let single = snapshot.join("model.safetensors");
-    if single.exists() {
-        return vec![single];
-    }
-    let index_path = snapshot.join("model.safetensors.index.json");
-    let index_str = std::fs::read_to_string(&index_path).unwrap_or_else(|_| {
-        panic!(
-            "no model.safetensors or index.json in {}",
-            snapshot.display()
-        )
-    });
-    let index: serde_json::Value = serde_json::from_str(&index_str).unwrap();
-    let weight_map = index["weight_map"].as_object().unwrap();
-    let mut shard_names: Vec<String> = weight_map
-        .values()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    shard_names.sort();
-    shard_names.dedup();
-    shard_names.iter().map(|name| snapshot.join(name)).collect()
-}
 
 fn load_gemma2(device: &Device) -> (GenericTransformer, MITokenizer, TransformerConfig) {
     let snapshot =
@@ -403,20 +352,15 @@ fn sae_vs_python_reference() {
         .expect("failed to read scripts/sae_reference.json — run scripts/sae_validation.py first");
     let reference: serde_json::Value = serde_json::from_str(&ref_text).unwrap();
 
-    let py_d_in = reference["d_in"].as_u64().unwrap() as usize;
-    let py_d_sae = reference["d_sae"].as_u64().unwrap() as usize;
+    let py_d_in = json_usize(&reference["d_in"]);
+    let py_d_sae = json_usize(&reference["d_sae"]);
     let py_mse = reference["reconstruction_mse"].as_f64().unwrap();
-    let py_n_active = reference["n_active_last_pos"].as_u64().unwrap() as usize;
+    let py_n_active = json_usize(&reference["n_active_last_pos"]);
     let py_top_features: Vec<(usize, f64)> = reference["top_features_last_pos"]
         .as_array()
         .unwrap()
         .iter()
-        .map(|v| {
-            (
-                v["index"].as_u64().unwrap() as usize,
-                v["value"].as_f64().unwrap(),
-            )
-        })
+        .map(|v| (json_usize(&v["index"]), v["value"].as_f64().unwrap()))
         .collect();
 
     println!(
@@ -430,7 +374,7 @@ fn sae_vs_python_reference() {
     let prompt = reference["prompt"].as_str().unwrap();
     let token_ids = tokenizer.encode(prompt).unwrap();
     let seq_len = token_ids.len();
-    let py_n_tokens = reference["n_tokens"].as_u64().unwrap() as usize;
+    let py_n_tokens = json_usize(&reference["n_tokens"]);
     assert_eq!(
         seq_len, py_n_tokens,
         "token count mismatch: Rust={seq_len}, Python={py_n_tokens}"
@@ -442,7 +386,7 @@ fn sae_vs_python_reference() {
         .unwrap();
 
     // Forward pass capturing resid_post at HOOK_LAYER.
-    let hook_layer = reference["hook_layer"].as_u64().unwrap() as usize;
+    let hook_layer = json_usize(&reference["hook_layer"]);
     let mut hooks = HookSpec::new();
     hooks.capture(HookPoint::ResidPost(hook_layer));
     let result = model.forward(&input, &hooks).unwrap();
@@ -464,9 +408,9 @@ fn sae_vs_python_reference() {
 
     println!("Rust: {n_active} active features, Python: {py_n_active}");
     // Allow some tolerance — float differences can toggle features near threshold.
-    // CAST: usize → i64, active-feature counts are far below i64::MAX; the signed
-    // widening is deliberate so the subtraction cannot underflow before `unsigned_abs`.
     #[allow(clippy::cast_possible_wrap)]
+    // CAST: usize → i64, widened so the difference can go negative before
+    // `unsigned_abs()`; both operands are feature counts
     let active_diff = (n_active as i64 - py_n_active as i64).unsigned_abs();
     assert!(
         active_diff <= 10,

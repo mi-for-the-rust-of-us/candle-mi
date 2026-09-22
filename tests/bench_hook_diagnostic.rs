@@ -37,6 +37,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::find_snapshot;
+
 use std::hint::black_box;
 use std::time::Instant;
 
@@ -48,32 +52,6 @@ use candle_mi::{
 // ---------------------------------------------------------------------------
 // Helpers (mirrored from bench_hook_overhead.rs to keep this self-contained)
 // ---------------------------------------------------------------------------
-
-fn hf_cache_dir() -> std::path::PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return std::path::PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
 
 fn load_model_on(
     model_id: &str,
@@ -234,7 +212,8 @@ fn time_forward(
     for _ in 0..FWD_RUNS {
         let _ = model.forward(input, spec).unwrap();
     }
-    // CAST: usize → u32, FWD_RUNS = 10 fits comfortably.
+    // CAST: usize → u32, `FWD_RUNS` is a small compile-time constant and `Duration::div`
+    // takes a u32 divisor
     start.elapsed() / FWD_RUNS as u32
 }
 
@@ -283,10 +262,9 @@ fn run_diagnostic(label: &str, device: &Device) {
     let top3: Vec<String> = ranked
         .iter()
         .take(3)
-        .map(|(i, _)| {
-            // CAST: usize → u32, vocab indices fit in u32 for all models we use.
-            tokenizer.decode(&[*i as u32]).unwrap()
-        })
+        // CAST: usize → u32, a vocabulary index being handed back to `tokenizers`, whose
+        // ids are u32; the largest vocabulary candle-mi loads is 256000
+        .map(|(i, _)| tokenizer.decode(&[*i as u32]).unwrap())
         .collect();
     println!("  Sanity check — top-3 next tokens for \"{PROMPT}\": {top3:?}");
     // Bind the end-to-end forward correctness: "Paris" must be a top-3 next token
@@ -307,13 +285,16 @@ fn run_diagnostic(label: &str, device: &Device) {
     for _ in 0..FWD_RUNS {
         let _ = model.forward(&input, &empty_hooks).unwrap();
     }
-    // CAST: usize → u32, FWD_RUNS = 10 fits comfortably.
+    // CAST: usize → u32, `FWD_RUNS` is a small compile-time constant and `Duration::div`
+    // takes a u32 divisor
     let empty_avg = start.elapsed() / FWD_RUNS as u32;
 
     let start = Instant::now();
     for _ in 0..FWD_RUNS {
         let _ = model.forward(&input, &full_hooks).unwrap();
     }
+    // CAST: usize → u32, `FWD_RUNS` is a small compile-time constant and `Duration::div`
+    // takes a u32 divisor
     let full_avg = start.elapsed() / FWD_RUNS as u32;
     let fwd_delta = full_avg.saturating_sub(empty_avg);
 
@@ -333,7 +314,8 @@ fn run_diagnostic(label: &str, device: &Device) {
         walk_spec(&full_hooks, num_layers);
     }
     let walk_total = start.elapsed();
-    // CAST: usize → u32, LOOKUP_ITERS = 100_000 fits.
+    // CAST: usize → u32, `LOOKUP_ITERS` is a small compile-time constant and
+    // `Duration::div` takes a u32 divisor
     let walk_per_fwd = walk_total / LOOKUP_ITERS as u32;
 
     println!("\nA. Pure spec-lookup cost ({n_caps} hooks per synthetic forward):");
@@ -353,7 +335,8 @@ fn run_diagnostic(label: &str, device: &Device) {
         black_box(cache);
     }
     let store_total = start.elapsed();
-    // CAST: usize → u32, STORE_ITERS = 10_000 fits.
+    // CAST: usize → u32, `STORE_ITERS` is a small compile-time constant and
+    // `Duration::div` takes a u32 divisor
     let store_per_fwd = store_total / STORE_ITERS as u32;
 
     println!("\nC. Capture-machinery cost ({n_caps} clone+insert per synthetic forward):");
@@ -363,9 +346,14 @@ fn run_diagnostic(label: &str, device: &Device) {
     // ------------------------------------------------------------------
     // Attribution
     // ------------------------------------------------------------------
-    // CAST: u128 → f64, durations small enough that f64 holds them losslessly.
+    // CAST: u128 → f64, a measured duration in nanoseconds; f64 is exact for integers well
+    // past any benchmark's runtime
     let delta_ns = fwd_delta.as_nanos() as f64;
+    // CAST: u128 → f64, a measured duration in nanoseconds; f64 is exact for integers well
+    // past any benchmark's runtime
     let walk_ns = walk_per_fwd.as_nanos() as f64;
+    // CAST: u128 → f64, a measured duration in nanoseconds; f64 is exact for integers well
+    // past any benchmark's runtime
     let store_ns = store_per_fwd.as_nanos() as f64;
     let lookup_pct = if delta_ns > 0.0 {
         walk_ns / delta_ns * 100.0
@@ -404,7 +392,8 @@ fn run_diagnostic(label: &str, device: &Device) {
         }
         let avg = time_forward(&model, &input, &spec);
         let delta = avg.saturating_sub(empty_avg);
-        // CAST: u128 → f64 / u32 → f64, both small enough.
+        // CAST: u128 → f64, a measured duration in nanoseconds; f64 is exact for integers
+        // well past any benchmark's runtime
         let per_cap_ns = delta.as_nanos() as f64 / count as f64;
         println!("   {count:>6}  {avg:>10.2?}  {delta:>10.2?}  {per_cap_ns:>10.0} ns");
     }

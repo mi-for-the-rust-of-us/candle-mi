@@ -44,6 +44,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::{hf_cache_dir, json_f32, json_u32, json_usize, reference_path};
+
 use std::path::PathBuf;
 
 use candle_core::{DType, Device, IndexOp, Tensor};
@@ -51,22 +55,6 @@ use candle_mi::{HookSpec, MIModel, RopeScaling, TransformerConfig};
 
 const MODEL_ID: &str = "microsoft/Phi-3.5-mini-instruct";
 const ABS_DIFF_BAR: f32 = 5e-3;
-
-fn reference_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("scripts")
-        .join("phi35_longrope_forward_reference.json")
-}
-
-fn hf_cache_dir() -> PathBuf {
-    let home = std::env::var_os("USERPROFILE")
-        .or_else(|| std::env::var_os("HOME"))
-        .expect("no home dir");
-    PathBuf::from(home)
-        .join(".cache")
-        .join("huggingface")
-        .join("hub")
-}
 
 fn snapshot_dir() -> Option<PathBuf> {
     let dir = hf_cache_dir()
@@ -93,12 +81,13 @@ fn phi35_longrope_forward_parity() {
     };
 
     // --- Oracle ---
-    let reference: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(reference_path()).unwrap())
-            .expect("run scripts/phi35_longrope_validation.py first");
+    let reference: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(reference_path("phi35_longrope_forward_reference.json")).unwrap(),
+    )
+    .expect("run scripts/phi35_longrope_validation.py first");
     assert_eq!(reference["model_repo"].as_str().unwrap(), MODEL_ID);
-    let ref_vocab = reference["vocab_size"].as_u64().unwrap() as usize;
-    let ref_mscale = reference["attention_scaling"].as_f64().unwrap() as f32;
+    let ref_vocab = json_usize(&reference["vocab_size"]);
+    let ref_mscale = json_f32(&reference["attention_scaling"]);
     let test_cases = reference["test_cases"].as_array().unwrap();
 
     // --- Structural: longrope parses; its mscale matches the oracle's ---
@@ -117,6 +106,8 @@ fn phi35_longrope_forward_parity() {
             assert_eq!(long_factor.len(), config.head_dim / 2);
             assert_eq!(*original_max_position_embeddings, 4096);
             assert!(
+                // CAST: f64 → f32, the oracle stores the scale as a Python double and the
+                // comparison runs at the test's F32 bar
                 (*attention_factor as f32 - ref_mscale).abs() < 1e-4,
                 "candle mscale {attention_factor} != oracle attention_scaling {ref_mscale}"
             );
@@ -143,7 +134,7 @@ fn phi35_longrope_forward_parity() {
             .as_array()
             .unwrap()
             .iter()
-            .map(|v| v.as_u64().unwrap() as u32)
+            .map(json_u32)
             .collect();
         let ref_top10 = tc["top_10"].as_array().unwrap();
         if regime == "long" {
@@ -177,8 +168,8 @@ fn phi35_longrope_forward_parity() {
             last.iter().enumerate().map(|(i, &v)| (i, v)).collect();
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-        let ref_top1_idx = ref_top10[0]["index"].as_u64().unwrap() as usize;
-        let ref_top1_logit = ref_top10[0]["logit"].as_f64().unwrap() as f32;
+        let ref_top1_idx = json_usize(&ref_top10[0]["index"]);
+        let ref_top1_logit = json_f32(&ref_top10[0]["logit"]);
         println!(
             "  {prompt:?} [{regime}, {} tok]: oracle top-1 ({ref_top1_idx}, {ref_top1_logit:.4})  candle ({}, {:.4})",
             ref_tokens.len(),
@@ -187,8 +178,8 @@ fn phi35_longrope_forward_parity() {
         );
 
         for (rank, ref_item) in ref_top10.iter().enumerate() {
-            let ref_idx = ref_item["index"].as_u64().unwrap() as usize;
-            let ref_logit = ref_item["logit"].as_f64().unwrap() as f32;
+            let ref_idx = json_usize(&ref_item["index"]);
+            let ref_logit = json_f32(&ref_item["logit"]);
             let (rust_idx, _) = indexed[rank];
             if rust_idx != ref_idx {
                 failures.push(format!(

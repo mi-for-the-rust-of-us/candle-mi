@@ -20,6 +20,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::find_snapshot;
+
 use std::time::Instant;
 
 use candle_core::{DType, Device, Tensor};
@@ -30,32 +34,6 @@ use candle_mi::{
 // ---------------------------------------------------------------------------
 // Helpers (duplicated from validate_models.rs to keep this self-contained)
 // ---------------------------------------------------------------------------
-
-fn hf_cache_dir() -> std::path::PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return std::path::PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
 
 fn load_model_on(
     model_id: &str,
@@ -253,6 +231,8 @@ fn bench_hook_overhead_cpu() {
         let _ = model.forward(&input, &empty_hooks).unwrap();
     }
     let no_hooks_total = start.elapsed();
+    // CAST: usize → u32, `BENCH_RUNS` is a small compile-time constant and `Duration::div`
+    // takes a u32 divisor
     let no_hooks_avg = no_hooks_total / BENCH_RUNS as u32;
 
     // --- Full capture ---
@@ -265,9 +245,13 @@ fn bench_hook_overhead_cpu() {
         assert!(result.get(&HookPoint::AttnPattern(0)).is_some());
     }
     let full_capture_total = start.elapsed();
+    // CAST: usize → u32, `BENCH_RUNS` is a small compile-time constant and `Duration::div`
+    // takes a u32 divisor
     let full_capture_avg = full_capture_total / BENCH_RUNS as u32;
 
     let overhead_pct = if no_hooks_avg.as_nanos() > 0 {
+        // CAST: u128 → f64, a measured duration in nanoseconds; f64 is exact for integers
+        // well past any benchmark's runtime
         ((full_capture_avg.as_nanos() as f64 / no_hooks_avg.as_nanos() as f64) - 1.0) * 100.0
     } else {
         0.0
@@ -349,6 +333,8 @@ fn bench_hook_overhead_gpu() {
         let _ = model.forward(&input, &empty_hooks).unwrap();
     }
     let no_hooks_total = start.elapsed();
+    // CAST: usize → u32, `BENCH_RUNS` is a small compile-time constant and `Duration::div`
+    // takes a u32 divisor
     let no_hooks_avg = no_hooks_total / BENCH_RUNS as u32;
 
     // --- Full capture ---
@@ -360,9 +346,13 @@ fn bench_hook_overhead_gpu() {
         assert!(result.get(&HookPoint::AttnPattern(0)).is_some());
     }
     let full_capture_total = start.elapsed();
+    // CAST: usize → u32, `BENCH_RUNS` is a small compile-time constant and `Duration::div`
+    // takes a u32 divisor
     let full_capture_avg = full_capture_total / BENCH_RUNS as u32;
 
     let overhead_pct = if no_hooks_avg.as_nanos() > 0 {
+        // CAST: u128 → f64, a measured duration in nanoseconds; f64 is exact for integers
+        // well past any benchmark's runtime
         ((full_capture_avg.as_nanos() as f64 / no_hooks_avg.as_nanos() as f64) - 1.0) * 100.0
     } else {
         0.0

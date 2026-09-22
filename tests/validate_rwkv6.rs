@@ -24,6 +24,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::{cuda_device, find_snapshot, json_f32, json_u32, safetensors_paths};
+
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::rwkv::{GenericRwkv, RwkvConfig};
 use candle_mi::{HookPoint, HookSpec, MIBackend, MITokenizer};
@@ -55,7 +59,7 @@ fn load_reference() -> ReferenceData {
         .as_array()
         .unwrap()
         .iter()
-        .map(|v| v.as_u64().unwrap() as u32)
+        .map(json_u32)
         .collect();
 
     let top_predictions: Vec<(u32, String, f32)> = json["top_predictions"]
@@ -63,9 +67,9 @@ fn load_reference() -> ReferenceData {
         .unwrap()
         .iter()
         .map(|p| {
-            let id = p["token_id"].as_u64().unwrap() as u32;
+            let id = json_u32(&p["token_id"]);
             let token = p["token"].as_str().unwrap().to_string();
-            let logit = p["logit"].as_f64().unwrap() as f32;
+            let logit = json_f32(&p["logit"]);
             (id, token, logit)
         })
         .collect();
@@ -74,8 +78,7 @@ fn load_reference() -> ReferenceData {
         .as_array()
         .unwrap()
         .iter()
-        // CAST: u64 → u32, token ids fit in u32
-        .map(|v| v.as_u64().unwrap() as u32)
+        .map(json_u32)
         .collect();
 
     ReferenceData {
@@ -89,67 +92,6 @@ fn load_reference() -> ReferenceData {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/// Find the `HuggingFace` cache directory.
-fn hf_cache_dir() -> std::path::PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return std::path::PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-/// Find the snapshot directory for a given model ID.
-fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
-
-/// Get a CUDA device if available, or None.
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(Device::is_cuda)
-}
-
-/// Collect safetensors paths for a model snapshot (single or sharded).
-fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let single = snapshot.join("model.safetensors");
-    if single.exists() {
-        return vec![single];
-    }
-
-    // Sharded: parse model.safetensors.index.json
-    let index_path = snapshot.join("model.safetensors.index.json");
-    let index_str = std::fs::read_to_string(&index_path).unwrap_or_else(|_| {
-        panic!(
-            "no model.safetensors or index.json in {}",
-            snapshot.display()
-        )
-    });
-    let index: serde_json::Value = serde_json::from_str(&index_str).unwrap();
-    let weight_map = index["weight_map"].as_object().unwrap();
-
-    let mut shard_names: Vec<String> = weight_map
-        .values()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    shard_names.sort();
-    shard_names.dedup();
-
-    shard_names.iter().map(|name| snapshot.join(name)).collect()
-}
 
 /// Load the RWKV-6 model and tokenizer from the local HF cache.
 fn load_rwkv6_on(device: &Device) -> (GenericRwkv, MITokenizer, RwkvConfig) {
@@ -229,7 +171,11 @@ fn top_k_last_token(
         .iter()
         .take(k)
         .map(|(idx, logit)| {
+            // CAST: usize → u32, a vocabulary index being handed back to `tokenizers`,
+            // whose ids are u32; the largest vocabulary candle-mi loads is 256000
             let token = tokenizer.decode(&[*idx as u32]).unwrap();
+            // CAST: usize → u32, a vocabulary index; candle takes u32 token ids and no
+            // supported vocabulary approaches u32::MAX
             (*idx as u32, token, *logit)
         })
         .collect()
@@ -272,7 +218,8 @@ fn greedy_generate(
                 best_idx = i;
             }
         }
-        // CAST: usize → u32, vocab index fits in u32
+        // CAST: usize → u32, a vocabulary index; candle takes u32 token ids and no
+        // supported vocabulary approaches u32::MAX
         let next = best_idx as u32;
         ids.push(next);
         generated.push(next);

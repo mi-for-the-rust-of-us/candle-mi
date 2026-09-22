@@ -46,7 +46,11 @@
     missing_docs
 )]
 
-use std::path::{Path, PathBuf};
+mod common;
+
+use common::{
+    cuda_device, find_snapshot, json_f32, json_u32, json_usize, reference_path, safetensors_paths,
+};
 
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::{GenericTransformer, HookSpec, MIBackend, TransformerConfig};
@@ -56,90 +60,21 @@ const MODEL_ID: &str = "Qwen/Qwen2.5-Coder-3B-Instruct";
 const ABS_DIFF_BAR_CPU: f32 = 1e-3;
 const ABS_DIFF_BAR_GPU: f32 = 5e-3;
 
-fn reference_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("scripts")
-        .join("qwen25_coder_forward_reference.json")
-}
-
-fn hf_cache_dir() -> PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-/// Locate the snapshot directory carrying `config.json` and safetensors
-/// weights (single-file or sharded).  A repo can have several snapshot dirs.
-fn find_snapshot(model_id: &str) -> Option<PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    for entry in std::fs::read_dir(snapshots_dir).ok()?.flatten() {
-        let path = entry.path();
-        let has_weights = path.join("model.safetensors").exists()
-            || path.join("model.safetensors.index.json").exists();
-        if path.join("config.json").exists() && has_weights {
-            return Some(path);
-        }
-    }
-    None
-}
-
-/// Collect safetensors paths for a snapshot (single file or sharded index).
-fn safetensors_paths(snapshot: &Path) -> Vec<PathBuf> {
-    let single = snapshot.join("model.safetensors");
-    if single.exists() {
-        return vec![single];
-    }
-    let index_path = snapshot.join("model.safetensors.index.json");
-    let index_str = std::fs::read_to_string(&index_path).unwrap_or_else(|_| {
-        panic!(
-            "no model.safetensors or index.json in {}",
-            snapshot.display()
-        )
-    });
-    let index: serde_json::Value = serde_json::from_str(&index_str).unwrap();
-    let weight_map = index["weight_map"].as_object().unwrap();
-    let mut shard_names: Vec<String> = weight_map
-        .values()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    shard_names.sort();
-    shard_names.dedup();
-    shard_names.iter().map(|name| snapshot.join(name)).collect()
-}
-
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(Device::is_cuda)
-}
-
 /// Run the Qwen2.5-Coder forward-parity check on the given `device`.  Prints a
 /// per-prompt comparison, then asserts top-10 index + magnitude parity across
 /// all cases at the end.
 #[allow(clippy::too_many_lines)]
 fn run_qwen25_coder_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f32) {
-    let reference_str = std::fs::read_to_string(reference_path()).expect(
+    let reference_str = std::fs::read_to_string(reference_path("qwen25_coder_forward_reference.json")).expect(
         "failed to read qwen25_coder_forward_reference.json — run scripts/qwen25_coder_validation.py first",
     );
     let reference: serde_json::Value = serde_json::from_str(&reference_str).unwrap();
 
     let model_repo = reference["model_repo"].as_str().unwrap();
-    let ref_hidden = reference["hidden_size"].as_u64().unwrap() as usize;
-    let ref_layers = reference["num_layers"].as_u64().unwrap() as usize;
-    let ref_vocab = reference["vocab_size"].as_u64().unwrap() as usize;
-    let ref_head_dim = reference["head_dim"].as_u64().unwrap() as usize;
+    let ref_hidden = json_usize(&reference["hidden_size"]);
+    let ref_layers = json_usize(&reference["num_layers"]);
+    let ref_vocab = json_usize(&reference["vocab_size"]);
+    let ref_head_dim = json_usize(&reference["head_dim"]);
     let test_cases = reference["test_cases"].as_array().unwrap();
 
     assert_eq!(model_repo, MODEL_ID, "oracle JSON model_repo mismatch");
@@ -189,7 +124,7 @@ fn run_qwen25_coder_forward_parity(device: &Device, device_name: &str, abs_diff_
             .as_array()
             .unwrap()
             .iter()
-            .map(|v| v.as_u64().unwrap() as u32)
+            .map(json_u32)
             .collect();
         let ref_top10 = tc["top_10"].as_array().unwrap();
 
@@ -226,8 +161,8 @@ fn run_qwen25_coder_forward_parity(device: &Device, device_name: &str, abs_diff_
             .collect();
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-        let ref_top1_idx = ref_top10[0]["index"].as_u64().unwrap() as usize;
-        let ref_top1_logit = ref_top10[0]["logit"].as_f64().unwrap() as f32;
+        let ref_top1_idx = json_usize(&ref_top10[0]["index"]);
+        let ref_top1_logit = json_f32(&ref_top10[0]["logit"]);
         println!("\nPrompt: {prompt:?}  ({} tokens)", ref_tokens.len());
         println!(
             "  Python top-1: ({ref_top1_idx}, {ref_top1_logit:.4})   \
@@ -237,8 +172,8 @@ fn run_qwen25_coder_forward_parity(device: &Device, device_name: &str, abs_diff_
 
         let mut prompt_max_diff: f32 = 0.0;
         for (rank, ref_item) in ref_top10.iter().enumerate() {
-            let ref_idx = ref_item["index"].as_u64().unwrap() as usize;
-            let ref_logit = ref_item["logit"].as_f64().unwrap() as f32;
+            let ref_idx = json_usize(&ref_item["index"]);
+            let ref_logit = json_f32(&ref_item["logit"]);
             let (rust_idx, rust_logit) = indexed[rank];
 
             if rust_idx != ref_idx {

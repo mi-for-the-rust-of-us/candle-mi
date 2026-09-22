@@ -35,7 +35,9 @@
     missing_docs
 )]
 
-use std::path::PathBuf;
+mod common;
+
+use common::find_snapshot;
 
 use candle_core::{DType, Device};
 use candle_mi::{DiffusionSamplingConfig, GenericTransformer, TransformerConfig};
@@ -45,32 +47,6 @@ const MODEL_ID: &str = "dllm-hub/Qwen2.5-Coder-0.5B-Instruct-diffusion-mdlm-v0.1
 /// `<|mask|>` in the a2d-qwen2 tokenizer (from `added_tokens.json`) — note it is
 /// **not** `vocab_size - 1`, which is the MDLM convention.
 const MASK_ID: u32 = 151_665;
-
-fn hf_cache_dir() -> PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-fn find_snapshot(model_id: &str) -> Option<PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
 
 /// Demonstrates that the masked-diffusion `SUBS` sampler works on a bidirectional
 /// `GenericTransformer` (not just `GenericMdlm`), with the model's real

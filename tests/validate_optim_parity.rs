@@ -61,6 +61,8 @@ fn loss_of(w: &Var, target: &Tensor) -> Tensor {
 /// The learning rate at `step`, so both optimizers see the same varying
 /// schedule — a constant rate would not exercise `set_learning_rate`.
 fn lr_at(step: usize) -> f64 {
+    // CAST: usize → f64, an optimizer step count, far inside f64's exactly-representable
+    // integer range
     0.05 * (step as f64).mul_add(0.01, 1.0).recip()
 }
 

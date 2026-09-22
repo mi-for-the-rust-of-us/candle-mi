@@ -40,7 +40,9 @@
     missing_docs
 )]
 
-use std::path::PathBuf;
+mod common;
+
+use common::{cuda_device, find_snapshot, json_f32, json_u32, json_usize, reference_path};
 
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::{GenericTransformer, HookSpec, MIBackend, TransformerConfig};
@@ -50,55 +52,20 @@ const MODEL_ID: &str = "dllm-hub/Qwen2.5-Coder-0.5B-Instruct-diffusion-mdlm-v0.1
 const ABS_DIFF_BAR_CPU: f32 = 1e-3;
 const ABS_DIFF_BAR_GPU: f32 = 5e-3;
 
-fn reference_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("scripts")
-        .join("bidirectional_forward_reference.json")
-}
-
-fn hf_cache_dir() -> PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-fn find_snapshot(model_id: &str) -> Option<PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
-
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0).ok().filter(Device::is_cuda)
-}
-
 /// Run the bidirectional forward-parity check on `device`.  Panics on any
 /// mismatch.  `abs_diff_bar` is the per-rank acceptance threshold.
 fn run_bidirectional_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f32) {
-    let reference_str = std::fs::read_to_string(reference_path()).expect(
-        "failed to read bidirectional_forward_reference.json — run \
+    let reference_str =
+        std::fs::read_to_string(reference_path("bidirectional_forward_reference.json")).expect(
+            "failed to read bidirectional_forward_reference.json — run \
          scripts/bidirectional_forward_validation.py first",
-    );
+        );
     let reference: serde_json::Value = serde_json::from_str(&reference_str).unwrap();
 
-    let ref_hidden = reference["hidden_size"].as_u64().unwrap() as usize;
-    let ref_layers = reference["num_hidden_layers"].as_u64().unwrap() as usize;
-    let ref_heads = reference["num_attention_heads"].as_u64().unwrap() as usize;
-    let ref_vocab = reference["vocab_size"].as_u64().unwrap() as usize;
+    let ref_hidden = json_usize(&reference["hidden_size"]);
+    let ref_layers = json_usize(&reference["num_hidden_layers"]);
+    let ref_heads = json_usize(&reference["num_attention_heads"]);
+    let ref_vocab = json_usize(&reference["vocab_size"]);
     let test_cases = reference["test_cases"].as_array().unwrap();
 
     println!("Validating bidirectional forward parity ({device_name}) against the fp32 oracle:");
@@ -146,7 +113,7 @@ fn run_bidirectional_forward_parity(device: &Device, device_name: &str, abs_diff
             .as_array()
             .unwrap()
             .iter()
-            .map(|v| v.as_u64().unwrap() as u32)
+            .map(json_u32)
             .collect();
         let positions = tc["positions"].as_array().unwrap();
 
@@ -172,7 +139,7 @@ fn run_bidirectional_forward_parity(device: &Device, device_name: &str, abs_diff
             .unwrap();
 
         for pos_entry in positions {
-            let pos = pos_entry["position"].as_u64().unwrap() as usize;
+            let pos = json_usize(&pos_entry["position"]);
             let ref_top10 = pos_entry["top_10"].as_array().unwrap();
 
             let at_pos: Vec<f32> = logits_cpu.i((0, pos)).unwrap().to_vec1().unwrap();
@@ -181,8 +148,8 @@ fn run_bidirectional_forward_parity(device: &Device, device_name: &str, abs_diff
             indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
             for (rank, ref_item) in ref_top10.iter().enumerate() {
-                let ref_idx = ref_item["index"].as_u64().unwrap() as usize;
-                let ref_logit = ref_item["logit"].as_f64().unwrap() as f32;
+                let ref_idx = json_usize(&ref_item["index"]);
+                let ref_logit = json_f32(&ref_item["logit"]);
                 let (rust_idx, rust_logit) = indexed[rank];
 
                 assert_eq!(

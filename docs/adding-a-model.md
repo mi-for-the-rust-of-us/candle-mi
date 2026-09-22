@@ -173,6 +173,20 @@ absent (see `tests/validate_othello_forward.rs`, pointed at its fixtures via an
 environment variable). Keep large weights/fixtures **out** of the committed
 crate — they are regenerable, and the published package excludes data.
 
+**Use [`tests/common/`](../tests/common/mod.rs) rather than writing your own
+helpers.** It holds `hf_cache_dir`, `find_snapshot`, `safetensors_paths`,
+`cuda_device`, a parameterised `reference_path`, and the `json_usize` /
+`json_u32` / `json_f32` readers for oracle JSON. Declare it with `mod common;`
+and call through `common::`.
+
+This is not only tidiness. Those four helpers were once copy-pasted into every
+test and had **drifted**: `find_snapshot` existed in six different versions, and
+twelve files ran one that took the first directory entry unvalidated, which
+selects an arbitrary revision when more than one snapshot is cached. Two others
+hardcoded a single weight filename, so a sharded repo read as "not cached" and
+the test skipped instead of running. A test that quietly does not run is worse
+than one that fails.
+
 **Declare the new test in `Cargo.toml`**, or the lane matrix will not build:
 
 ```toml

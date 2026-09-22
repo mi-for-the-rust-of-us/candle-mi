@@ -24,6 +24,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::{cuda_device, find_snapshot, safetensors_paths};
+
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::{GenericTransformer, HookSpec, MIBackend, MITokenizer, TransformerConfig};
 use serial_test::serial;
@@ -31,69 +35,6 @@ use serial_test::serial;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/// Find the `HuggingFace` cache directory.
-fn hf_cache_dir() -> std::path::PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return std::path::PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-/// Find the snapshot directory for a given model ID.
-fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
-
-/// Get a CUDA device if available, or None.
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0)
-        .ok()
-        .filter(candle_core::Device::is_cuda)
-}
-
-/// Collect safetensors paths for a model snapshot (single or sharded).
-fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let single = snapshot.join("model.safetensors");
-    if single.exists() {
-        return vec![single];
-    }
-
-    // Sharded: parse model.safetensors.index.json
-    let index_path = snapshot.join("model.safetensors.index.json");
-    let index_str = std::fs::read_to_string(&index_path).unwrap_or_else(|_| {
-        panic!(
-            "no model.safetensors or index.json in {}",
-            snapshot.display()
-        )
-    });
-    let index: serde_json::Value = serde_json::from_str(&index_str).unwrap();
-    let weight_map = index["weight_map"].as_object().unwrap();
-
-    let mut shard_names: Vec<String> = weight_map
-        .values()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    shard_names.sort();
-    shard_names.dedup();
-
-    shard_names.iter().map(|name| snapshot.join(name)).collect()
-}
 
 /// Load a model from the local HF cache on the specified device.
 ///
@@ -177,6 +118,8 @@ fn top_k_last_token(
         .iter()
         .take(k)
         .map(|(idx, logit)| {
+            // CAST: usize → u32, a vocabulary index being handed back to `tokenizers`,
+            // whose ids are u32; the largest vocabulary candle-mi loads is 256000
             let token = tokenizer.decode(&[*idx as u32]).unwrap();
             (token, *logit)
         })

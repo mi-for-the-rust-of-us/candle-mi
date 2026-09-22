@@ -27,6 +27,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::{cuda_device, find_snapshot, json_f32, json_u32, json_usize, safetensors_paths};
+
 use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::clt::CrossLayerTranscoder;
 use candle_mi::{
@@ -39,61 +43,6 @@ use serial_test::serial;
 // Helpers (shared with validate_models.rs — duplicated to keep test files
 // independent, as Rust integration tests are separate crates)
 // ---------------------------------------------------------------------------
-
-fn hf_cache_dir() -> std::path::PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return std::path::PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
-
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0)
-        .ok()
-        .filter(candle_core::Device::is_cuda)
-}
-
-fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let single = snapshot.join("model.safetensors");
-    if single.exists() {
-        return vec![single];
-    }
-    let index_path = snapshot.join("model.safetensors.index.json");
-    let index_str = std::fs::read_to_string(&index_path).unwrap_or_else(|_| {
-        panic!(
-            "no model.safetensors or index.json in {}",
-            snapshot.display()
-        )
-    });
-    let index: serde_json::Value = serde_json::from_str(&index_str).unwrap();
-    let weight_map = index["weight_map"].as_object().unwrap();
-    let mut shard_names: Vec<String> = weight_map
-        .values()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    shard_names.sort();
-    shard_names.dedup();
-    shard_names.iter().map(|name| snapshot.join(name)).collect()
-}
 
 fn load_gemma2(device: &Device) -> (GenericTransformer, MITokenizer, TransformerConfig) {
     let snapshot =
@@ -398,6 +347,8 @@ fn clt_injection_shifts_logits() {
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         println!("{label} top-5:");
         for (rank, (idx, logit)) in indexed.iter().take(5).enumerate() {
+            // CAST: usize → u32, a vocabulary index being handed back to `tokenizers`,
+            // whose ids are u32; the largest vocabulary candle-mi loads is 256000
             let token = tokenizer.decode(&[*idx as u32]).unwrap();
             println!("  {}: '{}' (logit={:.4})", rank + 1, token, logit);
         }
@@ -567,9 +518,10 @@ fn clt_position_sweep_activations() {
         .collect();
     let intersection = first_top_ids.intersection(&last_top_ids).count();
     let union = first_top_ids.union(&last_top_ids).count();
-    // CAST: usize → f32, set cardinalities are bounded by the top-k size
     #[allow(clippy::cast_precision_loss)]
     let jaccard = if union > 0 {
+        // CAST: usize → f32, set sizes bounded by the transcoder's feature count; the
+        // Jaccard ratio needs float division
         intersection as f32 / union as f32
     } else {
         1.0
@@ -620,8 +572,7 @@ fn clt_position_sweep_activations() {
         .as_array()
         .unwrap()
         .iter()
-        // CAST: u64 → u32, HF token ids fit in u32
-        .map(|v| v.as_u64().unwrap() as u32)
+        .map(json_u32)
         .collect();
     assert_eq!(token_ids, ref_token_ids, "tokenizer mismatch vs oracle");
 
@@ -635,12 +586,9 @@ fn clt_position_sweep_activations() {
     for pos in 0..seq_len {
         let ref_pos = &ref_positions[pos];
         let ref_top = ref_pos["top_features"].as_array().unwrap();
-        // CAST: u64 → usize, feature index within the layer
-        let ref_top1_idx = ref_top[0][0].as_u64().unwrap() as usize;
-        // CAST: f64 → f32, oracle activation is JSON f64; compare against the f32 forward
-        let ref_top1_act = ref_top[0][1].as_f64().unwrap() as f32;
-        // CAST: u64 → usize, active-feature count
-        let ref_n_active = ref_pos["n_active"].as_u64().unwrap() as usize;
+        let ref_top1_idx = json_usize(&ref_top[0][0]);
+        let ref_top1_act = json_f32(&ref_top[0][1]);
+        let ref_n_active = json_usize(&ref_pos["n_active"]);
 
         let (rust_fid, rust_act) = per_position_top_features[pos][0];
 
@@ -747,8 +695,7 @@ fn clt_position_sweep_causal() {
          scripts/clt_position_sweep_validation.py first",
     );
     let reference: serde_json::Value = serde_json::from_str(&ref_text).unwrap();
-    // CAST: u64 → usize, feature index within the layer
-    let ref_chosen = reference["causal"]["chosen_feature"].as_u64().unwrap() as usize;
+    let ref_chosen = json_usize(&reference["causal"]["chosen_feature"]);
     assert_eq!(
         chosen_feature.index, ref_chosen,
         "planning-site feature {} != oracle chosen_feature {ref_chosen}",
@@ -890,6 +837,8 @@ fn clt_position_sweep_causal() {
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         println!("{label} top-5:");
         for (rank, (idx, logit)) in indexed.iter().take(5).enumerate() {
+            // CAST: usize → u32, a vocabulary index being handed back to `tokenizers`,
+            // whose ids are u32; the largest vocabulary candle-mi loads is 256000
             let token = tokenizer.decode(&[*idx as u32]).unwrap();
             println!("  {}: '{}' (logit={:.4})", rank + 1, token, logit);
         }
@@ -1192,6 +1141,8 @@ fn clt_injection_shifts_logits_llama() {
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         println!("{label} top-5:");
         for (rank, (idx, logit)) in indexed.iter().take(5).enumerate() {
+            // CAST: usize → u32, a vocabulary index being handed back to `tokenizers`,
+            // whose ids are u32; the largest vocabulary candle-mi loads is 256000
             let token = tokenizer.decode(&[*idx as u32]).unwrap();
             println!("  {}: '{}' (logit={:.4})", rank + 1, token, logit);
         }
@@ -1362,9 +1313,10 @@ fn clt_position_sweep_activations_llama() {
         .collect();
     let intersection = first_top_ids.intersection(&last_top_ids).count();
     let union = first_top_ids.union(&last_top_ids).count();
-    // CAST: usize → f32, set cardinalities are bounded by the top-k size
     #[allow(clippy::cast_precision_loss)]
     let jaccard = if union > 0 {
+        // CAST: usize → f32, set sizes bounded by the transcoder's feature count; the
+        // Jaccard ratio needs float division
         intersection as f32 / union as f32
     } else {
         1.0
@@ -1583,6 +1535,8 @@ fn clt_position_sweep_causal_llama() {
         indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         println!("{label} top-5:");
         for (rank, (idx, logit)) in indexed.iter().take(5).enumerate() {
+            // CAST: usize → u32, a vocabulary index being handed back to `tokenizers`,
+            // whose ids are u32; the largest vocabulary candle-mi loads is 256000
             let token = tokenizer.decode(&[*idx as u32]).unwrap();
             println!("  {}: '{}' (logit={:.4})", rank + 1, token, logit);
         }

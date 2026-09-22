@@ -26,6 +26,10 @@
     missing_docs
 )]
 
+mod common;
+
+use common::{cuda_device, find_snapshot, safetensors_paths};
+
 use std::time::Instant;
 
 use candle_core::{DType, Device, IndexOp, Tensor};
@@ -37,61 +41,6 @@ use candle_mi::{
 // ---------------------------------------------------------------------------
 // Helpers (shared pattern with validate_clt.rs / validate_models.rs)
 // ---------------------------------------------------------------------------
-
-fn hf_cache_dir() -> std::path::PathBuf {
-    if let Ok(cache) = std::env::var("HF_HOME") {
-        return std::path::PathBuf::from(cache).join("hub");
-    }
-    if let Ok(home) = std::env::var("USERPROFILE") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    if let Ok(home) = std::env::var("HOME") {
-        return std::path::PathBuf::from(home)
-            .join(".cache")
-            .join("huggingface")
-            .join("hub");
-    }
-    panic!("Cannot find HuggingFace cache directory");
-}
-
-fn find_snapshot(model_id: &str) -> Option<std::path::PathBuf> {
-    let model_dir_name = format!("models--{}", model_id.replace('/', "--"));
-    let snapshots_dir = hf_cache_dir().join(model_dir_name).join("snapshots");
-    let entry = std::fs::read_dir(snapshots_dir).ok()?.next()?.ok()?;
-    Some(entry.path())
-}
-
-fn cuda_device() -> Option<Device> {
-    Device::cuda_if_available(0)
-        .ok()
-        .filter(candle_core::Device::is_cuda)
-}
-
-fn safetensors_paths(snapshot: &std::path::Path) -> Vec<std::path::PathBuf> {
-    let single = snapshot.join("model.safetensors");
-    if single.exists() {
-        return vec![single];
-    }
-    let index_path = snapshot.join("model.safetensors.index.json");
-    let index_str = std::fs::read_to_string(&index_path).unwrap_or_else(|_| {
-        panic!(
-            "no model.safetensors or index.json in {}",
-            snapshot.display()
-        )
-    });
-    let index: serde_json::Value = serde_json::from_str(&index_str).unwrap();
-    let weight_map = index["weight_map"].as_object().unwrap();
-    let mut shard_names: Vec<String> = weight_map
-        .values()
-        .map(|v| v.as_str().unwrap().to_string())
-        .collect();
-    shard_names.sort();
-    shard_names.dedup();
-    shard_names.iter().map(|name| snapshot.join(name)).collect()
-}
 
 fn load_llama(device: &Device) -> (GenericTransformer, MITokenizer, TransformerConfig) {
     let snapshot = find_snapshot("meta-llama/Llama-3.2-1B")

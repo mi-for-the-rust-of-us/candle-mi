@@ -91,6 +91,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Integration tests share `tests/common/` instead of copy-pasting helpers.**
+  `hf_cache_dir`, `find_snapshot`, `safetensors_paths` and `cuda_device` were
+  duplicated into every oracle test, 95 redundant definitions in all, and the
+  copies had drifted: 4 bodies for `hf_cache_dir`, **6 for `find_snapshot`**.
+  Most of that divergence was cosmetic, but `find_snapshot` was not. Twelve
+  files ran a version that did `read_dir(..).next()`, taking the first
+  directory entry with no validation, which selects an arbitrary revision once
+  more than one snapshot is cached and can select one with no weights at all.
+  Two more hardcoded a single weight filename, so a sharded repo read as "not
+  cached" and those tests **skipped instead of running**. The canonical version
+  scans every snapshot and accepts all four weight layouts.
+
+  The same module carries the only three `as` casts the oracle tests need.
+  `serde_json` hands back `u64`/`f64` while the values are model dimensions,
+  token ids and logits from this repo's own Python oracles, and that conversion
+  appeared 149 times across 27 files. It is now `json_usize` / `json_u32` /
+  `json_f32`, each justified once. Numeric casts in `tests/` drop from 191 to
+  42, and all 42 that remain are annotated, so the directory satisfies
+  `CONVENTIONS.md`'s CAST rule for the first time.
+
 - **Documentation, following the Gemma investigation.** `BACKENDS.md` records
   the `hidden_act` override in its Tier 4 `model_type` fixups, the designated
   home for per-family quirks. `docs/adding-a-model.md` gains "Trap 1 has a

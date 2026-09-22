@@ -34,17 +34,13 @@
     missing_docs
 )]
 
-use std::collections::HashMap;
-use std::path::PathBuf;
+mod common;
+
+use common::{json_f32, json_usize, reference_path};
 
 use candle_core::{Device, Tensor};
 use candle_mi::clt::{CrossLayerTranscoder, TranscoderSchema};
-
-fn reference_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("scripts")
-        .join("plt_llama_reference.json")
-}
+use std::collections::HashMap;
 
 #[test]
 #[ignore = "requires mntss/transcoder-Llama-3.2-1B cached (~16 GiB); run with --ignored"]
@@ -56,17 +52,15 @@ fn reference_path() -> PathBuf {
 #[allow(clippy::too_many_lines)]
 fn validate_plt_llama_encoder_against_python_oracle() {
     // --- Load the frozen reference JSON ---
-    let reference_str = std::fs::read_to_string(reference_path()).expect(
+    let reference_str = std::fs::read_to_string(reference_path("plt_llama_reference.json")).expect(
         "failed to read plt_llama_reference.json — run scripts/plt_llama_validation.py first",
     );
     let reference: serde_json::Value = serde_json::from_str(&reference_str).unwrap();
 
     let plt_repo = reference["plt_repo"].as_str().unwrap();
     let ref_schema = reference["schema"].as_str().unwrap();
-    // CAST: u64 → usize, JSON integer known to fit (PLT d_model = 2048)
-    let d_model = reference["d_model"].as_u64().unwrap() as usize;
-    // CAST: u64 → usize, JSON integer known to fit (PLT n_features = 131072)
-    let n_features_per_layer = reference["n_features_per_layer"].as_u64().unwrap() as usize;
+    let d_model = json_usize(&reference["d_model"]);
+    let n_features_per_layer = json_usize(&reference["n_features_per_layer"]);
     let test_cases = reference["test_cases"].as_array().unwrap();
 
     assert_eq!(
@@ -103,8 +97,7 @@ fn validate_plt_llama_encoder_against_python_oracle() {
     // --- Group test cases by layer so each encoder is loaded exactly once ---
     let mut by_layer: HashMap<usize, Vec<&serde_json::Value>> = HashMap::new();
     for tc in test_cases {
-        // CAST: u64 → usize, JSON layer index known to be 0..16 for Llama 3.2 1B
-        let layer = tc["layer"].as_u64().unwrap() as usize;
+        let layer = json_usize(&tc["layer"]);
         by_layer.entry(layer).or_default().push(tc);
     }
 
@@ -127,12 +120,9 @@ fn validate_plt_llama_encoder_against_python_oracle() {
                 .as_array()
                 .unwrap()
                 .iter()
-                // CAST: f64 → f32, JSON residual stored as Python-float (f64)
-                // but candle-mi's encoder works in F32; matches oracle's input dtype.
-                .map(|v| v.as_f64().unwrap() as f32)
+                .map(json_f32)
                 .collect();
-            // CAST: u64 → usize, JSON count bounded by n_features_per_layer
-            let ref_n_active = tc["n_active"].as_u64().unwrap() as usize;
+            let ref_n_active = json_usize(&tc["n_active"]);
             let ref_top10 = tc["top_10"].as_array().unwrap();
 
             assert_eq!(
@@ -157,10 +147,8 @@ fn validate_plt_llama_encoder_against_python_oracle() {
 
             // --- Top-10 indices + activations ---
             for (rank, ref_item) in ref_top10.iter().enumerate() {
-                // CAST: u64 → usize, JSON feature index bounded by n_features_per_layer
-                let ref_idx = ref_item["index"].as_u64().unwrap() as usize;
-                // CAST: f64 → f32, activation magnitude down-cast to match candle-mi's F32 encoder
-                let ref_act = ref_item["activation"].as_f64().unwrap() as f32;
+                let ref_idx = json_usize(&ref_item["index"]);
+                let ref_act = json_f32(&ref_item["activation"]);
 
                 let (rust_fid, rust_act) = sparse.features.get(rank).unwrap_or_else(|| {
                     panic!(

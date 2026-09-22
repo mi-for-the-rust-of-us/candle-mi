@@ -29,6 +29,8 @@ fn generate_inputs(n: usize) -> Vec<f32> {
     // CAST: usize → f32, small test indices
     #[allow(clippy::cast_precision_loss, clippy::as_conversions)]
     (0..n * 2)
+        // CAST: usize → f32, a small synthetic index driving a deterministic test signal,
+        // not a measured value
         .map(|i| ((i as f32) * 0.618_034).sin() * 3.0)
         .collect()
 }
