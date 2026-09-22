@@ -660,6 +660,26 @@ impl TransformerConfig {
 
             norm_type: NormType::GemmaRmsNorm,
             norm_eps,
+            // Hardcoded, and it deliberately IGNORES the checkpoint's
+            // `hidden_act`.  Gemma is an approximate-GELU model, but the
+            // original Gemma 1.0 configs (`google/gemma-2b`, `gemma-2b-it`,
+            // `gemma-7b`, `gemma-7b-it`, `codegemma-2b`) shipped in February
+            // 2024 carrying `"hidden_act": "gelu"`, which denotes the *exact*
+            // erf form.  Honouring that string would reproduce a known-wrong
+            // value: HF added a `hidden_activation` field precisely to override
+            // it, and `GemmaConfig::hidden_act` still DEFAULTS to
+            // `"gelu_pytorch_tanh"` to this day.
+            //
+            // This is not hypothetical.  `transformers` PR #35235 (2024-12-18,
+            // v4.48.0) deleted the guard that applied that override, so every
+            // `transformers >= 4.48.0` computes exact GELU for those five
+            // checkpoints, silently and with no warning.
+            // `tests/validate_gemma_forward.rs` caught it: its oracle has to
+            // pin `gelu_pytorch_tanh` explicitly, and unpinned the logits
+            // diverge by ~1e-2 while every top-10 index still matches.  See
+            // `scripts/gemma_validation.py` for the full chain.  Gemma 1.1 and
+            // later omit or correct the string, so no config-driven branch is
+            // needed here.
             activation: Activation::GeluApprox,
             qkv_layout: QkvLayout::Separate,
             mlp_layout: MlpLayout::GatedSeparate,
@@ -1284,7 +1304,23 @@ impl TransformerConfig {
             .or_else(|| config.get("norm_epsilon").and_then(Value::as_f64))
             .unwrap_or(1e-5);
 
-        let activation = parse_activation_str(config);
+        // Gemma is an approximate-GELU family, but the original Gemma 1.0
+        // configs say `"hidden_act": "gelu"`, which names the *exact* erf form.
+        // `parse_gemma` ignores that string outright; this path must agree, or
+        // a Gemma-derived checkpoint whose `model_type` is not registered gets
+        // `GemmaRmsNorm` and `embedding_scale` (correct) alongside exact GELU
+        // (wrong).  `hidden_activation`, when present, already wins inside
+        // `parse_activation_str`, so this only rescues the legacy spelling.
+        // See `tests/validate_gemma_forward.rs` and
+        // `docs/upstream/transformers-gemma1-activation-regression.md` for the
+        // upstream version of this same bug.
+        let parsed_activation = parse_activation_str(config);
+        let activation =
+            if model_type.contains("gemma") && matches!(parsed_activation, Activation::Gelu) {
+                Activation::GeluApprox
+            } else {
+                parsed_activation
+            };
 
         // Sliding window: respect `use_sliding_window: false` (Qwen2)
         let sliding_window =
@@ -2687,6 +2723,102 @@ mod tests {
         let manual = TransformerConfig::from_hf_config(&json).unwrap();
         let auto = TransformerConfig::parse_auto(&json, &names, "gemma").unwrap();
         assert_eq!(auto, manual);
+    }
+
+    /// The Gemma 1.0 spelling, which the `auto_config_matches_gemma` case above
+    /// cannot catch: it uses CodeGemma 7B IT, whose config carries the
+    /// corrected `"hidden_activation": "gelu_pytorch_tanh"`, and that is the
+    /// one shape where both paths agree whatever the override does.
+    ///
+    /// `google/gemma-2b` instead ships the legacy `"hidden_act": "gelu"` and no
+    /// `hidden_activation` at all.  Read literally that names exact erf GELU,
+    /// which is not what Gemma was trained with; `parse_gemma` hardcodes
+    /// [`Activation::GeluApprox`] for exactly that reason, so `parse_auto` has
+    /// to reach the same answer from the same bytes.
+    ///
+    /// Taking the config string at face value here is the bug `transformers`
+    /// shipped in v4.48.0 (PR #35235), measured at ~1e-2 per logit in
+    /// `tests/validate_gemma_forward.rs`.
+    #[test]
+    fn auto_config_matches_gemma_1_legacy_activation() {
+        // google/gemma-2b, verbatim from its config.json at revision 9cf48e52.
+        let json = serde_json::json!({
+            "model_type": "gemma",
+            "hidden_size": 2048,
+            "num_hidden_layers": 18,
+            "num_attention_heads": 8,
+            "num_key_value_heads": 1,
+            "head_dim": 256,
+            "intermediate_size": 16384,
+            "vocab_size": 256000,
+            "rms_norm_eps": 1e-6,
+            "rope_theta": 10000.0,
+            "max_position_embeddings": 8192,
+            "hidden_act": "gelu"
+        });
+        let names = tensor_names(&[
+            "model.embed_tokens.weight",
+            "model.layers.0.input_layernorm.weight",
+            "model.layers.0.mlp.down_proj.weight",
+            "model.layers.0.mlp.gate_proj.weight",
+            "model.layers.0.mlp.up_proj.weight",
+            "model.layers.0.post_attention_layernorm.weight",
+            "model.layers.0.self_attn.k_proj.weight",
+            "model.layers.0.self_attn.o_proj.weight",
+            "model.layers.0.self_attn.q_proj.weight",
+            "model.layers.0.self_attn.v_proj.weight",
+            "model.norm.weight",
+        ]);
+
+        let manual = TransformerConfig::from_hf_config(&json).unwrap();
+        assert_eq!(
+            manual.activation,
+            Activation::GeluApprox,
+            "parse_gemma must ignore the legacy `hidden_act: gelu`"
+        );
+
+        let auto = TransformerConfig::parse_auto(&json, &names, "gemma").unwrap();
+        assert_eq!(
+            auto.activation,
+            Activation::GeluApprox,
+            "parse_auto must reach the same activation as parse_gemma"
+        );
+        assert_eq!(auto, manual);
+    }
+
+    /// The override is scoped to Gemma: a non-Gemma family asking for exact
+    /// GELU must still get it.
+    #[test]
+    fn auto_config_keeps_exact_gelu_outside_gemma() {
+        let json = serde_json::json!({
+            "model_type": "some_other_family",
+            "hidden_size": 2048,
+            "num_hidden_layers": 18,
+            "num_attention_heads": 8,
+            "num_key_value_heads": 8,
+            "intermediate_size": 16384,
+            "vocab_size": 32000,
+            "rms_norm_eps": 1e-6,
+            "rope_theta": 10000.0,
+            "max_position_embeddings": 8192,
+            "hidden_act": "gelu"
+        });
+        let names = tensor_names(&[
+            "model.embed_tokens.weight",
+            "model.layers.0.input_layernorm.weight",
+            "model.layers.0.mlp.down_proj.weight",
+            "model.layers.0.mlp.gate_proj.weight",
+            "model.layers.0.mlp.up_proj.weight",
+            "model.layers.0.post_attention_layernorm.weight",
+            "model.layers.0.self_attn.k_proj.weight",
+            "model.layers.0.self_attn.o_proj.weight",
+            "model.layers.0.self_attn.q_proj.weight",
+            "model.layers.0.self_attn.v_proj.weight",
+            "model.norm.weight",
+        ]);
+
+        let auto = TransformerConfig::parse_auto(&json, &names, "some_other_family").unwrap();
+        assert_eq!(auto.activation, Activation::Gelu);
     }
 
     #[test]

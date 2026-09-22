@@ -903,7 +903,7 @@ CI enforces the same three checks on every push. A red CI is treated as a blocki
 
 **Goal:** The core causal analysis toolkit — transforms candle-mi from "model loader with hooks" into "general-purpose MI framework." Forward-only methods; no autograd needed (tractable on 16 GB VRAM up to ~7B F32).
 
-- [ ] Per-head hooks (`hook_z`, `hook_result`) — capture attention-weighted values and per-head output projected to `d_model` before summation. Requires `attention.rs` changes + re-validation of all 7 transformer families — **commit** — **PUSH**
+- [ ] Per-head hooks (`hook_z`, `hook_result`) — capture attention-weighted values and per-head output projected to `d_model` before summation. Requires `attention.rs` changes + re-validation of all 8 transformer families — **commit** — **PUSH**
 - [ ] Residual stream decomposition — `accumulated_resid()` (stack residual streams at each layer) + `decompose_resid()` (per-component additive contributions: each attention output, each MLP output, embeddings) on `FullActivationCache` — **commit**
 - [ ] Direct logit attribution — `logit_attrs()`: dot product of each component's residual contribution with unembedding direction of target tokens. Per-head, per-layer, per-MLP granularity — **commit**
 - [ ] Activation patching framework — `activation_patch()` generic + pre-built variants (`resid_pre`, `attn_out`, `mlp_out`, per-head). Clean/corrupted forward passes with activation swaps at specified hook points. Note: basic activation patching already works as an example (`activation_patching.rs`, v0.1.0) with full causal trace heatmap (v0.1.3); this phase promotes it to a reusable library API — **commit** — **PUSH**

@@ -145,6 +145,10 @@ name = "validate_llama32_forward"
 required-features = ["transformer"]
 
 [[test]]
+name = "validate_gemma_forward"
+required-features = ["transformer"]
+
+[[test]]
 name = "validate_gemma2_forward"
 required-features = ["transformer"]
 

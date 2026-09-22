@@ -73,6 +73,11 @@ Auto-config reads configuration from two sources:
 
 **Tier 4: `model_type` fixups** (architecture-specific overrides):
 - Gemma/Gemma2 → `GemmaRmsNorm`, `embedding_scale`, `alternating_sliding_window`
+- Gemma → `GeluApprox`, **overriding `hidden_act` when it says `"gelu"`**. The
+  Gemma 1.0 checkpoints ship a `hidden_act` naming the exact erf form while the
+  models use the tanh approximation, so the config is not authoritative here;
+  `hidden_activation`, when present, already takes precedence. See
+  [`docs/adding-a-model.md`](docs/adding-a-model.md) ("Trap 1 has a second face")
 - Any model with `attn_logit_softcapping` → soft-capping enabled
 
 For a visual overview of how these config fields map to transformer blocks, see Raschka's
@@ -225,7 +230,7 @@ fn parse_qwen2(config: &Value) -> Result<TransformerConfig> {
 pub const SUPPORTED_MODEL_TYPES: &[&str] = &[
     "gemma", "gemma2", "llama", "mistral",
     "my_new_model",  // ← add here
-    "phi3", "qwen2", "starcoder2",
+    "phi3", "qwen2", "qwen3", "starcoder2",
 ];
 ```
 

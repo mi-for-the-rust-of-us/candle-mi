@@ -16,7 +16,7 @@ Every `.rs` file must start with `// SPDX-License-Identifier: MIT OR Apache-2.0`
 Before every commit, run and fix any issues from:
 1. `cargo update -p hf-fetch-model` — pick up the latest compatible patch release
 2. `cargo fmt`
-3. `cargo clippy --all-targets --all-features -- -D warnings`
+3. `cargo clippy --all-targets --no-default-features --features <lane> -- -D warnings` for each feature lane the change touches. **Never `--all-features`** — see below.
 4. `cargo test`
 5. Update `CHANGELOG.md` — add a bullet under the `[Unreleased]` section for any user-visible change (new feature, fix, breaking change). Follow [Keep a Changelog](https://keepachangelog.com/) categories: Added, Changed, Fixed, Removed.
 
@@ -24,7 +24,9 @@ CI runs clippy separately for each backend feature. Before pushing, also run cli
 - `cargo clippy --features transformer -- -W clippy::pedantic`
 - `cargo clippy --features rwkv -- -W clippy::pedantic`
 
-Checking only `--all-features` will miss lint errors that appear under a single feature flag.
+**`--all-features` is not an option here, for three independent reasons.** It does not run at all on this machine: it enables `metal`, which pulls `objc2`, which `compile_error!`s on anything that is not Apple. It cannot see a lint that fires only under one feature. And it structurally cannot see two whole classes of breakage that the per-lane matrix does catch: a feature-gated intra-doc link (which resolves when its feature is on and dangles when it is off, so `preflight.ps1` runs rustdoc per lane), and a target that compiles only when a feature is *present* — an integration test missing its `[[test]] required-features` entry in `Cargo.toml` builds fine under `--features transformer` and fails in every other lane. Both were live defects caught by preflight and by nothing else (2026-09-22).
+
+When in doubt, do not guess the lane: `./scripts/preflight.ps1` runs the whole matrix in ~6 minutes, CPU only, and is the authority.
 
 Before every push, run `./scripts/preflight.ps1`. It freshens the toolchains (`rustup update stable`, and ensures the MSRV `1.91` toolchain) so local lints match CI's rolling stable — a dry-run on a stale compiler can pass while CI fails on a newer lint (this is how `clippy::suboptimal_flops` from Rust 1.96 broke a clean `main`; the same lint, on the then-MSRV 1.88, also broke a push when preflight didn't yet run the MSRV lane).
 
@@ -53,7 +55,7 @@ Selecting entries, so a single refresh costs a minute rather than the full tier:
 - `-List` prints the number/slug map plus each entry's tier and last-verified date. Start here.
 - `-Only <tokens>` / `-Skip <tokens>` take 1-based numbers **or** stable slugs (`-Only longrope`, `-Only 12`, `-Only clt,sae`, `-Skip longrope`). Prefer slugs in anything you write down: inserting an entry renumbers everything after it.
 - `-Skip longrope` is the common shortcut: that one entry is ~15 min of the ~44 min default tier (Phi-3.5-mini at F32 spills ~8.8 GiB), so skipping it gives ~28 min whenever the VRAM-spill path is not what changed.
-- A partial run stamps `partial (N of 20: …)`, never a tier name, so a three-entry run can never later read as full coverage.
+- A partial run stamps `partial (N of <all entries>: …)`, never a tier name, so a three-entry run can never later read as full coverage.
 
 **A default-off feature that no entry enables cannot invalidate the suite.** `training` gates `src/optim.rs` entirely and appears nowhere in `resurrect.ps1`, so adding it after a green run needs no re-run. Check the same way: grep the feature name in `resurrect.ps1` and confirm the module is fully `cfg`-gated.
 

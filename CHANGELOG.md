@@ -7,7 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Gemma 1 forward-parity validation (`tests/validate_gemma_forward.rs`).**
+  `gemma` was the only entry in `SUPPORTED_MODEL_TYPES` with no forward-parity
+  record in `RESURRECTION.md`: `parse_gemma` had config-level unit tests and a
+  support claim in `README.md`, but its forward pass had never been checked
+  against an oracle. The Gemma 2 arm does not cover it, because Gemma 1 is that
+  arm's inverse: it keeps `GemmaRmsNorm`, `sqrt(hidden_size)` embedding scaling
+  and the GELU-tanh approximation, but has no logit soft-capping, no
+  post-attention/post-feedforward norms and no sliding window, so the new test
+  asserts those extensions are correctly *absent*. `google/gemma-2b` is also the
+  only validated checkpoint using multi-query attention (`num_kv_heads == 1`),
+  making this the sole exercise of the GQA path at its degenerate end.
+
+  Verified CPU and GPU against a new from-first-principles oracle
+  (`scripts/gemma_validation.py`): max abs-diff `3.4e-5` (CPU, bar `1e-3`) and
+  `1.7e-5` (CUDA, bar `5e-3`), with all top-10 indices matching. Added as the
+  `gemma` entry in `scripts/resurrect.ps1`, taking that suite to 22 entries.
+
+  The run immediately found an upstream defect rather than a candle-mi one.
+  `transformers >= 4.48.0` computes **exact erf GELU** for `google/gemma-2b`,
+  `gemma-2b-it`, `gemma-7b`, `gemma-7b-it` and `codegemma-2b`, because PR #35235
+  (2024-12-18) replaced `GemmaMLP`'s `hidden_activation` guard with
+  `ACT2FN[config.hidden_act]` and deleted its warning in the same diff, while
+  those checkpoints still carry the legacy `"hidden_act": "gelu"` string.
+  `GemmaConfig.hidden_act` still defaults to `"gelu_pytorch_tanh"`, so the
+  library contradicts itself. candle-mi is the correct side; `parse_gemma` now
+  documents why it ignores `hidden_act`, and the oracle pins the activation
+  explicitly. Unpinned, every logit shifts by ~`1e-2` while every top-10 index
+  still matches, which is why no smoke test or benchmark would register it.
+
 ### Fixed
+
+- **`parse_auto` could reproduce the upstream Gemma activation bug.** The
+  auto-detection fallback applied its Gemma fixups (`GemmaRmsNorm`,
+  `embedding_scale`, `alternating_sliding_window`, `query_pre_attn_scalar`) but
+  read the activation straight from `hidden_act`, so a Gemma-derived checkpoint
+  whose `model_type` was not in `SUPPORTED_MODEL_TYPES` would get the correct
+  norm and embedding scale alongside **exact** GELU. Registered Gemma
+  checkpoints were never affected, since `from_hf_config_auto` routes them to
+  `parse_gemma`.
+
+  The pre-existing `auto_config_matches_gemma` test could not catch it: it uses
+  CodeGemma 7B IT, whose config carries the corrected
+  `"hidden_activation": "gelu_pytorch_tanh"`, and that is the one config shape
+  where both paths agree regardless. The new
+  `auto_config_matches_gemma_1_legacy_activation` uses `google/gemma-2b`'s
+  config verbatim and fails without the fix;
+  `auto_config_keeps_exact_gelu_outside_gemma` pins the override's scope.
 
 - **The manifest and the README made incompatible promises about CPU-only use.**
   `README.md` said "CPU-only works for small models and tokenizer-only
@@ -40,6 +88,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   candle-mi code, and switching it to `dynamic-loading` would not help because
   `candle-kernels` needs `nvcc` regardless and candle-core exposes no feature to
   select the loading mode.
+
+### Changed
+
+- **Documentation, following the Gemma investigation.** `BACKENDS.md` records
+  the `hidden_act` override in its Tier 4 `model_type` fixups, the designated
+  home for per-family quirks. `docs/adding-a-model.md` gains "Trap 1 has a
+  second face: the config can lie", generalizing the rule that when a config
+  field and the documented architecture disagree, the parity test decides and
+  the resolution belongs in a comment at the parser line; its differential-test
+  recipe now also says to declare the new test in `Cargo.toml` with
+  `required-features` and to let `resurrect.ps1` stamp `RESURRECTION.md` rather
+  than hand-writing the row. `CLAUDE.md` replaces the `--all-features` clippy
+  step, which cannot run on Windows (`metal` pulls `objc2`) and structurally
+  cannot see either a feature-gated intra-doc link or a target that fails only
+  when a feature is absent.
 
 ## [0.2.0] - 2026-09-21
 

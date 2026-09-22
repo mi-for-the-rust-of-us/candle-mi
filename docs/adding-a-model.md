@@ -33,6 +33,32 @@ Two more that bite less often but are worth a glance: **attention scale**
 (`1/sqrt(head_dim)` is standard, but some models fold a different scalar in) and
 **weight tying** (is the head tied to `tok_emb`, or a separate `head.weight`?).
 
+### Trap 1 has a second face: the config can lie
+
+Reading the PyTorch source is necessary but not sufficient, because the source
+often reads a *config string* rather than naming the function. If that string is
+wrong in the published checkpoint, faithfully following the code reproduces the
+error.
+
+Gemma 1.0 is the worked example. `google/gemma-2b`, `gemma-2b-it`, `gemma-7b`,
+`gemma-7b-it` and `codegemma-2b` all ship `"hidden_act": "gelu"`, which names the
+exact erf form, while the models were trained with the tanh approximation.
+HuggingFace added a `hidden_activation` field precisely to override the bad
+string, and `GemmaConfig.hidden_act` still *defaults* to `"gelu_pytorch_tanh"`.
+So the checkpoint disagrees with the library that publishes it.
+
+This is why [`parse_gemma`](../src/config.rs) hardcodes `Activation::GeluApprox`
+and ignores `hidden_act` outright, and why `parse_auto` applies the same override
+for any `model_type` containing `gemma`. Both are covered by
+`config::tests::auto_config_matches_gemma_1_legacy_activation`.
+
+The rule that generalizes: **when a config field and the model's documented
+architecture disagree, the parity test decides, and the resolution belongs in a
+comment at the parser line.** `transformers` itself got this wrong from v4.48.0
+(PR #35235 deleted the override and its warning in one diff), which is worth
+about `1e-2` per logit with every top-10 index unchanged. See
+[`docs/upstream/transformers-gemma1-activation-regression.md`](upstream/transformers-gemma1-activation-regression.md).
+
 ## Weight keys: prefer verbatim over remap
 
 PyTorch `nn.Linear` stores `weight` as `[out, in]` — the **same** convention as
@@ -146,6 +172,26 @@ load them in a `#[ignore]` integration test that skips when the fixtures are
 absent (see `tests/validate_othello_forward.rs`, pointed at its fixtures via an
 environment variable). Keep large weights/fixtures **out** of the committed
 crate — they are regenerable, and the published package excludes data.
+
+**Declare the new test in `Cargo.toml`**, or the lane matrix will not build:
+
+```toml
+[[test]]
+name = "validate_<model>_forward"
+required-features = ["transformer"]
+```
+
+Without it Cargo auto-discovers the file and compiles it in *every* feature
+lane, including ones where the backend is gated out, so
+`preflight.ps1` fails with `unresolved import candle_mi::GenericTransformer`
+pointing at your test rather than at the missing declaration. Nothing you run by
+hand catches this: `cargo test --features transformer` has the feature, and only
+a lane that builds `--all-targets` *without* it exposes the gap.
+
+Finally, add the test to [`scripts/resurrect.ps1`](../scripts/resurrect.ps1) as
+its own entry and let the script stamp `RESURRECTION.md`. Do not hand-write the
+row: that file is a record of what the tooling verified, and a typed row is a
+claim nothing made.
 
 > Worked result: the `OthelloGpt` port reproduced the fp32 oracle to
 > **4.18e-5** (logits) / **2.59e-4** (worst of 8 `resid_post` layers) on CPU,

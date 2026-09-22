@@ -32,8 +32,8 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-09-21 12:48 — tier **partial (1 of 21: anacrousis)**
-- **Toolchain:** rustc 1.98.0 (88d9e12ae 2026-08-18)
+- **Last run:** 2026-09-22 15:30 — tier **partial (1 of 22: gemma)**
+- **Toolchain:** rustc 1.98.1 (48a229cea 2026-09-01)
 - **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
 | Test | Models | Device(s) | Last verified | Wall-clock | Peak spill | Outcome |
@@ -42,6 +42,7 @@ pass `-SpillProbe` to sample every entry.
 | plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-09-21 | 2m07s | none | ✅ PASS |
 | plt_llama (encoder parity) | mntss/transcoder-Llama-3.2-1B (~16 GiB) | CPU | 2026-09-21 | 1m33s | — | ✅ PASS |
 | llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-09-21 | 1m55s | — | ✅ PASS |
+| gemma forward | google/gemma-2b (gated) | CPU+GPU | 2026-09-22 | 4m41s | — | ✅ PASS |
 | gemma2 forward | google/gemma-2-2b (gated) | CPU+GPU | 2026-09-21 | 1m40s | — | ✅ PASS |
 | phi3-mini forward | microsoft/Phi-3-mini-4k-instruct | CPU+GPU | 2026-09-21 | 89.6s | — | ✅ PASS |
 | mistral-7b forward | mistralai/Mistral-7B-v0.1 (gated) | CPU+GPU | 2026-09-21 | 1m56s | — | ✅ PASS |

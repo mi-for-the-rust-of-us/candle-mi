@@ -1,23 +1,33 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-//! Integration test: `google/gemma-2-2b` forward-pass parity against the
-//! from-first-principles Python oracle in `scripts/gemma2_validation.py`.
+//! Integration test: `google/gemma-2b` forward-pass parity against the
+//! from-first-principles Python oracle in `scripts/gemma_validation.py`.
 //!
-//! Gemma 2 is the highest-quirk decoder-only family candle-mi covers:
-//! attention + final logit soft-capping (`tanh(x/cap)*cap`), four norms per
-//! layer, `sqrt(hidden_size)` embedding scaling, GELU-tanh approximation, a
-//! custom `query_pre_attn_scalar`, and a required BOS token.  Its only prior
-//! guard was a "`Paris` in top-10" smoke test in `validate_models.rs`, which a
-//! subtly-wrong soft-capping/4-norm path still passes.  This is the exact-logit
-//! regression guard the smoke test could not be.
+//! Gemma 1 was the one entry in `SUPPORTED_MODEL_TYPES` with no
+//! forward-parity record in `RESURRECTION.md`: `parse_gemma` had
+//! config-level unit tests and a support claim in `README.md`, but its
+//! forward pass had never been checked against an oracle.
 //!
-//! Consumes the frozen reference JSON (`scripts/gemma2_forward_reference.json`)
+//! It is not covered by the Gemma 2 arm, because it is that arm's *inverse*.
+//! Gemma 1 keeps `GemmaRmsNorm`, `sqrt(hidden_size)` embedding scaling,
+//! `GeluApprox` and the required BOS token, but has **no** attention or final
+//! logit soft-capping, **no** post-attention / post-feedforward norms, and
+//! **no** sliding window.  A passing `validate_gemma2_forward` says nothing
+//! about any of those being correctly *absent*.
+//!
+//! `google/gemma-2b` additionally uses multi-query attention (a single KV
+//! head), which no other validated family exercises, so this is also the
+//! narrowest test of the GQA path at its degenerate end.
+//!
+//! Consumes the frozen reference JSON (`scripts/gemma_forward_reference.json`)
 //! and verifies that candle-mi's [`GenericTransformer`] produces matching
 //! output when fed the same input prompts.  Acceptance bar:
 //!
-//! - Detected config carries non-`None` `attn_logit_softcapping` /
-//!   `final_logit_softcapping`, `use_post_norms`, and `embedding_scale`.
-//! - `(hidden_size, num_layers, vocab_size, head_dim)` match the Python run.
+//! - Detected config carries `None` `attn_logit_softcapping` /
+//!   `final_logit_softcapping`, `use_post_norms == false`,
+//!   `sliding_window == None`, and a non-`None` `embedding_scale`.
+//! - `(hidden_size, num_layers, vocab_size, head_dim, num_kv_heads)` match
+//!   the Python run.
 //! - Per test case: top-10 logit indices match exactly; magnitudes within
 //!   `abs diff < 1e-3` (CPU vs CPU `F32`) or `< 5e-3` (GPU `F32` vs CPU
 //!   `F32`).
@@ -25,14 +35,14 @@
 //! Two test wrappers (one CPU, one GPU), both `#[ignore]`-gated and serial.
 //! GPU test skips cleanly when no `CUDA` device is available.
 //!
-//! Requires `google/gemma-2-2b` (gated; ~5 GiB) cached in
+//! Requires `google/gemma-2b` (gated; ~4.7 GiB) cached in
 //! `~/.cache/huggingface/hub/`.
 //!
 //! Run CPU:
-//!   `cargo test --test validate_gemma2_forward --features transformer -- --ignored gemma2_2b_forward_parity_cpu`
+//!   `cargo test --test validate_gemma_forward --features transformer -- --ignored gemma_2b_forward_parity_cpu`
 //!
 //! Run GPU:
-//!   `cargo test --test validate_gemma2_forward --features transformer -- --ignored gemma2_2b_forward_parity_gpu`
+//!   `cargo test --test validate_gemma_forward --features transformer -- --ignored gemma_2b_forward_parity_gpu`
 
 #![allow(
     clippy::unwrap_used,
@@ -55,14 +65,14 @@ use candle_core::{DType, Device, IndexOp, Tensor};
 use candle_mi::{GenericTransformer, HookSpec, MIBackend, TransformerConfig};
 use serial_test::serial;
 
-const MODEL_ID: &str = "google/gemma-2-2b";
+const MODEL_ID: &str = "google/gemma-2b";
 const ABS_DIFF_BAR_CPU: f32 = 1e-3;
 const ABS_DIFF_BAR_GPU: f32 = 5e-3;
 
 fn reference_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("scripts")
-        .join("gemma2_forward_reference.json")
+        .join("gemma_forward_reference.json")
 }
 
 fn hf_cache_dir() -> PathBuf {
@@ -128,13 +138,13 @@ fn cuda_device() -> Option<Device> {
     Device::cuda_if_available(0).ok().filter(Device::is_cuda)
 }
 
-/// Run the Gemma 2 forward-parity check on the given `device`.  Prints a
+/// Run the Gemma 1 forward-parity check on the given `device`.  Prints a
 /// per-prompt comparison, then asserts top-10 index + magnitude parity across
 /// all cases at the end.
 #[allow(clippy::too_many_lines)]
-fn run_gemma2_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f32) {
+fn run_gemma_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f32) {
     let reference_str = std::fs::read_to_string(reference_path()).expect(
-        "failed to read gemma2_forward_reference.json, run scripts/gemma2_validation.py first",
+        "failed to read gemma_forward_reference.json, run scripts/gemma_validation.py first",
     );
     let reference: serde_json::Value = serde_json::from_str(&reference_str).unwrap();
 
@@ -146,15 +156,16 @@ fn run_gemma2_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f
     let ref_layers = reference["num_layers"].as_u64().unwrap() as usize;
     let ref_vocab = reference["vocab_size"].as_u64().unwrap() as usize;
     let ref_head_dim = reference["head_dim"].as_u64().unwrap() as usize;
+    let ref_kv_heads = reference["num_kv_heads"].as_u64().unwrap() as usize;
     let test_cases = reference["test_cases"].as_array().unwrap();
 
     assert_eq!(model_repo, MODEL_ID, "oracle JSON model_repo mismatch");
 
-    println!("Validating Gemma 2 forward parity ({device_name}) against Python oracle:");
+    println!("Validating Gemma 1 forward parity ({device_name}) against Python oracle:");
     println!("  model:  {model_repo}");
     println!(
         "  hidden_size={ref_hidden}, num_layers={ref_layers}, \
-         vocab_size={ref_vocab}, head_dim={ref_head_dim}"
+         vocab_size={ref_vocab}, head_dim={ref_head_dim}, num_kv_heads={ref_kv_heads}"
     );
     println!(
         "  {} test cases, abs-diff bar = {abs_diff_bar:.0e}",
@@ -171,21 +182,31 @@ fn run_gemma2_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f
     assert_eq!(config.num_layers, ref_layers);
     assert_eq!(config.vocab_size, ref_vocab);
     assert_eq!(config.head_dim, ref_head_dim);
+    assert_eq!(config.num_kv_heads, ref_kv_heads);
 
-    // candle-mi must detect the Gemma 2 soft-capping + 4-norm + scaled-embedding
-    // stack; a wrong path here is the latent class this guards against.
-    assert!(
-        config.attn_logit_softcapping.is_some(),
-        "Gemma 2 must detect attn_logit_softcapping"
-    );
-    assert!(
-        config.final_logit_softcapping.is_some(),
-        "Gemma 2 must detect final_logit_softcapping"
-    );
-    assert!(config.use_post_norms, "Gemma 2 must use 4 norms per layer");
+    // Gemma 1 is Gemma 2's inverse: the shared pieces must be detected, and
+    // every Gemma 2 extension must be correctly ABSENT.  A parser that leaks a
+    // soft-cap or a post-norm into the Gemma 1 path is the latent class this
+    // guards against, and no Gemma 2 run can catch it.
     assert!(
         config.embedding_scale.is_some(),
-        "Gemma 2 must scale embeddings by sqrt(hidden_size)"
+        "Gemma 1 must scale embeddings by sqrt(hidden_size)"
+    );
+    assert!(
+        config.attn_logit_softcapping.is_none(),
+        "Gemma 1 must NOT have attn_logit_softcapping"
+    );
+    assert!(
+        config.final_logit_softcapping.is_none(),
+        "Gemma 1 must NOT have final_logit_softcapping"
+    );
+    assert!(
+        !config.use_post_norms,
+        "Gemma 1 must use 2 norms per layer, not 4"
+    );
+    assert!(
+        config.sliding_window.is_none(),
+        "Gemma 1 must NOT use a sliding window"
     );
 
     let dtype = DType::F32;
@@ -297,27 +318,27 @@ fn run_gemma2_forward_parity(device: &Device, device_name: &str, abs_diff_bar: f
 
     assert!(
         failures.is_empty(),
-        "Gemma 2 forward parity FAILED ({} divergences):\n  {}",
+        "Gemma 1 forward parity FAILED ({} divergences):\n  {}",
         failures.len(),
         failures.join("\n  ")
     );
 }
 
 #[test]
-#[ignore = "requires google/gemma-2-2b cached (~5 GiB); run with --ignored"]
+#[ignore = "requires google/gemma-2b cached (~4.7 GiB); run with --ignored"]
 #[serial]
-fn gemma2_2b_forward_parity_cpu() {
+fn gemma_2b_forward_parity_cpu() {
     if find_snapshot(MODEL_ID).is_none() {
         eprintln!("SKIP: {MODEL_ID} not in HF cache");
         return;
     }
-    run_gemma2_forward_parity(&Device::Cpu, "CPU", ABS_DIFF_BAR_CPU);
+    run_gemma_forward_parity(&Device::Cpu, "CPU", ABS_DIFF_BAR_CPU);
 }
 
 #[test]
-#[ignore = "requires google/gemma-2-2b cached (~5 GiB) and a CUDA device; run with --ignored"]
+#[ignore = "requires google/gemma-2b cached (~4.7 GiB) and a CUDA device; run with --ignored"]
 #[serial]
-fn gemma2_2b_forward_parity_gpu() {
+fn gemma_2b_forward_parity_gpu() {
     if find_snapshot(MODEL_ID).is_none() {
         eprintln!("SKIP: {MODEL_ID} not in HF cache");
         return;
@@ -326,5 +347,5 @@ fn gemma2_2b_forward_parity_gpu() {
         eprintln!("SKIP: no CUDA device available");
         return;
     };
-    run_gemma2_forward_parity(&device, "CUDA", ABS_DIFF_BAR_GPU);
+    run_gemma_forward_parity(&device, "CUDA", ABS_DIFF_BAR_GPU);
 }
