@@ -253,6 +253,10 @@ Happy to open a PR for whichever shape is preferred.
 - Version bisect on the guard, by release tag: present through v4.47.1, gone in
   v4.48.0
 - `google/gemma-2b` at revision `9cf48e52b224239de00d483ec8eb84fb8d0f3a3a`
+- Cross-checked against [candle-mi](https://github.com/mi-for-the-rust-of-us/candle-mi) 0.2.1, an independent Rust
+  implementation of the forward pass, whose
+  [`tests/validate_gemma_forward.rs`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/tests/validate_gemma_forward.rs)
+  is how this surfaced
 
 ## Prior art checked
 

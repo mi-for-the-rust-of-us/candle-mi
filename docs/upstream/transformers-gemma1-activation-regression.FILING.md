@@ -37,12 +37,15 @@ would render literally.
 
 ## FIELD 1: System Info
 
-```
-- transformers 5.1.0, torch 2.10.0+cu130, Python 3.14, Windows 11
-- Version bisect on the guard, by release tag: present through v4.47.1, gone in v4.48.0
-- google/gemma-2b at revision 9cf48e52b224239de00d483ec8eb84fb8d0f3a3a
-- Cross-checked against an independent Rust implementation (candle-mi), which is how
-  this surfaced
+Pulled from the document's `## System info` section, not retyped here.
+
+An earlier version of this sheet held a second copy, and the two drifted within a day:
+the sheet's copy gained a candle-mi cross-check bullet that the document never got, and
+the version filed named candle-mi without linking it. One source, assembled by the same
+script as FIELD 5:
+
+```python
+field1 = sections["System info"]
 ```
 
 ---
