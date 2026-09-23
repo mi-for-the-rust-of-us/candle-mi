@@ -1255,6 +1255,50 @@ mod tests {
         assert_eq!(rp.dims3().unwrap(), (1, 3, 8));
     }
 
+    /// `BACKENDS.md`'s conformance case for `OthelloGpt`: `Intervention::Zero`
+    /// at `ResidPost(0)` must change the output, which proves the hook is wired
+    /// to the tensor the forward pass actually carries forward.
+    ///
+    /// Seeded weights via `init`, not `synthetic_var_builder`, and that choice
+    /// is the test. The synthetic builder zero-initialises every tensor, so the
+    /// residual at `ResidPost(0)` is already zero and zeroing it again is a
+    /// no-op: the assertion would pass whether or not the intervention ran, and
+    /// the test would certify nothing. `intervention_add_propagates_downstream`
+    /// below can use that rig precisely because `Add` is visible against zeros.
+    ///
+    /// Three backends failed this conformance case silently for releases
+    /// because nothing asserted it (fixed in v0.2.0); `OthelloGpt` was never
+    /// among them, and this pins that.
+    #[test]
+    fn honours_intervention_at_resid_post() {
+        let device = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_config(), &varmap, &device, 7).unwrap();
+        let input = Tensor::new(&[[1u32, 2, 3]], &device).unwrap();
+
+        let logits = |hooks: &HookSpec| -> Vec<f32> {
+            model
+                .forward(&input, hooks)
+                .unwrap()
+                .output()
+                .flatten_all()
+                .unwrap()
+                .to_vec1()
+                .unwrap()
+        };
+
+        let baseline = logits(&HookSpec::new());
+
+        let mut hooks = HookSpec::new();
+        hooks.intervene(HookPoint::ResidPost(0), crate::hooks::Intervention::Zero);
+        let treated = logits(&hooks);
+
+        assert_ne!(
+            baseline, treated,
+            "Intervention::Zero at ResidPost(0) must change the output"
+        );
+    }
+
     #[test]
     fn intervention_add_propagates_downstream() {
         // The P4 pattern: add a steering vector at ResidPost(layer) and verify

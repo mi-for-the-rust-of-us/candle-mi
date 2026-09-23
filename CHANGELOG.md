@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`OthelloGpt` has the `BACKENDS.md` intervention conformance test it was
+  missing.** `honours_intervention_at_resid_post` asserts that
+  `Intervention::Zero` at `ResidPost(0)` changes the output, which the checklist
+  has required as a real test since v0.2.0. `OthelloGpt` was never one of the
+  three backends that failed it silently, but nothing pinned that.
+
+  The test seeds weights through `init` rather than using
+  `synthetic_var_builder`, and that choice is the point: the synthetic builder
+  zero-initialises every tensor, so the residual at `ResidPost(0)` is already
+  zero and zeroing it again is a no-op. On that rig the assertion passes whether
+  or not the intervention ran. `BACKENDS.md`'s checklist now carries that
+  warning, since it previously pointed at the synthetic pattern without it.
+
+  Mutation-checked against the exact failure class it guards: with
+  `hooks::hook_point` altered to stop applying interventions, the test fails.
+
+  `GenericTransformer` and `GenericMdlm` remain the two backends whose
+  conformance holds by construction rather than by test. Both need a
+  download-free synthetic rig that does not yet exist, which is the "synthetic
+  test rigs" item in `docs/roadmaps/v0.3.0-api-ergonomics.md`.
+
 - **Gemma 1 forward-parity validation (`tests/validate_gemma_forward.rs`).**
   `gemma` was the only entry in `SUPPORTED_MODEL_TYPES` with no forward-parity
   record in `RESURRECTION.md`: `parse_gemma` had config-level unit tests and a
