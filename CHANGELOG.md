@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-23
+
 ### Added
 
 - **`OthelloGpt` has the `BACKENDS.md` intervention conformance test it was
@@ -2862,7 +2864,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CI workflow (fmt, clippy pedantic, tests, feature-flag hygiene)
 - Tag-triggered publish workflow with `workflow_dispatch` fallback
 
-[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.24...v0.2.0
 [0.1.24]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.23...v0.1.24
 [0.1.23]: https://github.com/mi-for-the-rust-of-us/candle-mi/compare/v0.1.22...v0.1.23

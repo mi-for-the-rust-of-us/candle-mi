@@ -10,13 +10,13 @@
 
 *Mechanistic Interpretability for the Rust of us.*
 
-> **Note:** v0.2.0 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
+> **Note:** v0.2.1 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
 
 ## Supported model families
 
 | Architecture | Families | Validated models | Feature |
 |---|---|---|---|
-| Decoder-only transformer | LLaMA 1/2/3, Mistral, Qwen 2/2.5, Qwen 3, Phi-3/4, Gemma, Gemma 2, StarCoder2 | LLaMA 3.2 1B, Qwen2.5-Coder-3B, Qwen3-1.7B-Base, Gemma 2 2B, Phi-3 Mini, StarCoder2 3B, Mistral 7B | `transformer` |
+| Decoder-only transformer | LLaMA 1/2/3, Mistral, Qwen 2/2.5, Qwen 3, Phi-3/4, Gemma, Gemma 2, StarCoder2 | LLaMA 3.2 1B, Qwen2.5-Coder-3B, Qwen3-1.7B-Base, Gemma 1 2B, Gemma 2 2B, Phi-3 Mini, StarCoder2 3B, Mistral 7B | `transformer` |
 | Linear RNN | RWKV-6 (Finch), RWKV-7 (Goose) | RWKV-7 1.6B | `rwkv` |
 | Masked diffusion (bidirectional `DiT`) | MDLM | MDLM-owt (0.2B) | `diffusion` |
 | Masked diffusion (plain GPT-2 backbone) | `OthelloGpt` (learned absolute positions, full `LayerNorm`, exact-`GELU`) | OthelloMDLM world model (25M) | `diffusion` |
