@@ -2,7 +2,8 @@
 
 **Target:** `huggingface/transformers`
 **Kind:** bug report (issue)
-**Status:** DRAFT, not filed. Verified 2026-09-22; prior art re-checked 2026-09-23.
+**Status:** **FILED 2026-09-23** as [transformers#49051](https://github.com/huggingface/transformers/issues/49051).
+Verified 2026-09-22; prior art re-checked 2026-09-23.
 
 **Title for the issue:** Gemma 1 checkpoints silently use exact GELU instead of
 `gelu_pytorch_tanh` since v4.48.0 (#35235 removed the `hidden_activation` guard)

@@ -8,7 +8,19 @@ straight into the web form without re-editing mid-filing.
 **File it at:** https://github.com/huggingface/transformers/issues/new?template=bug-report.yml
 
 The form is a YAML form with structured fields, so `gh issue create --body-file` would
-not populate them. Use the web form.
+not populate them. Use the web form, or assemble the body and `PATCH` it (below).
+
+> **Read this before using this sheet as a template for another filing.**
+> The first version of it got five fields right and the sixth wrong, and the wrong one
+> shipped: FIELD 5 held a *table of contents* ("paste the Summary, then the Root cause,
+> then...") while the other five held literal paste-blocks, and nothing marked the
+> difference. Under copy-paste the list reads as one more block, so
+> [#49051](https://github.com/huggingface/transformers/issues/49051) was filed with
+> paste-instructions in place of its evidence and had to be corrected two minutes later.
+>
+> The lesson is not "be careful". It is that **a sheet must not mix paste-blocks with
+> instructions about paste-blocks.** Every field below is now either a literal block or
+> explicitly marked as assembled by script.
 
 ---
 
@@ -71,26 +83,50 @@ the body, since it is the only way this class of bug surfaces.
 
 ---
 
-## FIELD 5: Reproduction
+## FIELD 5: Reproduction (ASSEMBLED BY SCRIPT, not pasted by hand)
 
-Paste, in this order, from the main document:
+This field is the whole report, which is too long to assemble by hand without losing a
+section. Build it from the main document instead, then paste or `PATCH` the result:
 
-1. **Summary**: what happens, the five affected repos, what is unaffected, and the
-   workaround. (Lead with the workaround: anyone arriving from a search wants it first.)
-2. **Root cause**: the `#35235` diff, `gemma2` keeping its guard in the same commit,
-   the history of `#29402`/`#29995`, and `hidden_activation` being removed in v5.0.0 so
-   the override is now unreachable.
-3. **Reproduction**: the two-line `GemmaMLP(config).act_fn` check, the "no warning is
-   emitted" evidence, the eight-repo resolution table, and the derivatives paragraph.
-4. **Measured effect**: the three-prompt table, the 30-logit summary, the runnable
-   script, and the candle-mi cross-check.
-5. **Why this matters, given that the rankings do not move**: the Hub discussion #39
-   precedent, the single-token caveat, the train/serve framing.
-6. **Why this has gone unnoticed for 21 months**: the four reasons.
-7. **Prior art checked**: including the `cc @danielhanchen` line, which belongs here
-   rather than in field 2.
+```python
+import io, re
+doc = io.open("transformers-gemma1-activation-regression.md", encoding="utf-8").read()
+parts = re.split(r"^## ", doc, flags=re.M)
+sections = {}
+for p in parts[1:]:
+    name, _, rest = p.partition("
+")
+    sections[name.strip()] = rest.strip()
 
----
+want = ["Summary", "Root cause", "Reproduction", "Measured effect",
+        "Why this matters, given that the rankings do not move",
+        "Why this has gone unnoticed for 21 months", "Prior art checked"]
+field5 = "
+
+".join(f"#### {w}
+
+{sections[w]}" for w in want)
+```
+
+Two details that matter:
+
+- **Demote the headings to `####`.** The form renders its own field labels as `###`, so
+  the document's `##` would outrank them and the body would read as if the fields were
+  subsections of the content.
+- **`Suggested fix` and `System info` are deliberately excluded** from this field: they
+  are fields 6 and 1. `Prior art checked` *is* included, because it carries the
+  `cc @danielhanchen` line.
+
+If the issue is already open, patching beats re-filing and does not re-notify the people
+already tagged:
+
+```sh
+gh api repos/OWNER/REPO/issues/N --method PATCH -F "body=@<absolute-path>"
+```
+
+Note the path: Python on Windows resolves `/tmp` to `C:	mp`, which is not Git Bash's
+`/tmp`, and `gh` will not find a file written to one and read from the other. Use an
+explicit absolute path for both.
 
 ## FIELD 6: Expected behavior
 
@@ -124,9 +160,9 @@ Happy to open a PR for whichever shape is preferred.
 
 ## AFTER FILING
 
-1. Update the tracker row in [`README.md`](README.md): status `DRAFT, not filed` becomes
-   `FILED <date>` with the issue number and link, matching the five existing entries.
-2. Update the `Status:` line at the top of the main document.
+1. ~~Update the tracker row in [`README.md`](README.md)~~ **done**: `FILED 2026-09-23`
+   as [#49051](https://github.com/huggingface/transformers/issues/49051).
+2. ~~Update the `Status:` line at the top of the main document~~ **done**.
 3. If a maintainer picks a fix shape, the PR is small: the mapping plus a regression test
    in `tests/models/gemma/`. Note that `transformers` is modular, so the edit may need to
    go in `modular_gemma.py` and be regenerated; check before writing.
