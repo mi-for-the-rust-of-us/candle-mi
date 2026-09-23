@@ -260,3 +260,6 @@ Searched `huggingface/transformers` issues and PRs for `hidden_activation gemma`
 March to April 2024 ([#29402](https://github.com/huggingface/transformers/issues/29402) added `hidden_activation`,
 [#29995](https://github.com/huggingface/transformers/issues/29995) refined its warning), both closed, both part of the original correction. Nothing after
 2024-12-18 refers to this. Re-checked 2026-09-23: still nothing.
+
+cc @danielhanchen, who diagnosed the exact-versus-approximate GELU problem for
+Gemma in [#29402](https://github.com/huggingface/transformers/issues/29402) and whose correction is what went missing here.
