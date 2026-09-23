@@ -190,7 +190,7 @@ So the fix is wanted, and the shape is theirs: config `__post_init__`, not model
 runs after `from_dict`, so it covers configs loaded from the Hub, which is the entire affected
 population. Constructing a `GemmaConfig` in Python was never where this bites.
 
-### Reply drafted 2026-09-23, evening (not yet posted)
+### Reply POSTED 2026-09-23 16:31 as [comment-5798653482](https://github.com/huggingface/transformers/issues/49051#issuecomment-5798653482)
 
 ```markdown
 Agreed, and post-init is the better hook than the `__init__` I suggested: it runs after `from_dict`, so it covers configs loaded from the Hub, which is the whole affected population. Constructing a `GemmaConfig` in Python was never really where this bites.
@@ -202,11 +202,14 @@ One question before I write it. Should the mapping fire whenever `hidden_act == 
 Happy to open the PR: the edit in `modular_gemma.py` with `configuration_gemma.py` regenerated, plus a test that a config carrying the legacy value resolves to the tanh activation. I should get to it tomorrow.
 ```
 
-Post with:
+Posted with:
 
 ```sh
 gh api repos/huggingface/transformers/issues/49051/comments -F "body=@<absolute-path>"
 ```
+
+Next move is theirs: the reply ends on a question (unconditional mapping, or only for
+values that came from a file), so the PR shape is not fully settled until they answer.
 
 ### Groundwork for the PR, already checked
 
