@@ -169,3 +169,60 @@ Happy to open a PR for whichever shape is preferred.
 3. If a maintainer picks a fix shape, the PR is small: the mapping plus a regression test
    in `tests/models/gemma/`. Note that `transformers` is modular, so the edit may need to
    go in `modular_gemma.py` and be regenerated; check before writing.
+
+---
+
+## THE THREAD, after filing
+
+**2026-09-23 14:02** filed as [#49051](https://github.com/huggingface/transformers/issues/49051),
+labelled `bug`. Body corrected at 14:04 and 14:09 (see the note at the top of this sheet, and
+the System Info de-duplication).
+
+**2026-09-23 ~14:55**, about fifty minutes after filing, [@vasqu](https://github.com/vasqu)
+(Collaborator, and on the template's own text-models line) replied:
+
+> Open to have a fix for this 🤗 imo the best is to fix this in the post init of the config
+> and warn there. So we restore that logic not on init of the model but post init of the config
+> wdyt?
+
+So the fix is wanted, and the shape is theirs: config `__post_init__`, not model init. That is
+**better than option 1 as this report proposed it**, for a reason worth keeping: `__post_init__`
+runs after `from_dict`, so it covers configs loaded from the Hub, which is the entire affected
+population. Constructing a `GemmaConfig` in Python was never where this bites.
+
+### Reply drafted 2026-09-23, evening (not yet posted)
+
+```markdown
+Agreed, and post-init is the better hook than the `__init__` I suggested: it runs after `from_dict`, so it covers configs loaded from the Hub, which is the whole affected population. Constructing a `GemmaConfig` in Python was never really where this bites.
+
+There is precedent sitting right there, too: `PretrainedConfig.__post_init__` already carries the `torch_dtype` -> `dtype` shim. Its comment notes that one deliberately does not warn, because most Hub configs carry `torch_dtype` so it would fire every time. This case is the mirror image and should warn: `"hidden_act": "gelu"` is the anomaly on a Gemma 1 config, not the norm.
+
+One question before I write it. Should the mapping fire whenever `hidden_act == "gelu"`, or only when the value came from a file? Unconditional is my instinct, since anyone passing `"gelu"` explicitly for Gemma 1 is most likely making the same mistake, but you may want an escape hatch for the deliberate case.
+
+Happy to open the PR: the edit in `modular_gemma.py` with `configuration_gemma.py` regenerated, plus a test that a config carrying the legacy value resolves to the tanh activation. I should get to it tomorrow.
+```
+
+Post with:
+
+```sh
+gh api repos/huggingface/transformers/issues/49051/comments -F "body=@<absolute-path>"
+```
+
+### Groundwork for the PR, already checked
+
+Verified 2026-09-23 against the live repository, so tomorrow does not start from scratch:
+
+- **`PretrainedConfig.__post_init__(self, **kwargs)` exists**, at `configuration_utils.py:314`. It
+  is already the home for config back-compat shims: the `torch_dtype` -> `dtype` migration lives
+  there, with a comment explaining that it deliberately does not warn because most Hub configs
+  carry `torch_dtype` and it would fire every time. Our case is the mirror image and should warn.
+- **`configuration_gemma.py` is generated** from `modular_gemma.py` and "one of our CI enforces
+  this", per its own header. **The edit goes in `modular_gemma.py` and gets regenerated.**
+- **`GemmaConfig` has no `__post_init__` today.** In `modular_gemma.py` the class is at line 51
+  and `hidden_act: str = "gelu_pytorch_tanh"` at line 90. So the change adds one that calls
+  `super().__post_init__(**kwargs)` and then applies the legacy mapping.
+- **The pattern is well-worn**: 135 modular model files already define `__post_init__`.
+
+Remaining to do: fork and clone `transformers`, make the edit, regenerate, add a test under
+`tests/models/gemma/` asserting that a config carrying `hidden_act="gelu"` resolves to the tanh
+activation, and run `make fixup`.
