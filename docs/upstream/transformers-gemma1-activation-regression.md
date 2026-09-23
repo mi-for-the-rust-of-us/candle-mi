@@ -2,7 +2,7 @@
 
 **Target:** `huggingface/transformers`
 **Kind:** bug report (issue)
-**Status:** DRAFT, not filed. Verified 2026-09-22.
+**Status:** DRAFT, not filed. Verified 2026-09-22; prior art re-checked 2026-09-23.
 
 **Title for the issue:** Gemma 1 checkpoints silently use exact GELU instead of
 `gelu_pytorch_tanh` since v4.48.0 (#35235 removed the `hidden_activation` guard)
@@ -15,11 +15,11 @@ Since v4.48.0, `transformers` computes the **exact erf GELU** for the original
 Gemma 1.0 checkpoints, instead of the tanh approximation those models were
 trained with. There is no warning. The affected repos are:
 
-- `google/gemma-2b`
-- `google/gemma-2b-it`
-- `google/gemma-7b`
-- `google/gemma-7b-it`
-- `google/codegemma-2b`
+- [`google/gemma-2b`](https://huggingface.co/google/gemma-2b)
+- [`google/gemma-2b-it`](https://huggingface.co/google/gemma-2b-it)
+- [`google/gemma-7b`](https://huggingface.co/google/gemma-7b)
+- [`google/gemma-7b-it`](https://huggingface.co/google/gemma-7b-it)
+- [`google/codegemma-2b`](https://huggingface.co/google/codegemma-2b)
 
 Gemma 1.1, CodeGemma 7B-it and Gemma 2 are unaffected.
 
@@ -35,8 +35,9 @@ model = AutoModelForCausalLM.from_pretrained("google/gemma-2b", config=config)
 
 ## Root cause
 
-`GemmaMLP` used to guard the legacy config value. PR #35235 ("All attention
-refactor", commit `2c47618c`, 2024-12-18) replaced the guard with a direct
+`GemmaMLP` used to guard the legacy config value. PR [#35235](https://github.com/huggingface/transformers/issues/35235)
+("All attention refactor", commit [`2c47618c`](https://github.com/huggingface/transformers/commit/2c47618c), 2024-12-18)
+replaced the guard with a direct
 lookup and deleted the warning in the same diff:
 
 ```diff
@@ -55,8 +56,9 @@ Gemma 1 lost its fallback.
 
 That guard existed precisely because the Gemma 1.0 configs are wrong. They
 shipped in February 2024 with `"hidden_act": "gelu"`, which `ACT2FN` maps to
-`GELUActivation`, the exact erf form. PR #29402 added `hidden_activation` to
-override it, and #29995 refined the warning. Gemma 1.1 and later shipped
+`GELUActivation`, the exact erf form. PR [#29402](https://github.com/huggingface/transformers/issues/29402) added
+`hidden_activation` to override it, and [#29995](https://github.com/huggingface/transformers/issues/29995) refined the
+warning. Gemma 1.1 and later shipped
 configs carrying the corrected value, but the 1.0 repos were never updated and
 still depend on the removed guard. Their `config.json` still carries that string today, and the file's last
 commit on `main` is 2024-09-27.
@@ -177,6 +179,36 @@ CUDA and `3.4e-5` on CPU, i.e. ordinary F32 accumulation noise. The agreement
 between that `1.977e-2` and the `1.978e-2` measured inside PyTorch above is
 what establishes the activation as the whole of the difference.
 
+## Why this matters, given that the rankings do not move
+
+The 0-of-30 figure above is the honest measurement, and it is also the obvious
+reason to file this as cosmetic. Three arguments against that reading.
+
+**1. The question has already been answered here.** On
+[`google/gemma-2b-it` discussion #39](https://huggingface.co/google/gemma-2b-it/discussions/39)
+(April 2024), a user proposed settling the then-current warning by switching
+these configs to the legacy `gelu`. A HuggingFace maintainer answered that the
+model was designed with the approximate GELU and that `gelu_pytorch_tanh` is
+what it should be run with, and the remedy recommended was to set
+`hidden_activation` explicitly in `config.json`.
+
+That is the field [#35235](https://github.com/huggingface/transformers/issues/35235) stopped reading, and that v5.0.0
+removed. So anyone who followed the advice given on the Hub in April 2024 is
+being silently ignored today.
+
+**2. The measurement is single-token; generation is not.** Every number above is
+one next-token distribution from a short prompt. Nothing in it measures a
+continuation. A 2e-2 logit shift is invisible when the top-1 margin is wide and
+decisive when it is narrow, and decoding is sequential, so one flipped
+comparison diverges the whole remaining sample. "0 of 30 index mismatches" is
+evidence about three first tokens, not about generated text.
+
+**3. It is a train/serve mismatch, not a precision budget.** The affected
+checkpoints were trained with one function and are being served with another.
+That is different in kind from accumulation noise, which is why the cross-check
+above separates them: `1.7e-5` against the correct activation is noise, and
+`1.977e-2` against the current one is not.
+
 ## Why this has gone unnoticed for 21 months
 
 Worth stating, because it bears on how to fix it.
@@ -225,6 +257,6 @@ Happy to open a PR for whichever shape is preferred.
 
 Searched `huggingface/transformers` issues and PRs for `hidden_activation gemma`,
 `gemma gelu_pytorch_tanh` and `gemma approximate gelu`. Every Gemma-activation item is from
-March to April 2024 (#29402 added `hidden_activation`, #29995 refined its
-warning), both closed, both part of the original correction. Nothing after
-2024-12-18 refers to this.
+March to April 2024 ([#29402](https://github.com/huggingface/transformers/issues/29402) added `hidden_activation`,
+[#29995](https://github.com/huggingface/transformers/issues/29995) refined its warning), both closed, both part of the original correction. Nothing after
+2024-12-18 refers to this. Re-checked 2026-09-23: still nothing.
