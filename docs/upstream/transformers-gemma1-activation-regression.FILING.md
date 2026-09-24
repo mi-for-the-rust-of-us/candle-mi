@@ -336,6 +336,54 @@ git checkout <your-branch> -- <files under test>  # restore
 
 A mutation check that cannot distinguish "reverted" from "committed earlier" is not a check.
 
+### Second review round: what "no new class" actually meant
+
+Half an hour after the first round, [@vasqu](https://github.com/vasqu) asked for two more
+things:
+
+> Let's split the test into tester (like in mamba2)
+>
+> Also we can capture the emitted warning message completely or a larger portion tbh
+
+The first one **corrects a misreading from the round before**. His earlier comment was "no
+new class please, let's keep it simple like a mamba2 regression test". Both of us read "no
+new class" literally, so the test went in as a method on the existing `GemmaModelTest`. What
+he meant was: do not invent a bespoke class, use the sanctioned one. mamba2 has
+`Mamba2ConfigTester(ConfigTester)`, a class, and that is the thing he was pointing at.
+
+So the test is now:
+
+```python
+class GemmaConfigTester(ConfigTester):
+    def test_legacy_hidden_act_is_remapped(self): ...
+
+    def run_common_tests(self):
+        self.test_legacy_hidden_act_is_remapped()
+        return super().run_common_tests()
+```
+
+wired in through `setUp`, mirroring mamba2, and running under the existing `test_config`.
+The warning assertion moved from `assertIn` on a fragment to `assertEqual` on the whole
+emitted message.
+
+**The lesson is about reading review comments, and it cost a round trip.** "Like a mamba2
+regression test" pointed at a file that contains no warning-regression test, which is why the
+first pass went to `diffusion_gemma` for the `CaptureLogger` mechanics and put the method
+where the literal reading of "no new class" sent it. Naming `Mamba2ConfigTester` would have
+been three words and would have landed it first time.
+
+Two independent readers taking a terse instruction the same wrong way is evidence the
+instruction was under-specified, not that both misread it. **When a review points at another
+model as a pattern, resolve it to a named symbol before implementing**, and if the named
+symbol cannot be found, say so and ask rather than picking the nearest-looking thing. The
+first pass here found no warning test in mamba2, substituted a different model's idiom, and
+never flagged the substitution.
+
+State at the end of the day: three commits, `+62 -2` across three files, both rounds
+answered. Gates green locally each time: `ruff` check and format, repo-wide
+`check_modular_conversion`, and the mutation check done against the base branch per the rule
+above, failing without the fix and passing with it.
+
 ### Groundwork for the PR, already checked
 
 Verified 2026-09-23 against the live repository, so tomorrow does not start from scratch:
