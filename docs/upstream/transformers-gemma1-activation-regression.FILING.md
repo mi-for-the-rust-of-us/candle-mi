@@ -324,15 +324,16 @@ Redone by restoring the files from the base branch instead, the test fails as it
 AssertionError: 'gelu_pytorch_tanh' not found in ''
 ```
 
-**Rule:** a mutation check reverts to the **base branch**, never to `HEAD` and never via
-`git stash`, because both of those are relative to a tree that may already contain the thing
-being tested:
+**Rule, superseded within the day.** The first version of it read:
 
 ```sh
 git checkout origin/main -- <files under test>   # revert
 # run the test: it MUST fail
 git checkout <your-branch> -- <files under test>  # restore
 ```
+
+That rule is what later destroyed the fix. See "The rule that ate the fix" below for the
+corrected form; do not use the block above.
 
 A mutation check that cannot distinguish "reverted" from "committed earlier" is not a check.
 
@@ -402,3 +403,62 @@ Verified 2026-09-23 against the live repository, so tomorrow does not start from
 Remaining to do: fork and clone `transformers`, make the edit, regenerate, add a test under
 `tests/models/gemma/` asserting that a config carrying `hidden_act="gelu"` resolves to the tanh
 activation, and run `make fixup`.
+
+### The rule that ate the fix
+
+The CI run on [#49084](https://github.com/huggingface/transformers/pull/49084) went red with
+
+```
+AssertionError: '' != 'We found `hidden_act="gelu"` in this Gemm[155 chars]d.\n'
+```
+
+It was diagnosed twice, and the first diagnosis was wrong in an instructive way.
+
+**The wrong diagnosis, which was nonetheless a real bug.** CI sets
+`TRANSFORMERS_VERBOSITY=error` (`.circleci/create_circleci_config.py:434`), at which
+`logger.warning_once` emits nothing and `CaptureLogger` captures an empty string.
+Reproduced locally by exporting that variable, and fixed with `LoggingLevel(logging.WARNING)`
+around the capture, which is the shape `tests/generation/test_configuration_utils.py` already
+uses. That change is correct and was kept. It was not what turned CI red.
+
+**The actual cause: the fix was not in the commit.** `__post_init__` was absent from both
+source files in `0042edc` and its successor. With no remap there is no warning at all, so the
+capture is empty for a second, entirely different reason, producing a byte-identical error
+message.
+
+**The mechanism.** `git checkout origin/main -- <files>` updates **the index** as well as the
+working tree. The mutation check then restored the working tree with a file copy, which does
+not touch the index. The next commit staged only the test file, so both source files were
+committed back at their `origin/main` state. The working tree kept the fix throughout, which
+is why every local run went on passing: **the working tree was verified, the commit never
+was.**
+
+So the rule written a few hours earlier, to stop a mutation check from silently verifying
+nothing, itself caused a commit to silently contain nothing. The corrected form restores
+through git so the index moves back too, then proves the tree is clean, then tests **the
+commit** rather than the directory it was made from:
+
+```sh
+git checkout origin/main -- <files under test>      # revert: index AND worktree
+# run the test: it MUST fail
+git checkout HEAD -- <files under test>             # restore: index AND worktree
+git status --porcelain                              # MUST be empty
+git worktree add --detach ../verify HEAD            # verify what is COMMITTED
+# run the gates in ../verify, not in the working directory
+```
+
+**The general lesson, which outlives this PR:** a green check on a working tree says nothing
+about a commit. Anything that reverts files for a test must restore through the same
+mechanism it reverted with, and the final verification belongs in a fresh checkout of the
+commit being pushed. Both of the day's two silent failures reduce to the same sentence: the
+thing verified was not the thing shipped.
+
+Restored in `17e4cbe`, verified from a detached worktree of that commit under CI's own
+verbosity, with `ruff` check and format and repo-wide `check_modular_conversion` all run
+there rather than in the working directory.
+
+**One side observation, not ours to fix.** Running the Gemma suite locally under
+`TRANSFORMERS_VERBOSITY=error` shows two pre-existing failures
+(`AssertionError: 'Reinit due to size mismatch' not found in ''`), identical on clean
+`origin/main`, in tests that CI's shard skips for lack of an accelerator. Same latent class
+as ours: a log assertion with no level forced.
