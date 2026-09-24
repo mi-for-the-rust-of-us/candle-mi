@@ -462,3 +462,69 @@ there rather than in the working directory.
 (`AssertionError: 'Reinit due to size mismatch' not found in ''`), identical on clean
 `origin/main`, in tests that CI's shard skips for lack of an accelerator. Same latent class
 as ours: a log assertion with no level forced.
+
+### Third round, and the decision to finish rather than withdraw
+
+"Split the test into tester (like in mamba2)" was read, wrongly, as a `ConfigTester`
+subclass, because mamba2 has `Mamba2ConfigTester` and that is a tester. A third comment
+finally carried a line-range permalink to
+[mamba2 L315-317](https://github.com/huggingface/transformers/blob/763a150e59e2d2f0494646999472d41ad370fd9c/tests/models/mamba2/test_modeling_mamba2.py#L315-L317),
+which is a three-line test method delegating to a `create_and_check_*` method on the
+**ModelTester**. That is the shape now shipped. Two rounds were spent on a phrase that one
+permalink resolved instantly, and the permalink existed from the start.
+
+That same comment carried "Pls dont just aimlessly throw claude at it", prompted by the
+commit that had reverted its own fix. The observation worth keeping, stripped of the
+irritation on both sides: the defect that earned it was `git checkout -- <file>` touching the
+index, a sharp edge older than any assistant. What was genuinely assistant-shaped was the
+**rate**, four commits in three hours with two misreadings among them. Speed is the
+controllable part, not the tooling.
+
+### Audit of [#49081](https://github.com/huggingface/transformers/pull/49081), before deciding
+
+The plan at this point was to close ours and let the other PR stand, on the principle that
+the report was always the deliverable and the PR never was. Auditing the other PR first
+changed the decision.
+
+**It is functionally correct.** Run through `verify_gemma_activation.py`, every column comes
+back right: `config.hidden_act`, `save_pretrained`, `ACT2FN[config.hidden_act]`, the loaded
+`mlp.act_fn`, warnings at both load points, logits bit-identical to the reference, and
+`gelu_new` / `silu` / `relu` all preserved.
+
+**It does not merge.** `check_modular_conversion --check_all` fails on gemma's own two files,
+because both generated files were hand-edited: `configuration_gemma.py` **lost its "Do NOT
+edit this file manually" banner**, and `modeling_gemma.py` kept an unused `logger` left from
+an earlier model-side attempt. One `--fix_and_overwrite` clears both. Its other three red
+jobs are exit code 137, container OOM, and are not its fault.
+
+**It also diverges from what the maintainers asked**: `__init__` rather than the
+`__post_init__` specified twice, a new module-level test class after "no new class please",
+and no assertion on the warning at all. And its second test,
+
+```python
+def test_correct_gelu_activation_is_preserved(self):
+    config = GemmaConfig(hidden_act="gelu_pytorch_tanh")
+    self.assertEqual(config.hidden_act, "gelu_pytorch_tanh")
+```
+
+passes with or without the fix. A third instance, in one day, of a test that cannot fail.
+
+So withdrawing would have left the software worse off, which is the only ground on which the
+decision turned. Ours was finished instead.
+
+### Final state
+
+[#49084](https://github.com/huggingface/transformers/pull/49084) at `19f0ca9`, `+58 -2` across
+three files, **CI green: 21 success, 9 skipped, 0 failures**, with `PR CI status`,
+`Check repository consistency`, `Check code quality` and `tests_torch` all passing.
+
+Verified from a detached worktree of the commit rather than from the working directory, per
+the corrected rule above: the test passes under CI's own `TRANSFORMERS_VERBOSITY=error`, ruff
+check and format are clean, repo-wide modular conversion is exit 0, and the mutation check
+fails without the fix while leaving the index clean afterwards.
+
+One last tooling note, since it cost a confusing verification pass: in PowerShell,
+`git commit -q -F - @'...'@` passes the here-string as an **argument**, not on stdin. Git
+reports `pathspec ... did not match any file(s)`, no commit is made, and a verification run
+immediately afterwards silently measures the previous commit. Use a heredoc from a POSIX
+shell, or `-F <file>`.

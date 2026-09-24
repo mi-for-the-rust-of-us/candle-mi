@@ -3,7 +3,8 @@
 **Target:** `huggingface/transformers`
 **Kind:** bug report (issue)
 **Status:** **FILED 2026-09-23** as [transformers#49051](https://github.com/huggingface/transformers/issues/49051).
-Our PR is [#49084](https://github.com/huggingface/transformers/pull/49084) (2026-09-24).
+Our PR is [#49084](https://github.com/huggingface/transformers/pull/49084) (2026-09-24),
+CI green after three review rounds; see the filing sheet for the round-by-round record.
 Two earlier candidate PRs verified and reported the same day (see
 [Verification of the two candidate PRs](#verification-of-the-two-candidate-prs));
 the `## Why this matters` section was corrected the same day, here and in the issue
