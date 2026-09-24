@@ -228,6 +228,55 @@ The harness is [`verify_gemma_activation.py`](verify_gemma_activation.py).
 When reviewing a change to a class other models inherit, run the repo-wide check, or
 the review reports the opposite of the truth.
 
+### 2026-09-24 afternoon: the maintainer's response, and PR [#49084](https://github.com/huggingface/transformers/pull/49084)
+
+[@Cyrilvallez](https://github.com/Cyrilvallez) closed both earlier PRs as
+`AI trying to stiff issue of someone else`, confirmed the fix belongs in the config, and
+independently confirmed our finding 4 (telling #49063's author that the consistency
+failure was caused by the PR, not pre-existing, after that author had claimed the
+opposite). He also asked, fairly, that we not post long comments:
+
+> However note that we are all human reviewers here, so please avoid huge AI dumps of
+> unreadable text here please
+
+Answered in three lines, acknowledging the length without withdrawing the content, and
+the long comment was left standing as the reference it is.
+
+Our PR is [#49084](https://github.com/huggingface/transformers/pull/49084): the remap in
+`GemmaConfig.__post_init__` in `modular_gemma.py`, `configuration_gemma.py` regenerated
+by the converter rather than hand-edited, and six tests. Gates before pushing, all green:
+`ruff==0.14.10` check and format, repo-wide `check_modular_conversion --check_all`,
+`config_docstrings`, `config_attributes`, `copies`.
+
+**Mutation-checked, because a green test proves nothing on its own.** With the fix
+reverted and the tests kept, the four that assert the correction fail and the two that
+pin scope pass, which is the intended shape. End-to-end on `google/gemma-2b`, our branch
+gives `config.hidden_act`, `save_pretrained` and `ACT2FN[config.hidden_act]` all
+corrected, and logits bit-identical to the reference on CPU/F32 and CUDA/BF16.
+
+**The collision, and the process error behind it.** #49063's author opened a third PR,
+[#49081](https://github.com/huggingface/transformers/pull/49081), at 10:26Z, redoing it
+in the config as instructed, two hours before we said we would open ours. We did not see
+it: the thread was read by listing comments and the two known PR numbers, never by
+listing everything cross-referencing the issue. So we promised and opened a PR that
+duplicated an existing one.
+
+**Rule, so the next filing cannot repeat it:** before promising or opening a PR on an
+issue, list every cross-reference on it, not just the PRs already known:
+
+```sh
+gh api repos/OWNER/REPO/issues/N/timeline --paginate \
+  -H 'Accept: application/vnd.github.mockingbird-preview+json' \
+  --jq '.[] | select(.event=="cross-referenced") | .source.issue.number'
+```
+
+On finding it, we said so on our own PR and offered to close ours in its favour. Not
+mentioned there, because it would be a pile-on rather than information the maintainers
+lack: #49081 also fails repo-wide modular conversion, on gemma's own two files, having
+hand-edited the generated file (deleting its `do NOT edit` banner) and left an unused
+`logger` in `modeling_gemma.py`. That is a missing regeneration, fixable in one command,
+not a design flaw.
+
 ### Groundwork for the PR, already checked
 
 Verified 2026-09-23 against the live repository, so tomorrow does not start from scratch:
