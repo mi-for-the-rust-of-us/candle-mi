@@ -277,6 +277,65 @@ hand-edited the generated file (deleting its `do NOT edit` banner) and left an u
 `logger` in `modeling_gemma.py`. That is a missing regeneration, fixable in one command,
 not a design flaw.
 
+### Review round on [#49084](https://github.com/huggingface/transformers/pull/49084), same afternoon
+
+[@vasqu](https://github.com/vasqu) reviewed within nine minutes of the PR opening, with three
+asks, all cosmetic and all applied:
+
+1. Collapse the five-line explanatory comment to one: `# #35235 dropped this conversion which
+   we now handle here instead`.
+2. Shorten the warning text, given as a GitHub `suggestion` block. Taken essentially verbatim,
+   with one edit said out loud in the reply rather than slipped in: his text read "it is meant
+   to target **the the** tanh approximation", and committing a maintainer's typo into the file
+   would be worse manners than fixing it.
+3. "no new class please". Our separate `GemmaLegacyActivationTest` became a single
+   `test_legacy_hidden_act_is_remapped` method inside the existing `GemmaModelTest`.
+
+The diff went from `+93 -2` to `+47 -2`. Reviewing maintainers want the smallest change that
+carries the fix, not the most thorough one; the thoroughness belongs here.
+
+**The house idiom for asserting a warning fires** is worth keeping, since we went looking for
+it rather than inventing one. `tests/models/diffusion_gemma/test_modeling_diffusion_gemma.py`
+wraps the call in `CaptureLogger(logger)` and calls `logger.warning_once.cache_clear()` on
+both sides of it. So the `lru_cache` trap recorded above is one the codebase already knows
+about and defends against in its own tests.
+
+### The mutation check that silently verified nothing
+
+Worth recording in full, because it is the exact failure class this whole issue is about, and
+it happened inside the procedure meant to catch it.
+
+After applying the review, the mutation check reported the test **passing with the fix
+reverted**, which reads as a test structurally incapable of failing. The test was fine. The
+check was broken: by then the fix was **committed**, so
+
+```sh
+git stash push src/transformers/models/gemma/modular_gemma.py \
+               src/transformers/models/gemma/configuration_gemma.py
+```
+
+peeled off only the uncommitted review tweaks and left the committed fix in place underneath.
+The check verified nothing and said "pass". The same command had been valid an hour earlier,
+when the fix was still uncommitted, which is precisely what made the failure invisible.
+
+Redone by restoring the files from the base branch instead, the test fails as it should:
+
+```
+AssertionError: 'gelu_pytorch_tanh' not found in ''
+```
+
+**Rule:** a mutation check reverts to the **base branch**, never to `HEAD` and never via
+`git stash`, because both of those are relative to a tree that may already contain the thing
+being tested:
+
+```sh
+git checkout origin/main -- <files under test>   # revert
+# run the test: it MUST fail
+git checkout <your-branch> -- <files under test>  # restore
+```
+
+A mutation check that cannot distinguish "reverted" from "committed earlier" is not a check.
+
 ### Groundwork for the PR, already checked
 
 Verified 2026-09-23 against the live repository, so tomorrow does not start from scratch:
