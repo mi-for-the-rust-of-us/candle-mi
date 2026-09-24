@@ -3,6 +3,10 @@
 **Target:** `huggingface/transformers`
 **Kind:** bug report (issue)
 **Status:** **FILED 2026-09-23** as [transformers#49051](https://github.com/huggingface/transformers/issues/49051).
+Two candidate PRs verified and reported 2026-09-24 (see
+[Verification of the two candidate PRs](#verification-of-the-two-candidate-prs));
+the `## Why this matters` section was corrected the same day, here and in the issue
+body together, because the BF16 result falsified its heading.
 Verified 2026-09-22; prior art re-checked 2026-09-23.
 
 **Title for the issue:** Gemma 1 checkpoints silently use exact GELU instead of
@@ -180,10 +184,17 @@ CUDA and `3.4e-5` on CPU, i.e. ordinary F32 accumulation noise. The agreement
 between that `1.977e-2` and the `1.978e-2` measured inside PyTorch above is
 what establishes the activation as the whole of the difference.
 
-## Why this matters, given that the rankings do not move
+## Why this matters, given that the F32 rankings do not move
 
-The 0-of-30 figure above is the honest measurement, and it is also the obvious
-reason to file this as cosmetic. Three arguments against that reading.
+> **Edited 2026-09-24:** this section originally read "given that the rankings do
+> not move" and argued from 0 of 30 index mismatches, which is an F32-only result;
+> re-measured in BF16 it is 7 of 30, so the heading and argument 2 below have been
+> corrected. Measurement in [this comment](https://github.com/huggingface/transformers/issues/49051#issuecomment-5811228231), and in
+> [Verification of the two candidate PRs](#verification-of-the-two-candidate-prs)
+> below.
+
+The 0-of-30 figure above is the honest measurement in F32, and it is also the
+obvious reason to file this as cosmetic. Three arguments against that reading.
 
 **1. The question has already been answered here.** On
 [`google/gemma-2b-it` discussion #39](https://huggingface.co/google/gemma-2b-it/discussions/39)
@@ -197,12 +208,19 @@ That is the field [#35235](https://github.com/huggingface/transformers/issues/35
 removed. So anyone who followed the advice given on the Hub in April 2024 is
 being silently ignored today.
 
-**2. The measurement is single-token; generation is not.** Every number above is
-one next-token distribution from a short prompt. Nothing in it measures a
-continuation. A 2e-2 logit shift is invisible when the top-1 margin is wide and
-decisive when it is narrow, and decoding is sequential, so one flipped
-comparison diverges the whole remaining sample. "0 of 30 index mismatches" is
-evidence about three first tokens, not about generated text.
+**2. In BF16 the rankings do move, and the F32 measurement is single-token
+anyway.** Re-running the same three prompts gives 0 of 30 top-10 index mismatches
+in F32 on both CPU and CUDA, and **7 of 30 in BF16**, which is the precision these
+checkpoints are actually served at (3 of 10, 4 of 10 and 0 of 10 across the three
+prompts). A determinism control confirms that two unchanged forwards are
+bit-identical on that device, so the reordering is the activation and not
+run-to-run noise.
+
+Beyond that, every number here is one next-token distribution from a short prompt,
+and nothing in it measures a continuation. A 2e-2 logit shift is invisible when the
+top-1 margin is wide and decisive when it is narrow, and decoding is sequential, so
+one flipped comparison diverges the whole remaining sample. Even the F32 "0 of 30"
+is evidence about three first tokens, not about generated text.
 
 **3. It is a train/serve mismatch, not a precision budget.** The affected
 checkpoints were trained with one function and are being served with another.
@@ -268,3 +286,66 @@ March to April 2024 ([#29402](https://github.com/huggingface/transformers/issues
 
 cc @danielhanchen, who diagnosed the exact-versus-approximate GELU problem for
 Gemma in [#29402](https://github.com/huggingface/transformers/issues/29402) and whose correction is what went missing here.
+
+---
+
+## Verification of the two candidate PRs
+
+Posted 2026-09-24 as
+[comment-5811228231](https://github.com/huggingface/transformers/issues/49051#issuecomment-5811228231).
+
+Two PRs arrived within the hour of our 2026-09-23 reply, so no PR of ours was needed.
+What we contributed instead was a measurement. The harness is
+[`verify_gemma_activation.py`](verify_gemma_activation.py) in this directory: one script,
+run unchanged against four trees (`5.1.0`, `main` at `4b28d51`,
+[#49061](https://github.com/huggingface/transformers/pull/49061),
+[#49063](https://github.com/huggingface/transformers/pull/49063)) on CPU and CUDA in F32
+and BF16, twelve runs in total.
+
+| | `5.1.0` | main `4b28d51` | #49061 | #49063 |
+|---|---|---|---|---|
+| `config.hidden_act` | `gelu` | `gelu` | **`gelu_pytorch_tanh`** | `gelu` |
+| `save_pretrained` writes | `gelu` | `gelu` | **`gelu_pytorch_tanh`** | `gelu` |
+| `ACT2FN[config.hidden_act]` | `GELUActivation` | `GELUActivation` | **`GELUTanh`** | `GELUActivation` |
+| as-loaded `mlp.act_fn` | `GELUActivation` | `GELUActivation` | `GELUTanh` | `GELUTanh` |
+| bit-identical to reference | no | no | **yes** | **yes** |
+| repo-wide `check_modular_conversion` | n/a | pass | **pass** | **fail** |
+
+Four findings worth keeping.
+
+**1. The version gap was a non-issue, and now it is measured rather than argued.** The
+issue's System Info says `5.1.0` while `main` is `5.18.0.dev0`, seventeen minors apart.
+Both trees agree in every digit, and the originally filed per-prompt table reproduces
+exactly on both (`4.219e-3`, `1.978e-2`, `3.235e-3`, 0 of 30).
+
+**2. BF16 moves the rankings, and this falsified our own filed claim.** 0 of 30 top-10
+index mismatches in F32 on CPU and CUDA; **7 of 30 in BF16** (3, 4 and 0 across the three
+prompts). The `## Why this matters` section above was corrected on 2026-09-24 as a result,
+in the local document and in the issue body together.
+
+**3. The discriminator between the PRs is the config, not the numerics.** Both are
+`torch.equal` to the reference. Only #49061 corrects `config.hidden_act`, what
+`save_pretrained` writes, and therefore what any consumer reading `config.json` resolves
+to. That last is candle-mi's own position and how the bug surfaced.
+
+**4. #49063 fails repo-wide modular conversion, across 50 models.** Its guard sits in
+`GemmaMLP.__init__` in `modular_gemma.py`, and `GemmaMLP` is the modular base for
+`Qwen3MLP`, `OlmoeMLP`, `NomicBertMLP`, `BitNetMLP` and 46 more. Those families default to
+`silu`, `relu2` or `gelu_pytorch_tanh`, so it does not fire for them by default; it is
+CI-blocking structurally and behaviourally live for any of their checkpoints that sets
+`hidden_act: "gelu"`.
+
+Two method notes, both recorded because each cost a wrong intermediate conclusion:
+
+- **The narrow invocation hides finding 4.** `check_modular_conversion --files
+  src/transformers/models/gemma/modular_gemma.py --check_all` passes on both PRs. Only
+  `--check_all` with no `--files` surfaces the propagation. The first pass here used the
+  narrow form and concluded "both consistent".
+- **`warning_once` is `@functools.lru_cache(None)`.** An earlier probe in the same process
+  silently suppresses the warning at the point being measured, which made #49063 look as
+  if it never warned. The harness clears the cache between measurements.
+
+Controls, without which none of the above is readable: the two activation functions agree
+to `4.734992980957031e-4` in all twelve runs, and two unchanged forwards are bit-identical
+in all twelve. Stack: Windows 11, Python 3.14.0, torch 2.10.0+cu130, RTX 5060 Ti 16311 MiB
+(driver 610.88, cc 12.0), ruff 0.14.10 matching the `setup.py` pin.

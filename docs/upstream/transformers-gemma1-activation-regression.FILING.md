@@ -127,7 +127,7 @@ already tagged:
 gh api repos/OWNER/REPO/issues/N --method PATCH -F "body=@<absolute-path>"
 ```
 
-Note the path: Python on Windows resolves `/tmp` to `C:	mp`, which is not Git Bash's
+Note the path: Python on Windows resolves `/tmp` to `C:\tmp`, which is not Git Bash's
 `/tmp`, and `gh` will not find a file written to one and read from the other. Use an
 explicit absolute path for both.
 
@@ -210,6 +210,23 @@ gh api repos/huggingface/transformers/issues/49051/comments -F "body=@<absolute-
 
 Next move is theirs: the reply ends on a question (unconditional mapping, or only for
 values that came from a file), so the PR shape is not fully settled until they answer.
+
+### 2026-09-24: two PRs arrived, so we verified instead of competing
+
+[#49061](https://github.com/huggingface/transformers/pull/49061) (16:05:20Z) and
+[#49063](https://github.com/huggingface/transformers/pull/49063) (16:48:05Z) were both
+opened within the hour of our 16:31:22Z reply, so no PR of ours was needed. We posted a
+measurement instead, as [comment-5811228231](https://github.com/huggingface/transformers/issues/49051#issuecomment-5811228231).
+
+The full record, including the BF16 finding that falsified our own filed claim and the
+50-model modular-conversion failure in #49063, is in
+[the report's verification section](transformers-gemma1-activation-regression.md#verification-of-the-two-candidate-prs).
+The harness is [`verify_gemma_activation.py`](verify_gemma_activation.py).
+
+**The lesson for the next filing**, which is what this sheet is for: a narrow
+`check_modular_conversion --files <one model>` passes where the repo-wide run fails.
+When reviewing a change to a class other models inherit, run the repo-wide check, or
+the review reports the opposite of the truth.
 
 ### Groundwork for the PR, already checked
 
