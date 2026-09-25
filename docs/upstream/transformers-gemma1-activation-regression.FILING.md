@@ -528,3 +528,63 @@ One last tooling note, since it cost a confusing verification pass: in PowerShel
 reports `pathspec ... did not match any file(s)`, no commit is made, and a verification run
 immediately afterwards silently measures the previous commit. Use a heredoc from a POSIX
 shell, or `-F <file>`.
+
+### MERGED, 2026-09-25
+
+[#49084](https://github.com/huggingface/transformers/pull/49084) merged by
+[@vasqu](https://github.com/vasqu) at 19:14:27 UTC as `27166ea03f`, `+62 -6` across three files.
+Issue [#49051](https://github.com/huggingface/transformers/issues/49051) auto-closed one second
+later on the `Fixes` line. The merge commit on `main` is authored "Eric Jacopin".
+
+**How it closed.** He accepted the expectations archaeology outright ("That's totally what I'm
+looking for! I was just wanting to make sure that the regression also forced updates on these
+slow tests and they did"), then re-recorded the **`("cuda", 8)`** entries himself in `66a2535`
+and re-ran the slow suite. Nvidia came back "No failing test specific to this PR" and he merged
+thirteen minutes later.
+
+**He merged with the AMD red standing, and that was the right call.** Of the three AMD failures,
+`test_compile_static_cache` failed identically on base and PR, `test_model_7b_bf16` was already
+failing there beforehand, and only `test_model_7b_fp16` was ours. That last one has no
+`("rocm", ...)` entry, so it falls back to `(None, None)`, which he did not update; the delta is
+one token, and the value AMD now emits is already sitting in the `("cuda", 8)` entry:
+
+```python
+(None, None):  """Hello I am doing a project on a 1999 4.0L 4x4. I"""   # AMD resolves here
+("cuda", 8):      "Hello I am doing a project on a 1995 4.0L 4x4. I"    # what AMD now emits
+```
+
+A note saying exactly that was drafted and never posted, because he merged first. AMD
+expectations are maintained on a separate cadence by the `optimum-amd` side.
+
+**What shipped is ours, with one addition of his.** The `__post_init__` remap is verbatim, and he
+extended the comment to `# #35235 dropped this conversion (which is needed per #29402) which we
+now handle here instead`, putting the provenance in the source: #29402 is danielhanchen's 2024
+issue whose correction went missing. The test he restructured, but it kept the two things that
+mattered: `LoggingLevel(logging.WARNING)`, without which the assertion silently passes under CI's
+`TRANSFORMERS_VERBOSITY=error`, and the full-string warning comparison.
+
+**The other PR closed itself.** [@Talhax55z](https://github.com/Talhax55z) closed
+[#49081](https://github.com/huggingface/transformers/pull/49081) voluntarily: "Since #49084 is
+further along and already has maintainer engagement, I'll close this one in its favor. The fix
+matters more than whose commit it is."
+
+### The arc
+
+| | |
+|---|---|
+| Found by | `tests/validate_gemma_forward.rs`, a Rust forward-parity test |
+| Filed | 2026-09-23 14:02 UTC |
+| Accepted by a collaborator | 50 minutes later |
+| Merged | 2026-09-25 19:14 UTC |
+| Duration of the bug | 2024-12-18 to 2026-09-25, twenty-one months |
+| Review rounds | three, plus one round of expectations archaeology |
+
+**What made it land, in order of weight.** The independent implementation that surfaced it at all.
+The BF16 measurement, which turned "the rankings do not move" into a false claim of our own and
+was then confirmed by their slow suite on hardware we do not have. And the archaeology, which
+converted a maintainer's merge condition into five dated commit SHAs.
+
+**What cost time and should not next time.** Two review rounds lost to a terse pointer that one
+permalink resolved. A commit that silently reverted its own fix because `git checkout -- <file>`
+moves the index. A mutation check that verified a working tree rather than a commit. All three
+are written up above as rules rather than resolutions.
