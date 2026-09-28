@@ -1,0 +1,14 @@
+# Keeps the SHA-pinned GitHub Actions current. Every workflow pins third-party
+# actions to a full commit SHA (a tag can be re-pointed by whoever controls the
+# action's repository, which is how the TeamPCP campaign behind the LiteLLM
+# compromise spread). Dependabot proposes the new SHA, with the release notes,
+# as one grouped PR a month, so pinning does not mean freezing.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]

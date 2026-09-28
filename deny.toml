@@ -1,0 +1,65 @@
+# cargo-deny policy (https://embarkstudios.github.io/cargo-deny/), run by the
+# `deny` job in `.github/workflows/ci.yml` and locally with `cargo deny check`
+# (`[graph] all-features` below makes both cover every feature).
+#
+# Why this exists: a dependency's build script or proc-macro runs arbitrary code
+# on every machine that builds this crate, the same "runs just by being
+# installed" property the LiteLLM 1.82.8 `.pth` start-up hook abused. This file
+# cannot prove a dependency honest, but it makes the known ways one goes bad
+# visible: a RustSec advisory, a yanked release, a crate fetched from somewhere
+# other than crates.io, or a licence the crate could not be shipped under.
+
+[graph]
+all-features = true
+
+[advisories]
+# Every RustSec advisory (vulnerability, unsound, unmaintained) fails the job.
+# To accept one deliberately, add it to `ignore` with the reason, e.g.
+# `{ id = "RUSTSEC-0000-0000", reason = "..." }`.
+yanked = "deny"
+ignore = [
+    # `paste` is archived upstream; it reaches us only as a build-time macro
+    # dependency of candle's `gemm`, with no replacement until candle moves.
+    { id = "RUSTSEC-2024-0436", reason = "unmaintained, transitive via candle-core -> gemm; no upgrade available" },
+]
+
+[licenses]
+# Permissive licences only, matching the crate's own MIT OR Apache-2.0.
+allow = [
+    "0BSD",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+confidence-threshold = 0.8
+exceptions = [
+    # MPL-2.0 is file-level copyleft: it binds changes to these crates' own
+    # files, not the code that links them, so it is compatible with shipping
+    # this crate under MIT OR Apache-2.0. Allowed per crate, not globally, so
+    # a new MPL dependency is a deliberate decision. Both arrive through
+    # `dirs` (option-ext) and `hf-hub`'s xet stack (colored).
+    { allow = ["MPL-2.0"], crate = "colored" },
+    { allow = ["MPL-2.0"], crate = "option-ext" },
+    # Mozilla's root-certificate bundle, via reqwest's rustls-platform-verifier.
+    # CDLA-Permissive-2.0 is a permissive data licence.
+    { allow = ["CDLA-Permissive-2.0"], crate = "webpki-root-certs" },
+]
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+# crates.io only: a git or alternative-registry dependency would bypass the
+# registry's immutability and the advisory database.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+
+- **Release pipeline hardened against registry-token theft**, the root cause
+  of the 2026-03-24 LiteLLM supply-chain compromise. Releases now publish
+  through crates.io Trusted Publishing (OIDC), so no long-lived
+  `CARGO_REGISTRY_TOKEN` exists to steal. The publish job needs maintainer
+  approval through a `release` environment, runs only from a `v*` tag and
+  restores no build cache. Every third-party GitHub Action is pinned to a full
+  commit SHA, and Dependabot keeps the pins current. A new `deny` CI job runs
+  `cargo-deny` against `deny.toml` (RustSec advisories and yanked crates,
+  permissive licences plus per-crate exceptions for `colored` / `option-ext`
+  (MPL-2.0) and `webpki-root-certs` (CDLA-Permissive-2.0), crates.io as the
+  only source; the unmaintained `paste` advisory is ignored with its reason,
+  as it arrives through candle's `gemm` with no upgrade available).
+
 ## [0.2.1] - 2026-09-23
 
 ### Added

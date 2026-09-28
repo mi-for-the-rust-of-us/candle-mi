@@ -11,6 +11,10 @@ on:
     - cron: "0 6 * * 1" # Mondays 06:00 UTC
   workflow_dispatch: # run the canary on demand
 
+# Read-only workflow token: nothing in this workflow writes to the repository.
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -26,9 +30,11 @@ jobs:
           - name: "Stable"
             toolchain: "stable"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
-      - uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master (v1)
         with:
           toolchain: ${{ matrix.toolchain }}
           components: clippy, rustfmt
@@ -40,7 +46,7 @@ jobs:
             rustc --version; cargo clippy --version;
             echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
       - name: Check formatting
         run: cargo fmt --check
@@ -221,3 +227,18 @@ jobs:
       # Note: cuda/metal features require hardware; test all software features instead
       - name: Build (all software features)
         run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
+
+  # Dependency supply chain, per `deny.toml`. Build scripts and
+  # proc-macros run arbitrary code at build time, so a compromised or yanked
+  # dependency is worth failing the build over.
+  deny:
+    name: "Dependencies (cargo-deny)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check
