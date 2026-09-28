@@ -52,44 +52,44 @@ jobs:
         run: cargo fmt --check
 
       - name: Build (no default features — CPU only on CI)
-        run: cargo build --no-default-features --features transformer
+        run: cargo build --locked --no-default-features --features transformer
 
       - name: Clippy (pedantic)
-        run: cargo clippy --all-targets --no-default-features --features transformer -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features transformer -- -W clippy::pedantic
 
       - name: Tests
-        run: cargo test --no-default-features --features transformer
+        run: cargo test --locked --no-default-features --features transformer
 
       - name: Build (RWKV)
-        run: cargo build --no-default-features --features "rwkv,rwkv-tokenizer"
+        run: cargo build --locked --no-default-features --features "rwkv,rwkv-tokenizer"
 
       - name: Clippy (RWKV, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features "rwkv,rwkv-tokenizer" -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features "rwkv,rwkv-tokenizer" -- -W clippy::pedantic
 
       - name: Tests (RWKV)
-        run: cargo test --no-default-features --features "rwkv,rwkv-tokenizer"
+        run: cargo test --locked --no-default-features --features "rwkv,rwkv-tokenizer"
 
       - name: Build (Stoicheia)
-        run: cargo build --no-default-features --features stoicheia
+        run: cargo build --locked --no-default-features --features stoicheia
 
       - name: Clippy (Stoicheia, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features stoicheia -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features stoicheia -- -W clippy::pedantic
 
       - name: Tests (Stoicheia)
-        run: cargo test --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia
+        run: cargo test --locked --no-default-features --features stoicheia --lib --test stoicheia_analysis --test validate_stoicheia
 
       # CLT feature is opt-in and pairs with `transformer` in every example.
       # Without a dedicated lane, clt-only regressions (e.g. the hf-fetch-model
       # 0.9.6 signature change that broke list_repo_files_with_metadata on the
       # clt code path) escape the transformer + rwkv lanes entirely.
       - name: Build (CLT)
-        run: cargo build --no-default-features --features "clt,transformer"
+        run: cargo build --locked --no-default-features --features "clt,transformer"
 
       - name: Clippy (CLT, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features "clt,transformer" -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features "clt,transformer" -- -W clippy::pedantic
 
       - name: Tests (CLT)
-        run: cargo test --no-default-features --features "clt,transformer" --lib
+        run: cargo test --locked --no-default-features --features "clt,transformer" --lib
 
       # Quantized loading (bnb NF4/FP4/INT8, AWQ, GPTQ dequant via anamnesis) is
       # opt-in and pairs with `transformer`. It had ZERO CI presence before, so a
@@ -99,22 +99,22 @@ jobs:
       # + a GPU); this lane still compiles that test binary, catching signature/API
       # breaks even though the ignored cases don't run on CI.
       - name: Build (Quantized)
-        run: cargo build --no-default-features --features "quantized,transformer"
+        run: cargo build --locked --no-default-features --features "quantized,transformer"
 
       - name: Clippy (Quantized, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features "quantized,transformer" -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features "quantized,transformer" -- -W clippy::pedantic
 
       - name: Tests (Quantized)
-        run: cargo test --no-default-features --features "quantized,transformer" --lib --test validate_quantized_loading
+        run: cargo test --locked --no-default-features --features "quantized,transformer" --lib --test validate_quantized_loading
 
       # SAE (~1.5k lines in src/sae/) is opt-in and pairs with `transformer`. It
       # only ever appeared inside the combined `cargo build` (no clippy), so
       # sae-specific pedantic lints escaped CI entirely. This lane lints it.
       - name: Build (SAE)
-        run: cargo build --no-default-features --features "sae,transformer"
+        run: cargo build --locked --no-default-features --features "sae,transformer"
 
       - name: Clippy (SAE, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features "sae,transformer" -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features "sae,transformer" -- -W clippy::pedantic
 
       # validate_plt_gemma needs clt+sae+transformer together (sae → anamnesis/npz
       # for the GemmaScope NPZ loader). No single-feature lane builds that test
@@ -122,57 +122,57 @@ jobs:
       # NPZs), so a --no-run compile-check is the right coverage (mirrors the
       # validate_bidirectional_sampler precedent).
       - name: Tests compile (clt + sae + transformer)
-        run: cargo test --no-default-features --features "clt,sae,transformer" --test validate_plt_gemma --no-run
+        run: cargo test --locked --no-default-features --features "clt,sae,transformer" --test validate_plt_gemma --no-run
 
       # mmap is a weight-loading mode that gates the unsafe mmapped-safetensors
       # loader in backend.rs (6 cfg sites, incl. the deny(unsafe_code)+mmap path).
       # No lane ever compiled it, so that unsafe path was never clippy'd on CI.
       - name: Build (mmap)
-        run: cargo build --no-default-features --features "mmap,transformer"
+        run: cargo build --locked --no-default-features --features "mmap,transformer"
 
       - name: Clippy (mmap, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features "mmap,transformer" -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features "mmap,transformer" -- -W clippy::pedantic
 
       # Diffusion is a standalone backend (MDLM masked-diffusion DiT) that does
       # NOT imply `transformer`, so none of the lanes above ever compile it.
       # Without a dedicated lane the whole `src/diffusion/` module, its three
       # examples, and its forward-parity test escape CI entirely.
       - name: Build (Diffusion + examples)
-        run: cargo build --no-default-features --features diffusion --examples
+        run: cargo build --locked --no-default-features --features diffusion --examples
 
       - name: Clippy (Diffusion, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features diffusion -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features diffusion -- -W clippy::pedantic
 
       - name: Tests (Diffusion)
-        run: cargo test --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward --test validate_patch_at
+        run: cargo test --locked --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward --test validate_patch_at
 
       # validate_bidirectional_sampler needs `transformer` + `diffusion`; and
       # validate_bidirectional_forward (a2d-qwen2 bidirectional attention parity)
       # had zero CI presence. Both are #[ignore], so compile-check them here.
       - name: Tests compile (transformer + diffusion)
-        run: cargo test --no-default-features --features "transformer,diffusion" --test validate_bidirectional_sampler --test validate_bidirectional_forward --no-run
+        run: cargo test --locked --no-default-features --features "transformer,diffusion" --test validate_bidirectional_sampler --test validate_bidirectional_forward --no-run
 
       # Memory measurement (delegated to hypomnesis). Standalone — implied by no
       # other feature — so without a lane the module + its integration test
       # escape CI. The live CUDA checks in validate_memory are #[ignore]; the CPU
       # invariant runs here.
       - name: Build (memory)
-        run: cargo build --no-default-features --features memory
+        run: cargo build --locked --no-default-features --features memory
 
       - name: Clippy (memory, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features memory -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features memory -- -W clippy::pedantic
 
       - name: Tests (memory)
-        run: cargo test --no-default-features --features memory --lib --test validate_memory
+        run: cargo test --locked --no-default-features --features memory --lib --test validate_memory
 
       # memory-debug = memory + hypomnesis/debug-output. It gates no candle-mi
       # source of its own, so this lane is a feature-resolution guard: it catches
       # a hypomnesis debug-output combo that stops resolving/compiling on a bump.
       - name: Build (memory-debug)
-        run: cargo build --no-default-features --features memory-debug
+        run: cargo build --locked --no-default-features --features memory-debug
 
       - name: Clippy (memory-debug, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features memory-debug -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features memory-debug -- -W clippy::pedantic
 
       # Checkpointable AdamW (`training`, default-off). Gates real source, so
       # this is a full build + clippy + test lane, not a resolution guard. The
@@ -180,13 +180,13 @@ jobs:
       # they actually execute here: they hold our transcribed update rule to
       # candle's own trajectory, which is the claim the module rests on.
       - name: Build (training)
-        run: cargo build --no-default-features --features training
+        run: cargo build --locked --no-default-features --features training
 
       - name: Clippy (training, pedantic)
-        run: cargo clippy --all-targets --no-default-features --features training -- -W clippy::pedantic
+        run: cargo clippy --locked --all-targets --no-default-features --features training -- -W clippy::pedantic
 
       - name: Tests (training)
-        run: cargo test --no-default-features --features training --lib --test validate_optim_parity
+        run: cargo test --locked --no-default-features --features training --lib --test validate_optim_parity
 
       # Doctests for every feature-gated public example in ONE pass. The previous
       # `transformer,memory`-only lane left the clt, sae, and rwkv doc examples
@@ -196,7 +196,7 @@ jobs:
       # below but runs the doctests; transformer is included so the memory and
       # crate-level examples (MIModel::from_pretrained) still compile.
       - name: Doctests (all software features)
-        run: cargo test --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training" --doc
+        run: cargo test --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training" --doc
 
       # Rustdoc, per feature set. `#![deny(warnings)]` promotes
       # rustdoc::broken_intra_doc_links (and friends) to errors, but only for the
@@ -215,18 +215,18 @@ jobs:
                    "diffusion" "memory" "memory-debug" "training" \
                    "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training"; do
             echo "::group::cargo doc --features '$f'"
-            cargo doc --no-default-features ${f:+--features "$f"} --no-deps
+            cargo doc --locked --no-default-features ${f:+--features "$f"} --no-deps
             echo "::endgroup::"
           done
 
       # Check 5 (Rule 15): Bare no-default-features build
       - name: Build (no default features)
-        run: cargo build --no-default-features
+        run: cargo build --locked --no-default-features
 
       # Check 6 (Rule 15): All software features build
       # Note: cuda/metal features require hardware; test all software features instead
       - name: Build (all software features)
-        run: cargo build --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
+        run: cargo build --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
 
   # Dependency supply chain, per `deny.toml`. Build scripts and
   # proc-macros run arbitrary code at build time, so a compromised or yanked
