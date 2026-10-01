@@ -16,12 +16,12 @@ upstream fix is a bonus that later lets us delete code.
 | document | target | kind | status |
 |---|---|---|---|
 | [transformers-gemma1-activation-regression.md](transformers-gemma1-activation-regression.md) | `transformers` | bug report | **FILED 2026-09-23** as [transformers#49051](https://github.com/huggingface/transformers/issues/49051), tagging `@ArthurZucker` and `@Cyrilvallez` (both on the template's text-models line, and `git blame` puts both on the commit: #35235 authored by the first, merged by the second), with `@danielhanchen` cc'd in the body. First document here aimed outside `huggingface/candle`. Since v4.48.0 (#35235, 2024-12-18) `transformers` computes exact erf GELU for the five Gemma 1.0 checkpoints instead of `gelu_pytorch_tanh`, silently: the same diff that replaced `GemmaMLP`'s `hidden_activation` guard with `ACT2FN[config.hidden_act]` deleted its warning. Found by `tests/validate_gemma_forward.rs`. Measured inside `transformers` alone, swapping only `mlp.act_fn` on one loaded model: max abs-diff `1.978e-2` over 30 top-10 logits with **0 of 30** index mismatches, which is why no eval or smoke test would catch it. candle-mi is unaffected (`parse_gemma` hardcodes `GeluApprox`, now with a comment saying why). **2026-09-24:** two candidate PRs ([#49061](https://github.com/huggingface/transformers/pull/49061), [#49063](https://github.com/huggingface/transformers/pull/49063)) arrived within the hour of our reply, so we verified rather than competed: twelve runs across four trees, reported as [comment-5811228231](https://github.com/huggingface/transformers/issues/49051#issuecomment-5811228231). Two findings. The **0 of 30** above is F32-only; in BF16 it is **7 of 30**, which falsified this report's own "the rankings do not move" section (corrected the same day, locally and in the issue body together). And #49063 fails repo-wide `check_modular_conversion` across **50 models**, because its guard sits on `GemmaMLP`, the modular base of `Qwen3MLP`, `OlmoeMLP`, `NomicBertMLP` and 47 more. Harness: [`verify_gemma_activation.py`](verify_gemma_activation.py). **MERGED 2026-09-25** as [`27166ea03f`](https://github.com/huggingface/transformers/commit/27166ea03f12), closing the issue 54 hours after filing; the competing PR was closed voluntarily by its author |
-| [candle-cuda-copy-strided-src-overruns.md](candle-cuda-copy-strided-src-overruns.md) | `candle-core` | bug report | **FILED 2026-09-02** as [candle#3940](https://github.com/huggingface/candle/issues/3940), with the fix in [candle#3944](https://github.com/huggingface/candle/pull/3944). CUDA `copy_strided_src` sizes its copy from the storage rather than the source view, so `slice_scatter` with an offset source overruns into the following elements. Silent, GPU-only, and CPU disagrees. Found by `Intervention::PatchAt` returning a plausible-but-wrong causal trace on Llama-3.2-1B; workaround (a masked `where_cond`) already shipped |
+| [candle-cuda-copy-strided-src-overruns.md](candle-cuda-copy-strided-src-overruns.md) | `candle-core` | bug report | **FILED 2026-09-02** as [candle#3940](https://github.com/huggingface/candle/issues/3940), fixed by our [candle#3944](https://github.com/huggingface/candle/pull/3944), **MERGED 2026-09-24** as [`73e25aa`](https://github.com/huggingface/candle/commit/73e25aace6f001cd06cb792629f4335a761caa6c), not yet in a release (crates.io latest is still 0.11.0 as of 2026-10-01). CUDA `copy_strided_src` sizes its copy from the storage rather than the source view, so `slice_scatter` with an offset source overruns into the following elements. Silent, GPU-only, and CPU disagrees. Found by `Intervention::PatchAt` returning a plausible-but-wrong causal trace on Llama-3.2-1B; workaround (a masked `where_cond`) already shipped, and stays until candle-mi depends on a candle release carrying the fix |
 | [candle-fused-ops-drop-gradients-v2-cluster-map.md](candle-fused-ops-drop-gradients-v2-cluster-map.md) | `candle-nn` | map plus the posted comment | **comment posted 2026-08-01** as [candle#2168 comment-5150289607](https://github.com/huggingface/candle/issues/2168#issuecomment-5150289607) |
 | [candle-fused-ops-drop-gradients-v1-standalone-report.md](candle-fused-ops-drop-gradients-v1-standalone-report.md) | `candle-nn` | bug report | **superseded, do not file** |
-| [candle-adamw-state-accessors.md](candle-adamw-state-accessors.md) | `candle-nn` | PR (additive, +80/-0) | **FILED 2026-08-01** as [candle#3819](https://github.com/huggingface/candle/pull/3819). First CI runs expired unapproved after thirty days and were stamped `failure` with zero jobs run, so **rebased onto `638a819a` and re-pushed 2026-08-31** (`67ee82d4`, patch-id unchanged) with [a comment](https://github.com/huggingface/candle/pull/3819#issuecomment-5479119668) explaining the red X. Awaiting workflow approval |
-| candle-nn fused ops: `CustomOp::bwd` for `softmax_last_dim` + `layer_norm` | `candle-nn` | PR (the fix for the [gradient-drop cluster](candle-fused-ops-drop-gradients-v2-cluster-map.md): #3011, #3752…) | **FILED 2026-08-01** as [candle#3823](https://github.com/huggingface/candle/pull/3823) — branch `fused-ops-bwd`, independent of #3822; credits and offers deference to the open #3613/#3724. **Rebased onto `638a819a` and re-pushed 2026-08-31** (`dabee405`, patch-id unchanged) hours before its unapproved runs would have expired, with [a comment](https://github.com/huggingface/candle/pull/3823#issuecomment-5479358775). Awaiting workflow approval |
-| [candle-gradstore-accumulate.md](candle-gradstore-accumulate.md) | `candle-core` | PR (behaviour-preserving, +115/-133) | **FILED 2026-08-01** as [candle#3822](https://github.com/huggingface/candle/pull/3822). **Rebased onto `638a819a` and re-pushed 2026-08-31** (`e7ea559b`, patch-id unchanged) hours before its unapproved runs would have expired, with [a comment](https://github.com/huggingface/candle/pull/3822#issuecomment-5479358458). Awaiting workflow approval |
+| [candle-adamw-state-accessors.md](candle-adamw-state-accessors.md) | `candle-nn` | PR (additive, +80/-0) | **FILED 2026-08-01** as [candle#3819](https://github.com/huggingface/candle/pull/3819). First CI runs expired unapproved after thirty days and were stamped `failure` with zero jobs run, so **rebased onto `638a819a` and re-pushed 2026-08-31** (`67ee82d4`, patch-id unchanged) with [a comment](https://github.com/huggingface/candle/pull/3819#issuecomment-5479119668) explaining the red X. The runs on that head expired in turn on 2026-09-30, this time on the current head (see [what happened](#what-happened-checked-2026-10-01)). Still awaiting workflow approval |
+| candle-nn fused ops: `CustomOp::bwd` for `softmax_last_dim` + `layer_norm` | `candle-nn` | PR (the fix for the [gradient-drop cluster](candle-fused-ops-drop-gradients-v2-cluster-map.md): #3011, #3752…) | **FILED 2026-08-01** as [candle#3823](https://github.com/huggingface/candle/pull/3823) — branch `fused-ops-bwd`, independent of #3822; credits and offers deference to the open #3613/#3724. **Rebased onto `638a819a` and re-pushed 2026-08-31** (`dabee405`, patch-id unchanged) hours before its unapproved runs would have expired, with [a comment](https://github.com/huggingface/candle/pull/3823#issuecomment-5479358775). The runs on that head expired in turn on 2026-09-30, this time on the current head (see [what happened](#what-happened-checked-2026-10-01)). Still awaiting workflow approval |
+| [candle-gradstore-accumulate.md](candle-gradstore-accumulate.md) | `candle-core` | PR (behaviour-preserving, +115/-133) | **FILED 2026-08-01** as [candle#3822](https://github.com/huggingface/candle/pull/3822). **Rebased onto `638a819a` and re-pushed 2026-08-31** (`e7ea559b`, patch-id unchanged) hours before its unapproved runs would have expired, with [a comment](https://github.com/huggingface/candle/pull/3822#issuecomment-5479358458). The runs on that head expired in turn on 2026-09-30, this time on the current head (see [what happened](#what-happened-checked-2026-10-01)). Still awaiting workflow approval |
 
 On the two versions of the fused-ops document, following the `docs/conventions/`
 pattern where the version lives in the filename: v1 was drafted as a standalone
@@ -38,8 +38,8 @@ cluster and the errors. Read v2; file nothing from v1.
 | [3368](https://github.com/huggingface/candle/discussions/3368) | discussion, "Interest in a `candle-mi` crate?" | 2026-02-13 | name endorsed by `EricLBuehler` 2026-02-15, who invited the README PR; no candle-side reply since 2026-02-19 |
 | [3406](https://github.com/huggingface/candle/pull/3406) | PR, add candle-mi to Useful External Resources | 2026-03-16 | open, solicited in 3368 |
 | [3617](https://github.com/huggingface/candle/issues/3617) | issue, unbounded pickle-VM working set (DoS via crafted `.pth`) | 2026-06-13 | open |
-| [3940](https://github.com/huggingface/candle/issues/3940) | issue, CUDA `copy_strided_src` over-copies from an offset source view | 2026-09-02 | open; fix proposed the same day as 3944 |
-| [3944](https://github.com/huggingface/candle/pull/3944) | PR, size the CUDA copy from the layout rather than the storage (fixes 3940) | 2026-09-02 | open, `MERGEABLE`, +36/-3. Verified on an RTX 5060 Ti: the added `slice_scatter` assertions fail on CUDA without the patch and pass with it; full `candle-core` suite green on CPU and CUDA. Carries a comment flagging the four PRs stuck behind workflow approval |
+| [3940](https://github.com/huggingface/candle/issues/3940) | issue, CUDA `copy_strided_src` over-copies from an offset source view | 2026-09-02 | **closed 2026-09-24**, completed by the merge of 3944 |
+| [3944](https://github.com/huggingface/candle/pull/3944) | PR, size the CUDA copy from the layout rather than the storage (fixes 3940) | 2026-09-02 | **merged 2026-09-24** by `EricLBuehler` as [`73e25aa`](https://github.com/huggingface/candle/commit/73e25aace6f001cd06cb792629f4335a761caa6c), +36/-3 as authored, approved with "Thanks @PCfVW"; not yet released. Verified on an RTX 5060 Ti: the added `slice_scatter` assertions fail on CUDA without the patch and pass with it; full `candle-core` suite green on CPU and CUDA. Carries a comment flagging the four PRs stuck behind workflow approval |
 | [3628](https://github.com/huggingface/candle/pull/3628) | PR, bound the pickle VM's working set and nesting depth | 2026-06-18 | open upstream, but cherry-picked into [`astorise/candle`](https://github.com/astorise/candle) as commit `b196387` with authorship preserved, in that fork's "Pull 9 high-value upstream candle PRs into the fork (Tier 1)" batch (their #37, 2026-07-29). `Sébastien ASTORI` then fixed a clippy lint on top (`2840a5b`). He also filed candle #3688 on pickle DoS, so he is working the same problem and is worth engaging directly |
 
 ## The workflow-approval gate
@@ -104,7 +104,7 @@ rotted into a conflict.
 
 | PR | what it is | runs pending since | **expires** |
 |---|---|---|---|
-| [3944](https://github.com/huggingface/candle/pull/3944) | fixes 3940, the CUDA `copy_strided_src` overrun | 2026-09-02 13:15 | **2026-10-02 13:15 UTC** |
+| [3944](https://github.com/huggingface/candle/pull/3944) | fixes 3940, the CUDA `copy_strided_src` overrun | 2026-09-02 13:15 | **2026-10-02 13:15 UTC**; moot, merged 2026-09-24 |
 | [3823](https://github.com/huggingface/candle/pull/3823) | fused `softmax_last_dim` / `layer_norm` backward | 2026-08-31 13:44 | **2026-09-30 13:44 UTC** |
 | [3822](https://github.com/huggingface/candle/pull/3822) | store the first gradient directly | 2026-08-31 13:43 | **2026-09-30 13:43 UTC** |
 | [3819](https://github.com/huggingface/candle/pull/3819) | `AdamW` state accessors | 2026-08-31 13:32 | **2026-09-30 13:32 UTC** |
@@ -172,8 +172,48 @@ pass, not three.
    engaging a person, not pushing another commit.
 
 Each of 3406, 3819, 3822, 3823 and 3944 carries one comment; 3628 has none.
+
+### What happened (checked 2026-10-01)
+
+**3944 merged on 2026-09-24, eight days before its deadline.** Maintainers did
+both of the things that mattered. On 2026-09-04 `ivarflakstad` merged `main` into
+the branch (`8898eb2`). A maintainer's push needs no approval, so its runs went
+straight through: `Continuous integration` #9028 passed and `CI / cuda` #5880 was
+skipped. Then `EricLBuehler` approved and merged it. The runs on the original head
+(#9003 and cuda #5863, on `9dda9a6a`) were never approved, and GitHub stamped them
+`failure` at 15:06:46, the second of the merge. That sent one more red-X email,
+and it means nothing.
+
+**The 2026-09-30 batch expired, as decided.** No heads were moved.
+
+| runs | PR | created | stamped `failure` | jobs |
+|---|---|---|---|---|
+| `Continuous integration` #8947, `CI / cuda` #5821 | 3819 | 2026-08-31 13:32 | 2026-09-30 13:37 | 0 |
+| `Continuous integration` #8948, `CI / cuda` #5822 | 3822 | 2026-08-31 13:43 | 2026-09-30 13:47 | 0 |
+| `Continuous integration` #8949, `CI / cuda` #5823 | 3823 | 2026-08-31 13:44 | 2026-09-30 13:46 | 0 |
+
+None of these heads had moved, so the corollary above applies: the red X now sits
+on each current head. Nothing else changed. All three are still OPEN and
+unreviewed, and the patches have not been touched.
+
+**Decision 1's revisit condition has been met.** It said to revisit "only if a
+maintainer engages", and two did, on 3944. That still does not argue for moving
+heads, which converges on nothing. It argues for item 4 above, the one step that
+actually ends this: ask a person, for example one comment asking `EricLBuehler`
+to approve the workflows on 3819, 3822 and 3823. **Not yet done.** Decision 2,
+the offer to withdraw 3823, is also still not done.
+
 ## When something lands
 
 Record the link and the version here, then delete the corresponding downstream
 workaround: the `nn_ops` `track_op` dispatch for the fused-ops cluster, the
 vendored checkpointable `AdamW` for the optimizer accessors.
+
+Landed so far:
+
+- **candle#3944** (fixes 3940): merged 2026-09-24 as [`73e25aa`](https://github.com/huggingface/candle/commit/73e25aace6f001cd06cb792629f4335a761caa6c). **No release yet**, so
+  the version is still to be recorded. Its workaround is `Intervention::PatchAt`'s
+  masked `where_cond` (`src/hooks.rs`, `design/patch-at-position.md`). Remove it
+  once candle-mi's candle pin moves to a release containing the fix, and re-run
+  `tests/validate_patch_at.rs` on CUDA with a `slice_scatter` spelling first, to
+  confirm the release really carries it.

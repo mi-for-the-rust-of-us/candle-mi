@@ -2,8 +2,19 @@
 
 **Title for the issue:** CUDA `copy_strided_src` copies past the end of an offset source view, silently corrupting `slice_scatter` (CPU disagrees)
 
-**Status:** **FILED 2026-09-02** as [candle#3940](https://github.com/huggingface/candle/issues/3940),
-with the fix proposed the same day as [candle#3944](https://github.com/huggingface/candle/pull/3944).
+**Status: MERGED, NOT YET RELEASED.** Filed 2026-09-02 as
+[candle#3940](https://github.com/huggingface/candle/issues/3940), with the fix proposed the same day as
+[candle#3944](https://github.com/huggingface/candle/pull/3944), **merged 2026-09-24 15:06 UTC** by `EricLBuehler` as
+[`73e25aa`](https://github.com/huggingface/candle/commit/73e25aace6f001cd06cb792629f4335a761caa6c), which auto-closed the issue two seconds later. Twenty-two days from filing
+to merge. It went in as authored (+36/-3, the same two files, no review changes),
+approved with "Thanks @PCfVW". CI was never the obstacle: on 2026-09-04 `ivarflakstad`
+merged `main` into the branch (`8898eb2`), and a maintainer's push needs no approval,
+so that run passed and the thirty-day expiry stopped mattering.
+
+As of 2026-10-01 the newest `candle-core` on crates.io is still 0.11.0 (2026-06-26),
+which predates the fix, and candle-mi pins `0.11`. The workaround below therefore
+stays until candle-mi moves to a release that contains `73e25aa`.
+
 Searched first: no existing issue or PR covered this path (see "Prior art" below).
 Confirmed present on `main` at `d5fee525` as well as on the pinned 0.11.0.
 
@@ -18,8 +29,8 @@ row) and pass after, with the full `candle-core` suite green on CPU and CUDA.
 
 ## Workaround, up front
 
-Do not pass a source that is a **view over a larger storage** to
-`Tensor::slice_scatter` on CUDA. Either materialise it into a tensor that owns
+Until candle-mi depends on a release containing `73e25aa`, do not pass a source
+that is a **view over a larger storage** to `Tensor::slice_scatter` on CUDA. Either materialise it into a tensor that owns
 its storage exactly (`.contiguous()` is **not** enough, since a `narrow` view is
 already contiguous and keeps its parent's storage), or avoid the copy entirely.
 
