@@ -130,8 +130,10 @@ days. Revisit only if a maintainer engages, which changes the premise.
 the same gradient-drop problem, and adjudicating between them is more work for a
 maintainer than ignoring all three, so the crowding is plausibly why none moves.
 Withdrawing costs candle-mi nothing real: `nn_ops`'s `track_op` dispatch already
-ships the workaround, so nothing downstream waits on it. **Not yet done** --
-this needs a comment on 3823 and is the one action here still to take.
+ships the workaround, so nothing downstream waits on it. **Done 2026-10-01** as
+part of the triage comment [comment-5926788462](https://github.com/huggingface/candle/pull/3823#issuecomment-5926788462); see below. Note that 3823 is not a one-for-one
+swap with either PR: 3613 covers only `layer_norm` and 3724 only
+`softmax_last_dim`, so the offer is 3823 *or* the pair.
 
 Both follow the directory's standing rule, stated at the top: upstream work is a
 donation, not work in progress. File it, make it cheap to merge, walk away.
@@ -200,8 +202,33 @@ unreviewed, and the patches have not been touched.
 maintainer engages", and two did, on 3944. That still does not argue for moving
 heads, which converges on nothing. It argues for item 4 above, the one step that
 actually ends this: ask a person, for example one comment asking `EricLBuehler`
-to approve the workflows on 3819, 3822 and 3823. **Not yet done.** Decision 2,
-the offer to withdraw 3823, is also still not done.
+to approve the workflows on 3819, 3822 and 3823.
+
+**Done 2026-10-01**, as one comment on 3823 ([comment-5926788462](https://github.com/huggingface/candle/pull/3823#issuecomment-5926788462)), tagging `EricLBuehler` and
+`ivarflakstad`, with a table that hands each decision to a maintainer:
+
+| PR | overlaps with | suggestion |
+|---|---|---|
+| 3819 `AdamW` state accessors | none | workflow approval only |
+| 3822 store the first gradient directly | [#3578](https://github.com/huggingface/candle/pull/3578), the same change, filed 2026-06-04 | land #3578; we close 3822 |
+| 3823 backward for fused `softmax_last_dim` and `layer_norm` | [#3724](https://github.com/huggingface/candle/pull/3724) (softmax) and [#3613](https://github.com/huggingface/candle/pull/3613) (layer_norm, conflicts with `main` as of 2026-10-01) | 3823 alone, or #3724 + #3613 |
+
+Writing it surfaced two PRs this directory had missed:
+
+- **[#3578](https://github.com/huggingface/candle/pull/3578)** (`TeunVerstraaten`, 2026-06-04) is the 3822 change
+  two months earlier: `add_or_insert` / `sub_or_insert_negated` are our
+  `accumulate` / `accumulate_neg`, plus a backward benchmark and an
+  `overwrite_or_insert` for the `UpsampleNearest` sites. It stores `grad.clone()`,
+  so a first gradient can stay a strided view; 3822 stores `grad.contiguous()`.
+  The comment commits us to closing 3822 if #3578 lands, and offers that detail.
+- **[#3012](https://github.com/huggingface/candle/pull/3012)** (`tymat`, 2025-06-28, for issue 3011) is a fourth
+  `layer_norm` gradient fix, absent from the cluster map. It routes `ops::layer_norm`
+  through the slow composed path, giving up the fused kernel rather than adding a
+  backward to it.
+
+The lesson for the next filing: search open PRs by the *file* the change touches
+(`backprop.rs`), not only by the symptom. 3578's title names neither "accumulate"
+nor "first gradient". Nothing left to do here until a maintainer answers.
 
 ## When something lands
 

@@ -9,6 +9,11 @@ byte-identical between main and 0.11.0, so the same commit validates on both). P
 filing time: fmt clean, clippy zero findings, candle-core 171/171, stock candle-nn 58/58
 against the patched core.
 
+**Prior art missed at filing (found 2026-10-01):** [candle#3578](https://github.com/huggingface/candle/pull/3578) by
+`TeunVerstraaten`, opened 2026-06-04, makes the same change in the same file. Our
+triage comment [comment-5926788462](https://github.com/huggingface/candle/pull/3823#issuecomment-5926788462) proposes landing #3578 and closing this one. Details in
+[README.md](README.md#what-happened-checked-2026-10-01).
+
 ## What this changes
 
 `Tensor::backward` accumulates gradients through `GradStore::or_insert`, which initializes every
