@@ -293,9 +293,16 @@ impl OthelloBlock {
 
         // CONTIGUOUS: transpose produces non-unit strides; matmul requires contiguous layout
         let k_t = k.contiguous()?.transpose(2, 3)?;
-        // CONTIGUOUS: transpose produces non-unit strides; matmul requires contiguous layout
-        let q = q.contiguous()?;
-        let mut scores = (q.matmul(&k_t)? * self.scale)?;
+        // THE SCALE IS FOLDED INTO Q (2026-10-02, canvas speed map). `(q·kᵀ)·s` and `(q·s)·kᵀ`
+        // are the same scores; the first scales the `[batch, heads, seq, seq]` product, the second
+        // the `[batch, heads, seq, head_dim]` query — at seq 240 / head_dim 64 that is 3.75x fewer
+        // elements, forward and backward (measured 7.1 ms/step of the canvas trainer's 175 on a
+        // 5060 Ti). The affine also writes a contiguous tensor, so it replaces the copy the
+        // transposed `q` needed for the matmul. `AttnQ` is still captured BEFORE scaling and
+        // `AttnScores` still holds the post-scale scores, so every hook reads what it read before.
+        // The result differs from the old order only by fp rounding.
+        let q = (q * self.scale)?;
+        let mut scores = q.matmul(&k_t)?;
         if self.causal {
             let mask =
                 crate::util::masks::create_causal_mask(seq_len, scores.device(), scores.dtype())?;
