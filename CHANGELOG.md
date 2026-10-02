@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **`anamnesis` bumped `^0.7.7` → `^0.7.8`**, keeping the lockstep with
+  `hf-fetch-model`'s own anamnesis requirement that `Cargo.toml` documents
+  (`hf-fetch-model`'s pending 0.12.2 moves its floor to `^0.7.8`; both are
+  caret ranges over the same 0.7 line, so cargo resolves one `0.7.8` copy and
+  the `windows-sys`-style duplicate hazard stays closed, verified as a single
+  `anamnesis` entry in `Cargo.lock`). Upstream is a hardening release, and
+  candle-mi calls only `parse`, `parse_npz`, `parse_pth` and `inspect_npz`
+  (plus `AnamnesisError` and `TargetDtype`), never `remember` or `convert`, so
+  the duplicate-tensor-name rejections on the *write* paths, the cancelled-run
+  guarantee and the `"gptq_bits": "0"` divide-by-zero are all inert here. What
+  does land, across the three lanes that enable anamnesis:
+  - **`sae`** — a `.npz` archive that repeats an array name is now rejected
+    with `AnamnesisError::Parse` by both `parse_npz` and `inspect_npz`, where
+    before one kept the last copy and the other listed both, so the two could
+    describe different archives. A shape with a zero dimension after an
+    overflowing one now counts as empty rather than `usize::MAX` elements.
+  - **`stoicheia`** — a `.pth` archive that repeats `data.pkl` or `byteorder`
+    is likewise rejected instead of silently resolved, and `.pth` parse errors
+    no longer format the offending pickle value with `{:?}`: a 64 MiB
+    `BINBYTES` payload within every cap used to become a roughly 320 MiB error
+    string, allocated outside the parse limits. Messages now name the value's
+    kind and length and quote at most 48 characters.
+  - **`quantized`** — `dequantize_bnb4_double_quant` now rejects a weight
+    buffer of the wrong length. A short one was already caught downstream, but
+    an over-long one decoded without error with its tail silently ignored, on
+    the `NF4` path this lane reaches through `parse` with a `TargetDtype`.
+  - **All three** — upstream now states the `AnamnesisError::Parse` versus
+    `Io` split as a contract, and fixed three sites that broke it, among them
+    `.npz` entry reads, which mapped *every* failure to `Parse`, disk errors
+    included. Because [`src/error.rs`](src/error.rs)'s
+    `From<AnamnesisError> for MIError` maps `Parse` to `MIError::Config` and
+    `Io` to `MIError::Io`, **a genuine read failure on a `.npz` file now
+    surfaces as `MIError::Io` where it previously surfaced as
+    `MIError::Config`**: the correct variant, arriving for free, but a visible
+    change for anything matching on it. `.npz` `Parse` messages also reword
+    from `… read failed: …` to `failed to decode …: …`.
+
+- **`hypomnesis` bumped `^0.2.9` → `^0.2.12`.** The floor moves for a
+  correctness fix in the `dxgi` path this crate enables: through 0.2.11 the
+  per-index `DXGI` lookups (`query`, `adapter_name`, `adapter_luid`,
+  `adapter_dedicated_video_memory`) aborted the whole adapter walk whenever an
+  adapter earlier in the raw enumeration order failed its `IDXGIAdapter` cast
+  or `GetDesc`, so an iGPU with a half-installed driver sitting ahead of a
+  healthy NVIDIA card silently lost that card's reading. 0.2.12 skips the bad
+  adapter and keeps walking, as 0.2.10 had already done for two other walks.
+  This reaches candle-mi directly: `hypomnesis::Snapshot` calls
+  `gpu::device_info` and `gpu::device_count`, and `device_info` is one of the
+  four walks that were still broken. The rest of 0.2.12 is upstream's
+  duplicate-code audit remediation, verified behaviour-preserving there, plus
+  `hmn watch --filter` / `--min` and the `hmn` binary split, which this
+  crate's `default-features = false` pin never compiles. `Snapshot::ram_mb`
+  becoming a `const fn` is additive, and the `MemoryReport` `MB`-means-`MiB`
+  clarification is documentation upstream kept deliberately for candle-mi
+  parity, so no names or output change here.
+
 ### Security
 
 - **Release pipeline hardened against registry-token theft**, the root cause
