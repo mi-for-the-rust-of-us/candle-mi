@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **`OthelloGpt` attention folds the `1/√d` scale into Q before `QKᵀ`**
+  (`src/diffusion/othello.rs`). `(q·s)·kᵀ` instead of `(q·kᵀ)·s`: the scale now
+  runs on the `[batch, heads, seq, head_dim]` query rather than the
+  `[batch, heads, seq, seq]` scores — 3.75× fewer elements at seq 240 /
+  head_dim 64, forward and backward — and writes a contiguous `q`, replacing
+  the copy the transposed query needed before the matmul. Measured downstream
+  on the canvas trainer (RTX 5060 Ti, batch 64): **175 → 168 ms/step**.
+  **Outputs differ from 0.2.1 by floating-point rounding only**; hook semantics
+  are unchanged (`AttnQ` is still captured before scaling, `AttnScores` still
+  holds the post-scale scores). Whole-loop parity against the PyTorch oracle,
+  changed in step, holds at a worst step of 1.56e-7 with step 0 bit-identical.
+
 - **`anamnesis` bumped `^0.7.7` → `^0.7.8`**, keeping the lockstep with
   `hf-fetch-model`'s own anamnesis requirement that `Cargo.toml` documents
   (`hf-fetch-model`'s pending 0.12.2 moves its floor to `^0.7.8`; both are
