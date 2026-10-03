@@ -22,7 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   floating-point rounding only (online softmax). Measured downstream on the
   canvas trainer (RTX 5090, batch 128, same box, alternated rounds): **87 →
   75 ms/step** against the composed attention (candle-fused-attn's
-  `bench/results/2026-10-03-rtx5090-trainer-ab.md`).
+  `bench/results/2026-10-03-rtx5090-trainer-ab.md`). Checked against the
+  PyTorch fixtures of the Othello world model by the new `othello-fused` entry
+  of `scripts/resurrect.ps1`: logits max-abs-diff 3.1e-5 on CUDA, where the
+  composed attention gives 3.4e-5 (RTX 5060 Ti); a CI lane runs its routing
+  and fused-vs-composed tests.
 
 ### Changed
 

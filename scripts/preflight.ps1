@@ -113,6 +113,7 @@ $lanes = @(
     @{ Id = 'sae';          Features = 'sae,transformer' }
     @{ Id = 'mmap';         Features = 'mmap,transformer' }
     @{ Id = 'diffusion';    Features = 'diffusion' }
+    @{ Id = 'fused-attn';   Features = 'diffusion,fused-attn' }
     @{ Id = 'memory';       Features = 'memory' }
     @{ Id = 'memory-debug'; Features = 'memory-debug' }
     @{ Id = 'training';     Features = 'training' }
@@ -238,6 +239,13 @@ function Invoke-Lanes {
         @("build", "--no-default-features", "--features", "diffusion", "--examples") -Lane 'diffusion'
     Invoke-Cargo "[$Tc] Tests (Diffusion)" $Tc `
         @("test", "--no-default-features", "--features", "diffusion", "--lib", "--test", "validate_mdlm_forward", "--test", "validate_othello_forward", "--test", "validate_patch_at") -Lane 'diffusion'
+
+    # `fused-attn` (default-off) routes OthelloGpt's attention through candle-fused-attn: only a
+    # lane with it on compiles that path and runs its routing and fused-vs-composed unit tests (CPU:
+    # candle-fused-attn's composed reference). The CUDA kernels against the fixtures: resurrect.ps1's
+    # `othello-fused` entry.
+    Invoke-Cargo "[$Tc] Tests (Diffusion + fused-attn)" $Tc `
+        @("test", "--no-default-features", "--features", "diffusion,fused-attn", "--lib", "--test", "validate_othello_forward") -Lane 'fused-attn'
 
     # validate_bidirectional_sampler needs transformer + diffusion together; no
     # single-feature lane builds it, so compile-check it explicitly.

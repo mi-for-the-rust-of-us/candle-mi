@@ -1632,4 +1632,96 @@ mod tests {
                 .self_conditioning
         );
     }
+
+    /// `fused-attn` routing: the fused region hides Q, K, V, the scores and the pattern, so a
+    /// capture or an intervention at any of those hooks keeps THAT layer on the composed path; a
+    /// hook outside the attention, or another layer's hook, does not; and only f32 is fused.
+    #[cfg(feature = "fused-attn")]
+    #[test]
+    fn fused_attention_routing_follows_the_hooks() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_config(), &varmap, &dev, 7).unwrap();
+        let block = &model.blocks[0];
+        // [batch, seq, 3 * hidden] for tiny_config's hidden 8.
+        let qkv = Tensor::zeros((1, 3, 24), DType::F32, &dev).unwrap();
+
+        assert!(block.fused_attention_applies(&qkv, 0, &HookSpec::new()));
+        let mut outside = HookSpec::new();
+        outside.capture(HookPoint::ResidPost(0));
+        assert!(block.fused_attention_applies(&qkv, 0, &outside));
+
+        for inside in [
+            HookPoint::AttnQ(0),
+            HookPoint::AttnK(0),
+            HookPoint::AttnV(0),
+            HookPoint::AttnScores(0),
+            HookPoint::AttnPattern(0),
+        ] {
+            let mut captured = HookSpec::new();
+            captured.capture(inside.clone());
+            assert!(
+                !block.fused_attention_applies(&qkv, 0, &captured),
+                "a capture at {inside:?} must keep layer 0 composed"
+            );
+            assert!(
+                block.fused_attention_applies(&qkv, 1, &captured),
+                "a capture at {inside:?} must not affect layer 1"
+            );
+            let mut intervened = HookSpec::new();
+            intervened.intervene(
+                inside.clone(),
+                crate::hooks::Intervention::Add(Tensor::zeros(1, DType::F32, &dev).unwrap()),
+            );
+            assert!(
+                !block.fused_attention_applies(&qkv, 0, &intervened),
+                "an intervention at {inside:?} must keep layer 0 composed"
+            );
+        }
+
+        let qkv_f64 = qkv.to_dtype(DType::F64).unwrap();
+        assert!(!block.fused_attention_applies(&qkv_f64, 0, &HookSpec::new()));
+    }
+
+    /// `fused-attn` numerics: the same seeded model and input, with no hook (every layer fused)
+    /// and with every layer's pattern captured (every layer composed). On the CPU, candle-fused-attn
+    /// runs its composed reference, so the two differ only by operation order; the bar is relative
+    /// to the logits' own scale, so a tiny-weight model cannot pass it trivially.
+    #[cfg(feature = "fused-attn")]
+    #[test]
+    fn fused_attention_matches_the_composed_path() {
+        let dev = Device::Cpu;
+        let varmap = VarMap::new();
+        let model = OthelloGpt::init(tiny_config(), &varmap, &dev, 11).unwrap();
+        let ids = Tensor::new(&[[1u32, 5, 2, 9, 3, 7], [4, 4, 0, 11, 6, 2]], &dev).unwrap();
+
+        let fused = model.forward(&ids, &HookSpec::new()).unwrap();
+        let mut every_pattern = HookSpec::new();
+        for layer in 0..model.num_layers() {
+            every_pattern.capture(HookPoint::AttnPattern(layer));
+        }
+        let composed = model.forward(&ids, &every_pattern).unwrap();
+        // The second run did take the composed path: it holds every layer's pattern.
+        for layer in 0..model.num_layers() {
+            composed.require(&HookPoint::AttnPattern(layer)).unwrap();
+        }
+
+        let max_abs = |t: &Tensor| -> f32 {
+            t.abs()
+                .unwrap()
+                .flatten_all()
+                .unwrap()
+                .max(0)
+                .unwrap()
+                .to_scalar()
+                .unwrap()
+        };
+        let scale = max_abs(composed.output());
+        let diff = max_abs(&(fused.output() - composed.output()).unwrap());
+        assert!(scale > 0.0, "degenerate logits");
+        assert!(
+            diff <= 1e-5 * scale,
+            "fused vs composed logits: max-abs-diff {diff:.2e} against a scale of {scale:.2e}"
+        );
+    }
 }

@@ -139,6 +139,12 @@ $entries = @(
     # Appended last on purpose: inserting anywhere above renumbers every entry
     # after it, and the numbers are what `-Only <n>` takes.
     @{ Id = 'patchat'; Name = 'patch_at (CUDA offset-view guard)'; Features = 'diffusion';             Tests = @('validate_patch_at');                              Device = 'GPU';     Models = '(none - OthelloGpt::init from a seed)'; Quick = $true; Lib = $true; Filter = 'cuda_patch' }
+    # The Othello oracle again, with `fused-attn`: no hook inside the attention is captured, so every
+    # layer takes candle-fused-attn's path -- its CUDA kernels on the GPU half, its composed
+    # reference on the CPU half -- against the same PyTorch fixtures. The test asserts head_dim 64
+    # on CUDA, so a silent fallback to the composed attention cannot pass as coverage. Appended
+    # last, as the note above asks.
+    @{ Id = 'othello-fused'; Name = 'othello (fused-attn)';  Features = 'diffusion,fused-attn';        Tests = @('validate_othello_forward');                       Device = 'CPU+GPU'; Models = 'Othello fixtures (OTHELLO_MDLM_FIXTURES)' }
 )
 
 # --- Read prior per-entry state back out of RESURRECTION.md (Name -> {Date, Wall, Outcome}) ---

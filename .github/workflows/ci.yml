@@ -146,6 +146,16 @@ jobs:
       - name: Tests (Diffusion)
         run: cargo test --locked --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward --test validate_patch_at
 
+      # `fused-attn` (default-off) routes OthelloGpt's attention through candle-fused-attn. No other
+      # lane compiles that path; this one also runs its routing and fused-vs-composed unit tests (on
+      # CPU, candle-fused-attn's composed reference). The CUDA kernels are checked against the
+      # PyTorch fixtures by scripts/resurrect.ps1's `othello-fused` entry, locally.
+      - name: Clippy (Diffusion + fused-attn, pedantic)
+        run: cargo clippy --locked --all-targets --no-default-features --features "diffusion,fused-attn" -- -W clippy::pedantic
+
+      - name: Tests (Diffusion + fused-attn)
+        run: cargo test --locked --no-default-features --features "diffusion,fused-attn" --lib --test validate_othello_forward
+
       # validate_bidirectional_sampler needs `transformer` + `diffusion`; and
       # validate_bidirectional_forward (a2d-qwen2 bidirectional attention parity)
       # had zero CI presence. Both are #[ignore], so compile-check them here.
@@ -212,7 +222,7 @@ jobs:
           set -e
           for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" \
                    "quantized,transformer" "sae,transformer" "mmap,transformer" \
-                   "diffusion" "memory" "memory-debug" "training" \
+                   "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" \
                    "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training"; do
             echo "::group::cargo doc --features '$f'"
             cargo doc --locked --no-default-features ${f:+--features "$f"} --no-deps

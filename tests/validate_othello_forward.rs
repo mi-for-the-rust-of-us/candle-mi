@@ -123,6 +123,19 @@ fn run_othello_parity(dir: &std::path::Path, device: &Device, device_name: &str,
     );
     println!("  abs-diff bar = {bar:.0e}");
 
+    // With `fused-attn`, every layer takes the fused path here (only `ResidPost` is captured,
+    // outside the attention). On CUDA that path needs head_dim 64: fail rather than let a layer
+    // fall back to the composed attention, which would leave the kernels unchecked by this oracle.
+    #[cfg(feature = "fused-attn")]
+    {
+        let head_dim = n_embd / N_HEAD;
+        assert!(
+            device.is_cpu() || head_dim == candle_fused_attn::CUDA_HEAD_DIM,
+            "head_dim {head_dim}: the fused CUDA path would not apply"
+        );
+        println!("  attention: fused (candle-fused-attn), head_dim {head_dim}");
+    }
+
     // --- Load the model from the verbatim-keyed weights. ---
     let config = OthelloGptConfig::new(vocab, seq_len, n_layer, N_HEAD, n_embd, false).unwrap();
     let weights = dir.join("weights.safetensors");

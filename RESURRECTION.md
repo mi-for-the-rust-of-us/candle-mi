@@ -32,8 +32,8 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-09-22 15:30 — tier **partial (1 of 22: gemma)**
-- **Toolchain:** rustc 1.98.1 (48a229cea 2026-09-01)
+- **Last run:** 2026-10-03 16:03 — tier **partial (1 of 23: othello-fused)**
+- **Toolchain:** rustc 1.99.0 (b940084d7 2026-09-28)
 - **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
 | Test | Models | Device(s) | Last verified | Wall-clock | Peak spill | Outcome |
@@ -60,3 +60,4 @@ pass `-SpillProbe` to sample every entry.
 | rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-09-21 | 4m11s | — | ✅ PASS |
 | anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | 2026-09-21 | 11m37s ⚠️ | none | ✅ PASS |
 | patch_at (CUDA offset-view guard) | (none - OthelloGpt::init from a seed) | GPU | 2026-09-21 | 1m37s | — | ✅ PASS |
+| othello (fused-attn) | Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-10-03 | 89.6s | — | ✅ PASS |
