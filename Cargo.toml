@@ -101,7 +101,16 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 # `default-features = false` means 0.2.8's `cli`-becomes-default change is inert
 # here. No lockstep constraint applies: unlike anamnesis below, no hypomnesis
 # type crosses between candle-mi's and hf-fetch-model's public APIs.
-hypomnesis = { version = "0.2.9", optional = true, default-features = false, features = [
+# Floor moved 0.2.9 -> 0.2.12 for a correctness fix in the `dxgi` path this
+# crate enables: through 0.2.11, the per-index DXGI lookups (`query`,
+# `adapter_name`, `adapter_luid`, `adapter_dedicated_video_memory`) aborted the
+# whole adapter walk when any adapter earlier in the raw enumeration order
+# failed its `IDXGIAdapter` cast or `GetDesc`, so an iGPU with a half-installed
+# driver ahead of a healthy NVIDIA card silently lost that card's reading.
+# 0.2.12 skips the bad adapter and keeps walking, as 0.2.10 had already done
+# for two other walks. `hmn watch --filter`/`--min` and the 0.2.12 `hmn` split
+# are CLI surface this `default-features = false` pin never compiles.
+hypomnesis = { version = "0.2.12", optional = true, default-features = false, features = [
     "nvml",
     "dxgi",
     "nvidia-smi-fallback",
@@ -112,12 +121,17 @@ hypomnesis = { version = "0.2.9", optional = true, default-features = false, fea
 # - sae feature activates "npz" (Gemma Scope SAE weights)
 # - stoicheia feature activates "pth" (AlgZoo .pth agnostic loading)
 # - quantized feature activates "bnb"/"awq"/"gptq" (dequant-to-BF16 weight loading)
-# Kept in lockstep with hf-fetch-model's own anamnesis requirement (^0.7.7
-# as of hf-fetch-model 0.12.0) so cargo resolves a single anamnesis copy
-# across the tree rather than two semver-incompatible ones (same hazard as
-# the v0.1.18 windows-sys dedup). Bump this alongside any future
-# hf-fetch-model release that moves its own anamnesis floor.
-anamnesis = { version = "0.7.7", optional = true }
+# Kept in lockstep with hf-fetch-model's own anamnesis requirement so cargo
+# resolves a single anamnesis copy across the tree rather than two
+# semver-incompatible ones (same hazard as the v0.1.18 windows-sys dedup).
+# Bump this alongside any future hf-fetch-model release that moves its own
+# anamnesis floor. Moved ^0.7.7 -> ^0.7.8 for hf-fetch-model's pending 0.12.2,
+# which moves its own floor to ^0.7.8; the `hf-fetch-model` pin above still
+# reads 0.12.1 until that release is published and adopted. Both requirements
+# are caret ranges over the same 0.7 line, so cargo resolves one 0.7.8 copy
+# either way, and this floor being briefly ahead of the released
+# hf-fetch-model's costs nothing.
+anamnesis = { version = "0.7.8", optional = true }
 
 [dev-dependencies]
 clap = { version = "4", features = ["derive"] }
