@@ -38,6 +38,10 @@ exclude = [
 # Candle ML framework (pinned to 0.11.x per design/candle-version.md)
 candle-core = "0.11"
 candle-nn = "0.11"
+# The fused fp32 attention, forward + backward with a bit-reproducible backward, of
+# candle-fused-attn (same organisation, stock candle 0.11). Behind the `fused-attn` feature; see
+# `OthelloGpt::attention`.
+candle-fused-attn = { version = "0.2", optional = true }
 
 # HuggingFace integration.
 # Pinned to `0.22` to match candle-core 0.11's own `tokenizers` dependency — a
@@ -456,7 +460,7 @@ required-features = ["stoicheia"]
 # feature to select the loading mode. See README.md `## Requirements` for the
 # user-facing version of this note.
 default = ["cuda", "transformer"]
-cuda = ["candle-core/cuda", "candle-nn/cuda"]
+cuda = ["candle-core/cuda", "candle-nn/cuda", "candle-fused-attn?/cuda"]
 metal = ["candle-core/metal", "candle-nn/metal"]
 transformer = []
 mmap = []
@@ -480,6 +484,10 @@ memory-debug = ["memory", "hypomnesis/debug-output"]
 # candle-mi still ships no training loop, schedule or data loader — those are
 # experiment-shaped and stay with the caller.
 training = []
+# Route the diffusion OthelloGpt's attention through candle-fused-attn whenever no
+# attention-internal hook is requested at that layer (hooked layers keep the composed path).
+# With `cuda`, the fused kernels; without, candle-fused-attn's composed CPU reference.
+fused-attn = ["dep:candle-fused-attn"]
 
 [lints.rust]
 # unsafe_code is controlled via cfg_attr in lib.rs (forbid by default, deny with mmap/memory)

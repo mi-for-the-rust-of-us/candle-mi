@@ -363,6 +363,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "candle-fused-attn"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72757425748fe701abf14ad5fb4fe7ea1cf66b8c64f093d9f1fc7884e1ac040c"
+dependencies = [
+ "candle-core",
+ "cudaforge",
+]
+
+[[package]]
 name = "candle-kernels"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -394,6 +404,7 @@ dependencies = [
  "anamnesis",
  "anyhow",
  "candle-core",
+ "candle-fused-attn",
  "candle-nn",
  "clap",
  "hf-fetch-model",

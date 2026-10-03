@@ -272,6 +272,22 @@ impl OthelloBlock {
         let hidden = self.hidden_dim;
 
         let qkv = self.qkv.forward(xs)?;
+
+        // FUSED PATH (feature `fused-attn`): straight from the qkv projection to the
+        // merged heads, forward and backward, in one candle-fused-attn op -- no [b, h, s, s]
+        // tensor, no head split/merge, one interleaved qkv gradient. Taken only when nothing
+        // inside the attention is hooked at this layer (the fused region hides Q, K, V, the
+        // scores and the pattern), so every hook still sees the composed path below.
+        #[cfg(feature = "fused-attn")]
+        if self.fused_attention_applies(&qkv, layer_idx, hooks) {
+            // CAST: f64 → f32, the scale is 1/√head_dim, well inside f32
+            #[allow(clippy::cast_possible_truncation, clippy::as_conversions)]
+            let scale = self.scale as f32;
+            let attn =
+                candle_fused_attn::fused_attention_qkv(&qkv, self.n_heads, scale, self.causal)?;
+            return Ok(self.proj.forward(&attn)?);
+        }
+
         let q = qkv.narrow(D::Minus1, 0, hidden)?;
         let k = qkv.narrow(D::Minus1, hidden, hidden)?;
         let v = qkv.narrow(D::Minus1, 2 * hidden, hidden)?;
@@ -330,6 +346,25 @@ impl OthelloBlock {
             .reshape((batch, seq_len, hidden))?;
 
         Ok(self.proj.forward(&attn)?)
+    }
+
+    /// Whether [`Self::attention`] may take the fused path: f32, a head dimension the CUDA
+    /// kernels take (any on CPU), and no capture or intervention at any hook inside the fused
+    /// region (`AttnQ`, `AttnK`, `AttnV`, `AttnScores`, `AttnPattern`) of this layer.
+    #[cfg(feature = "fused-attn")]
+    fn fused_attention_applies(&self, qkv: &Tensor, layer_idx: usize, hooks: &HookSpec) -> bool {
+        let inside = [
+            HookPoint::AttnQ(layer_idx),
+            HookPoint::AttnK(layer_idx),
+            HookPoint::AttnV(layer_idx),
+            HookPoint::AttnScores(layer_idx),
+            HookPoint::AttnPattern(layer_idx),
+        ];
+        qkv.dtype() == DType::F32
+            && (qkv.device().is_cpu() || self.head_dim == candle_fused_attn::CUDA_HEAD_DIM)
+            && inside
+                .iter()
+                .all(|p| !hooks.is_captured(p) && !hooks.has_intervention_at(p))
     }
 
     /// Exact-`GELU` MLP: `proj(gelu_erf(fc(x)))`.

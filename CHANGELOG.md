@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`fused-attn` feature: `OthelloGpt`'s attention through
+  [candle-fused-attn](https://crates.io/crates/candle-fused-attn) 0.2**
+  (`src/diffusion/othello.rs`). Opt-in. At a layer where no hook inside the
+  attention (`AttnQ`, `AttnK`, `AttnV`, `AttnScores`, `AttnPattern`) is
+  captured or intervened on, and the tensors are f32 with `head_dim` 64 on
+  CUDA (any on CPU), the layer goes from the fused qkv projection to the
+  merged heads in one op, forward and backward: no `[batch, heads, seq, seq]`
+  tensor, no head split or merge, one interleaved qkv gradient, and on CUDA a
+  bit-reproducible backward. A hooked layer keeps the composed path, so every
+  hook sees what it saw before. Outputs differ from the composed path by
+  floating-point rounding only (online softmax). Measured downstream on the
+  canvas trainer (RTX 5090, batch 128, same box, alternated rounds): **87 →
+  75 ms/step** against the composed attention (candle-fused-attn's
+  `bench/results/2026-10-03-rtx5090-trainer-ab.md`).
+
 ### Changed
 
 - **`OthelloGpt` attention folds the `1/√d` scale into Q before `QKᵀ`**
