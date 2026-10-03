@@ -306,6 +306,6 @@ mod tests {
     #[test]
     fn top_predictions_empty() {
         let analysis = LogitLensAnalysis::new("test".to_string(), 0);
-        assert!(analysis.top_predictions().is_empty());
+        assert_eq!(analysis.top_predictions(), Vec::<(&str, f32)>::new());
     }
 }

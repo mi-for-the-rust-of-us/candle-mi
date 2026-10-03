@@ -2394,7 +2394,10 @@ mod tests {
     #[test]
     fn audit_config_coverage_clean_when_all_consumed() {
         // The minimal llama config uses only consumed keys → no warnings.
-        assert!(TransformerConfig::audit_config_coverage(&llama_config_json()).is_empty());
+        assert_eq!(
+            TransformerConfig::audit_config_coverage(&llama_config_json()),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
@@ -2408,7 +2411,10 @@ mod tests {
         json["transformers_version"] = serde_json::json!("4.45.0");
         json["mlp_bias"] = serde_json::json!(false);
         json["pretraining_tp"] = serde_json::json!(1);
-        assert!(TransformerConfig::audit_config_coverage(&json).is_empty());
+        assert_eq!(
+            TransformerConfig::audit_config_coverage(&json),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
@@ -2432,7 +2438,10 @@ mod tests {
         // `rope_parameters` is consumed (alias for `rope_scaling`).
         let mut json = llama_config_json();
         json["rope_parameters"] = serde_json::json!({ "rope_type": "llama3" });
-        assert!(TransformerConfig::audit_config_coverage(&json).is_empty());
+        assert_eq!(
+            TransformerConfig::audit_config_coverage(&json),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
@@ -2443,7 +2452,7 @@ mod tests {
         json["mystery_scheme"] = serde_json::json!("on");
         let report = TransformerConfig::check_config_fields(&json);
         assert!(report.compatible);
-        assert!(report.issues.is_empty());
+        assert_eq!(report.issues, Vec::<String>::new());
         assert_eq!(report.warnings.len(), 1);
         assert!(report.warnings.iter().any(|w| w.contains("mystery_scheme")));
     }

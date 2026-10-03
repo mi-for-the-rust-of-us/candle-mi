@@ -3287,7 +3287,7 @@ mod tests {
         assert_eq!(graph.target_layer(), 5);
         assert!(graph.is_empty());
         assert_eq!(graph.len(), 0);
-        assert!(graph.features().is_empty());
+        assert_eq!(graph.features(), Vec::<CltFeatureId>::new());
         assert!(graph.into_edges().is_empty());
     }
 
