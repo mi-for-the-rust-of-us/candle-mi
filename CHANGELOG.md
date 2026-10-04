@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **`fused-attn` feature: `OthelloGpt`'s attention through
-  [candle-fused-attn](https://crates.io/crates/candle-fused-attn) 0.2**
+  [candle-fused-attn](https://crates.io/crates/candle-fused-attn) 0.3**
   (`src/diffusion/othello.rs`). Opt-in. At a layer where no hook inside the
   attention (`AttnQ`, `AttnK`, `AttnV`, `AttnScores`, `AttnPattern`) is
   captured or intervened on, and the tensors are f32 with `head_dim` 64 on
@@ -21,8 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   hook sees what it saw before. Outputs differ from the composed path by
   floating-point rounding only (online softmax). Measured downstream on the
   canvas trainer (RTX 5090, batch 128, same box, alternated rounds): **87 →
-  75 ms/step** against the composed attention (candle-fused-attn's
-  `bench/results/2026-10-03-rtx5090-trainer-ab.md`). Checked against the
+  75 ms/step** against the composed attention with candle-fused-attn 0.2.0
+  (its `bench/results/2026-10-03-rtx5090-trainer-ab.md`); 0.3.0, bit-identical
+  to 0.2.0, adds +1.8 % throughput on the same step (its
+  `bench/results/2026-10-04-rtx5090-trainer-ab-v0.2.0-vs-v0.3.md`). Checked against the
   PyTorch fixtures of the Othello world model by the new `othello-fused` entry
   of `scripts/resurrect.ps1`: logits max-abs-diff 3.1e-5 on CUDA, where the
   composed attention gives 3.4e-5 (RTX 5060 Ti); a CI lane runs its routing
