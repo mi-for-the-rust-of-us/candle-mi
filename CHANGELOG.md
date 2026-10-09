@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - **`fused-attn` feature: `OthelloGpt`'s attention through
-  [candle-fused-attn](https://crates.io/crates/candle-fused-attn) 0.3**
+  [candle-fused-attn](https://crates.io/crates/candle-fused-attn) 0.4**
   (`src/diffusion/othello.rs`). Opt-in. At a layer where no hook inside the
   attention (`AttnQ`, `AttnK`, `AttnV`, `AttnScores`, `AttnPattern`) is
   captured or intervened on, and the tensors are f32 with `head_dim` 64 on
@@ -24,7 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   75 ms/step** against the composed attention with candle-fused-attn 0.2.0
   (its `bench/results/2026-10-03-rtx5090-trainer-ab.md`); 0.3.0, bit-identical
   to 0.2.0, adds +1.8 % throughput on the same step (its
-  `bench/results/2026-10-04-rtx5090-trainer-ab-v0.2.0-vs-v0.3.md`). Checked against the
+  `bench/results/2026-10-04-rtx5090-trainer-ab-v0.2.0-vs-v0.3.md`). 0.4.0 is bitwise identical in its outputs to
+  0.3.0 with a 5.6-6.9 % faster backward kernel (its CHANGELOG); on the canvas
+  model (6L/384d, the Me10 s0 e80 checkpoint, 64 rows) the logits, the loss and
+  a gradient through every fused layer reproduce 0.3.0's bits exactly (canvas
+  `examples/stack_digest`, RTX 5060 Ti, 2026-10-09). Checked against the
   PyTorch fixtures of the Othello world model by the new `othello-fused` entry
   of `scripts/resurrect.ps1`: logits max-abs-diff 3.1e-5 on CUDA, where the
   composed attention gives 3.4e-5 (RTX 5060 Ti); a CI lane runs its routing
