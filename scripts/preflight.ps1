@@ -2,8 +2,8 @@
 #
 # Mirrors the per-feature lanes in .github/workflows/ci.yml so that a clean run
 # here predicts a clean run on CI; scripts/lane-parity.ps1, which an unfiltered
-# run calls first, fails when the two (or publish.yml, or the docs.rs list) stop
-# agreeing. CI runs a matrix of two toolchains:
+# run calls first, fails when the two (or publish.yml, the docs.rs list, or a
+# feature table) stop agreeing. CI runs a matrix of two toolchains:
 # MSRV (1.91) and stable, each executing fmt + build/clippy/test for the
 # transformer, rwkv, stoicheia, clt and diffusion feature sets, plus bare
 # and all-software-features builds.

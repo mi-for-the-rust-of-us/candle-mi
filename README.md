@@ -241,8 +241,10 @@ This is a research-first design: MI analyses need to see everything, and the per
 | `rwkv` | no | RWKV-6/7 linear RNN backend |
 | `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
 | `diffusion` | no | MDLM masked-diffusion backend (bidirectional DiT; standalone) |
+| `fused-attn` | no | `OthelloGpt`'s attention through [candle-fused-attn](https://crates.io/crates/candle-fused-attn): fused fp32 forward and backward, with a bit-reproducible backward on CUDA, at every layer with no attention-internal hook (use with `diffusion`) |
 | `clt` | no | Cross-Layer Transcoder support |
 | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
+| `quantized` | no | Load quantized checkpoints (bitsandbytes NF4/FP4/INT8, AWQ, GPTQ) by dequantizing to BF16 via `anamnesis` |
 | `stoicheia` | no | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
 | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
 | `memory` | no | RAM/VRAM reporting (delegated to the [`hypomnesis`](https://crates.io/crates/hypomnesis) crate) |

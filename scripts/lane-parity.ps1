@@ -5,8 +5,9 @@
 # [package.metadata.docs.rs] list. Nothing compared them, and they drifted
 # twice: the docs.rs list omitted `training` until v0.1.23, so `optim::AdamW`
 # shipped in 0.1.22 with no docs.rs pages, and the `fused-attn` lane reached
-# ci.yml and preflight but not publish.yml. This script turns that drift into a
-# failure instead of a finding.
+# ci.yml and preflight but not publish.yml. The feature tables in README.md and
+# src/lib.rs (check 4) are two more hand-maintained lists. This script turns
+# that drift into a failure instead of a finding.
 #
 # Checks:
 #   1. publish.yml runs exactly ci.yml's cargo commands, plus its own
@@ -17,6 +18,11 @@
 #      least one ci.yml lane, except those listed in
 #      [package.metadata.lane-parity] `excluded`; the docs.rs list names nothing
 #      else.
+#   4. Every feature except `default` (cargo's own set, not one a user enables)
+#      has a row in the two feature tables, README.md's and the crate docs' in
+#      src/lib.rs (the docs.rs front page), and neither table names anything
+#      else. They had drifted too: 0.2.2 found `fused-attn` in neither,
+#      `quantized` missing from README.md and `training` from src/lib.rs.
 #
 # Commands are compared after normalisation: `--locked` (CI only) is dropped,
 # each `--features` list is sorted, and preflight's trailing
@@ -99,6 +105,34 @@ function Get-TomlStringArray {
     return @([regex]::Matches($m.Groups[1].Value, '"([^"]+)"') | ForEach-Object { $_.Groups[1].Value })
 }
 
+# The backticked first cells of the feature table that follows a
+# `| Feature | Default | ...` header. `Prefix` is what starts every line of the
+# table: nothing in Markdown, `//! ` in a crate doc comment. A missing header is
+# an error, so moving the table cannot silently switch this check off.
+function Get-FeatureTableNames {
+    param([string]$Path, [string]$Prefix)
+
+    $lines = @(Get-Content -LiteralPath $Path)
+    $start = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].StartsWith($Prefix) -and $lines[$i].Substring($Prefix.Length) -match '^\|\s*Feature\s*\|\s*Default\s*\|') {
+            $start = $i
+            break
+        }
+    }
+    if ($start -lt 0) { throw "$Path has no '| Feature | Default |' table; if it moved, update scripts/lane-parity.ps1" }
+
+    $names = [System.Collections.Generic.List[string]]::new()
+    # Rows end at the first line that is not one; +2 skips the separator.
+    for ($i = $start + 2; $i -lt $lines.Count; $i++) {
+        if (-not $lines[$i].StartsWith($Prefix)) { break }
+        $m = [regex]::Match($lines[$i].Substring($Prefix.Length), '^\|\s*`([^`]+)`\s*\|')
+        if (-not $m.Success) { break }
+        $names.Add($m.Groups[1].Value)
+    }
+    return $names
+}
+
 $failures = [System.Collections.Generic.List[string]]::new()
 
 # Record every command one side has and the other lacks (case-sensitive).
@@ -148,6 +182,20 @@ try {
         if ($features -cnotcontains $d) { $failures.Add("docs.rs list names '$d', which is not a feature") }
         elseif ($excluded -ccontains $d) { $failures.Add("docs.rs list names '$d', which lane-parity 'excluded' also names") }
     }
+
+    # Check 4.
+    $tables = [ordered]@{
+        'README.md'  = @(Get-FeatureTableNames (Join-Path $root 'README.md') '')
+        'src/lib.rs' = @(Get-FeatureTableNames (Join-Path $root 'src/lib.rs') '//! ')
+    }
+    foreach ($t in $tables.GetEnumerator()) {
+        foreach ($f in $features) {
+            if ($f -ne 'default' -and $t.Value -cnotcontains $f) { $failures.Add("feature '$f' has no row in the $($t.Key) feature table") }
+        }
+        foreach ($n in $t.Value) {
+            if ($features -cnotcontains $n -or $n -eq 'default') { $failures.Add("the $($t.Key) feature table has a row for '$n', which is not a feature") }
+        }
+    }
 }
 catch {
     Write-Host "lane parity: $_" -ForegroundColor Red
@@ -161,6 +209,6 @@ if ($failures.Count -gt 0) {
 }
 
 $summary = "Lane parity OK: ci.yml, publish.yml and preflight.ps1 run the same {0} cargo commands; " +
-"docs.rs and CI cover every feature but {1}."
+"docs.rs and CI cover every feature but {1}; both feature tables list every feature."
 Write-Host ($summary -f ($ci | Sort-Object -Unique).Count, ($excluded -join ', ')) -ForegroundColor Green
 exit 0

@@ -465,7 +465,8 @@ required-features = ["stoicheia"]
 #
 # The escape hatch is a supported, CI-tested configuration, not a workaround:
 #   cargo add candle-mi --no-default-features --features transformer
-# `preflight.ps1` builds and tests 46 such lanes per toolchain.
+# `preflight.ps1` builds and tests every such lane, on both toolchains under
+# `-Ci` (`./scripts/preflight.ps1 -PrintCommands` lists them).
 #
 # Reconsidered 2026-09-21 and kept. Switching `cudarc` to `dynamic-loading` would
 # not help: `candle-kernels` needs `nvcc` regardless, and candle-core exposes no

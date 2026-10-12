@@ -48,9 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   missing from the docs.rs list or from every CI lane without being listed in
   the new `[package.metadata.lane-parity]` exclusions. Those are `default`,
   `cuda` and `metal`, the features neither docs.rs nor the CI runners can
-  build. Its first run found the two gaps under Fixed below, and three
-  `ci.yml` builds preflight never ran (`sae`, `mmap`, `memory-debug`), now
-  added.
+  build. It also holds the two feature tables, in `README.md` and in the crate
+  docs, to one row per feature (all but `default`). Its first runs found the
+  gaps under Fixed below, and three `ci.yml` builds preflight never ran
+  (`sae`, `mmap`, `memory-debug`), now added.
 
 ### Changed
 
@@ -206,6 +207,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   docs.rs can build, so it no longer depends on judging which features gate
   public items, the call that left `optim::AdamW`, `fold_ema` and `FoldPath`
   without docs.rs pages in 0.1.22.
+- **The feature tables list every feature.** Neither the `README.md` table
+  nor the crate docs' (the docs.rs front page) had a row for `fused-attn`;
+  the README's also lacked `quantized`, and the crate docs' lacked
+  `training`.
 - **`scripts/resurrect.ps1` no longer lets the Othello oracles skip inside a
   green run.** With `OTHELLO_MDLM_FIXTURES` unset, their tests print `SKIP`
   and pass, and the run still exited 0; that is how the first oracle run for

@@ -167,9 +167,9 @@ the workflows**, and it is now checked mechanically. `scripts/lane-parity.ps1`,
 run first by every unfiltered `preflight.ps1` and by `ci.yml`'s `lanes` job,
 fails when `ci.yml`, `publish.yml` and `preflight.ps1` do not run the same cargo
 commands, or when a feature is missing from the docs.rs list or from every CI
-lane without being excluded in `Cargo.toml`'s `[package.metadata.lane-parity]`
-(candle-mi#2). If it fails, fix the file it names; this one holds nothing to
-update.
+lane without being excluded in `Cargo.toml`'s `[package.metadata.lane-parity]`,
+or from the feature table in `README.md` or `src/lib.rs` (candle-mi#2). If it
+fails, fix the file it names; this one holds nothing to update.
 
 ## Alternative: `act`
 

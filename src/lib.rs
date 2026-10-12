@@ -49,6 +49,7 @@
 //! | `rwkv` | no | RWKV-6/7 linear RNN backend |
 //! | `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
 //! | `diffusion` | no | MDLM masked-diffusion backend (bidirectional `DiT`; standalone) |
+//! | `fused-attn` | no | `OthelloGpt`'s attention through the `candle-fused-attn` crate: fused `F32` forward and backward, with a bit-reproducible backward on CUDA, at every layer with no attention-internal hook (use with `diffusion`) |
 //! | `clt` | no | Cross-Layer Transcoder support |
 //! | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
 //! | `quantized` | no | Load quantized checkpoints (bitsandbytes `NF4`/`FP4`/`INT8`, `AWQ`, `GPTQ`) by dequantizing to `BF16` via `anamnesis` |
@@ -56,6 +57,7 @@
 //! | `memory` | no | RAM/VRAM reporting (delegated to the `hypomnesis` crate) |
 //! | `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |
 //! | `stoicheia` | no | `AlgZoo` tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
+//! | `training` | no | Checkpointable `AdamW` (`optim::AdamW`) so a run staged across processes resumes with its moments and step counter intact; still no training loop, schedule or data loader |
 //! | `metal` | no | Apple Metal GPU acceleration |
 //!
 //! ## Quick start

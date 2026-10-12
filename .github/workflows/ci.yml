@@ -239,7 +239,8 @@ jobs:
         run: cargo build --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
 
   # The lane list is hand-maintained in four places (this file, publish.yml,
-  # scripts/preflight.ps1 and Cargo.toml's docs.rs list) and drifted twice
+  # scripts/preflight.ps1 and Cargo.toml's docs.rs list), the feature list in
+  # two more (the README.md and src/lib.rs feature tables), and both drifted
   # (candle-mi#2). This job fails when they disagree; it runs no cargo command,
   # so it needs no toolchain. See scripts/lane-parity.ps1.
   lanes:
