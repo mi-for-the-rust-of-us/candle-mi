@@ -30,9 +30,16 @@
 #   -Skip <tokens>  drop these from whatever the tier or -Only chose.
 #                   `-Skip longrope` is the usual one: that entry alone is ~15 of
 #                   the ~44 min default tier, so skipping it gives ~28 min.
-#   Any selector makes the run PARTIAL, and it stamps "partial (N of 21: ...)"
-#   rather than a tier name — a three-entry run must never later read as full
-#   coverage.
+#   Any selector makes the run PARTIAL, and it stamps "partial (N of <all
+#   entries>: ...)" rather than a tier name: a three-entry run must never later
+#   read as full coverage.
+#
+# Fixtures: entries with a `Fixtures` field read a fixture directory named by an
+#   environment variable (the Othello entries: OTHELLO_MDLM_FIXTURES). Unset, it
+#   defaults to the askesis sibling repo's copy when that holds the files; when
+#   neither does, the run stops before compiling instead of letting the oracle
+#   SKIP inside a green run. A SKIP from such an entry after its fixtures
+#   resolved counts as FAIL.
 #
 # Read-only:
 #   -Status   print how stale the suite is (oldest entry, entries past the
@@ -103,6 +110,20 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $mdPath = Join-Path $repoRoot 'RESURRECTION.md'
 
+# Fixture directories that some entries read through an environment variable.
+# Unset, their tests print SKIP and pass, so an oracle could drop out of a run
+# that still ended green: on 2026-10-12 the OthelloGpt scale-fold check did,
+# and only the per-entry line said so. Before anything runs, every set a
+# selected entry needs is resolved: the variable if it is set, otherwise
+# `Default` if that directory holds `Files`; failing both, the run stops.
+$fixtureSets = @{
+    OTHELLO_MDLM_FIXTURES = @{
+        # The askesis sibling repo, where the fixtures are generated (git-ignored there).
+        Default = Join-Path (Split-Path -Parent $repoRoot) 'askesis/reference/data/fixtures/othello_mdlm'
+        Files   = @('weights.safetensors', 'forward_capture.safetensors')
+    }
+}
+
 # Canonical entry list. `Features` are ADDED to the default set (cuda,transformer).
 # Quick=$true -> included in -Quick; FullOnly=$true -> only in -Full;
 # SlowSkip -> a `--skip <pat>` applied in the default tier (dropped in -Full).
@@ -129,7 +150,7 @@ $entries = @(
     # log records the measured spill instead of inferring it from wall-clock.
     @{ Id = 'longrope'; Name = 'longrope forward';           Features = 'mmap';                        Tests = @('validate_longrope');                              Device = 'GPU';     Models = 'microsoft/Phi-3.5-mini-instruct (~15 GiB)'; Spill = $true }
     @{ Id = 'bidirectional'; Name = 'bidirectional (a2d-qwen2)';  Features = 'diffusion,mmap';              Tests = @('validate_bidirectional_forward');                 Device = 'CPU+GPU'; Models = 'dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB)' }
-    @{ Id = 'mdlm'; Name = 'mdlm + othello';             Features = 'diffusion,mmap';              Tests = @('validate_mdlm_forward', 'validate_othello_forward'); Device = 'CPU+GPU'; Models = 'TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES)' }
+    @{ Id = 'mdlm'; Name = 'mdlm + othello';             Features = 'diffusion,mmap';              Tests = @('validate_mdlm_forward', 'validate_othello_forward'); Device = 'CPU+GPU'; Models = 'TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES)'; Fixtures = 'OTHELLO_MDLM_FIXTURES' }
     @{ Id = 'quantized'; Name = 'quantized (bnb/AWQ/GPTQ)';   Features = 'quantized,mmap';              Tests = @('validate_quantized_loading');                     Device = 'GPU';     Models = 'medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ' }
     @{ Id = 'clt'; Name = 'clt (encode/inject/sweep)';  Features = 'clt,mmap';                    Tests = @('validate_clt');                                   Device = 'GPU';     Models = 'gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM)' }
     @{ Id = 'sae'; Name = 'sae (encode/inject/parity)'; Features = 'sae,mmap';                    Tests = @('validate_sae');                                   Device = 'GPU';     Models = 'gemma-2-2b + gemma-scope-2b-pt-res' }
@@ -144,7 +165,7 @@ $entries = @(
     # reference on the CPU half -- against the same PyTorch fixtures. The test asserts head_dim 64
     # on CUDA, so a silent fallback to the composed attention cannot pass as coverage. Appended
     # last, as the note above asks.
-    @{ Id = 'othello-fused'; Name = 'othello (fused-attn)';  Features = 'diffusion,fused-attn';        Tests = @('validate_othello_forward');                       Device = 'CPU+GPU'; Models = 'Othello fixtures (OTHELLO_MDLM_FIXTURES)' }
+    @{ Id = 'othello-fused'; Name = 'othello (fused-attn)';  Features = 'diffusion,fused-attn';        Tests = @('validate_othello_forward');                       Device = 'CPU+GPU'; Models = 'Othello fixtures (OTHELLO_MDLM_FIXTURES)'; Fixtures = 'OTHELLO_MDLM_FIXTURES' }
 )
 
 # --- Read prior per-entry state back out of RESURRECTION.md (Name -> {Date, Wall, Outcome}) ---
@@ -355,6 +376,28 @@ try {
             (($selected | ForEach-Object { $_.Id }) -join ', ')
     }
 
+    # Resolve every fixture set the selection needs before compiling anything
+    # (see $fixtureSets). A variable this run defaults is removed again in the
+    # `finally` below, so the caller's shell is left as it was.
+    $defaultedVars = @()
+    $neededVars = @($selected | Where-Object { $_.Fixtures } | ForEach-Object { $_.Fixtures } | Sort-Object -Unique)
+    foreach ($var in $neededVars) {
+        $set = $fixtureSets[$var]
+        $current = [Environment]::GetEnvironmentVariable($var)
+        $dir = if ($current) { $current } else { $set.Default }
+        $missing = @($set.Files | Where-Object { -not (Test-Path -LiteralPath (Join-Path $dir $_)) })
+        if ($missing.Count -gt 0) {
+            $users = (@($selected | Where-Object { $_.Fixtures -eq $var } | ForEach-Object { $_.Id }) -join ',')
+            $source = if ($current) { "$var=$current" } else { "$var unset, default $dir" }
+            throw "fixtures for '$users' not found ($source; missing $($missing -join ', ')). Point $var at a directory holding $($set.Files -join ' + '), or leave those entries out with -Skip $users."
+        }
+        if (-not $current) {
+            Set-Item -Path "env:$var" -Value $dir
+            $defaultedVars += $var
+            Write-Host "$var unset; using $dir" -ForegroundColor DarkGray
+        }
+    }
+
     Write-Host "Resurrecting oracle suite - tier: $tier ($($selected.Count) of $($entries.Count) entries)" -ForegroundColor Cyan
     $rustc = (rustc --version)
 
@@ -450,6 +493,12 @@ try {
 
         $skipped = @($teeOut | Select-String -SimpleMatch 'SKIP').Count -gt 0
         if ($code -ne 0) { $entryStatus = 'FAIL'; $color = 'Red' }
+        elseif ($skipped -and $e.Fixtures) {
+            # Its fixtures were resolved above, so a SKIP means the test did not
+            # read them: a failure of the check, not a missing model.
+            Write-Host "  $($e.Id) reported SKIP although $($e.Fixtures) resolved; counting it as FAIL" -ForegroundColor Red
+            $entryStatus = 'FAIL'; $color = 'Red'
+        }
         elseif ($skipped) { $entryStatus = 'SKIP'; $color = 'DarkYellow' }
         else { $entryStatus = 'PASS'; $color = 'Green' }
 
@@ -598,5 +647,6 @@ try {
     Write-Host 'Done.' -ForegroundColor Green
 }
 finally {
+    foreach ($var in $defaultedVars) { Remove-Item -Path "env:$var" -ErrorAction SilentlyContinue }
     Pop-Location
 }

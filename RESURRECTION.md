@@ -32,7 +32,7 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-10-12 15:39 — tier **partial (2 of 23: mdlm, othello-fused)**
+- **Last run:** 2026-10-12 16:22 — tier **partial (2 of 23: mdlm, othello-fused)**
 - **Toolchain:** rustc 1.99.0 (b940084d7 2026-09-28)
 - **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
@@ -52,7 +52,7 @@ pass `-SpillProbe` to sample every entry.
 | deepseek forward | deepseek-ai/deepseek-coder-1.3b-base | CPU+GPU | 2026-10-12 | 2m08s | — | ✅ PASS |
 | longrope forward | microsoft/Phi-3.5-mini-instruct (~15 GiB) | GPU | 2026-09-21 | 15m45s ⚠️ | 8479 MiB / 13m18s / peak ~23.9 GiB | ✅ PASS |
 | bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-10-12 | 1m32s | — | ✅ PASS |
-| mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-10-12 | 6.3s | — | ✅ PASS |
+| mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-10-12 | 1m52s | — | ✅ PASS |
 | quantized (bnb/AWQ/GPTQ) | medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ | GPU | 2026-10-12 | 3m13s | — | ✅ PASS |
 | clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-10-12 | 5m12s ⚠️ | — | ✅ PASS |
 | sae (encode/inject/parity) | gemma-2-2b + gemma-scope-2b-pt-res | GPU | 2026-10-12 | 3m07s | — | ✅ PASS |
@@ -60,4 +60,4 @@ pass `-SpillProbe` to sample every entry.
 | rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-10-12 | 4m31s | — | ✅ PASS |
 | anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | 2026-09-21 | 11m37s ⚠️ | none | ✅ PASS |
 | patch_at (CUDA offset-view guard) | (none - OthelloGpt::init from a seed) | GPU | 2026-10-12 | 1m45s | — | ✅ PASS |
-| othello (fused-attn) | Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-10-12 | 1.7s | — | ✅ PASS |
+| othello (fused-attn) | Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-10-12 | 85.2s | — | ✅ PASS |

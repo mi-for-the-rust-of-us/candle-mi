@@ -206,6 +206,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   docs.rs can build, so it no longer depends on judging which features gate
   public items, the call that left `optim::AdamW`, `fold_ema` and `FoldPath`
   without docs.rs pages in 0.1.22.
+- **`scripts/resurrect.ps1` no longer lets the Othello oracles skip inside a
+  green run.** With `OTHELLO_MDLM_FIXTURES` unset, their tests print `SKIP`
+  and pass, and the run still exited 0; that is how the first oracle run for
+  this release missed the `OthelloGpt` scale-fold check. The two entries now
+  declare their fixtures: unset, the variable defaults to the askesis sibling
+  repo's copy when that holds the files, and otherwise the run stops before
+  compiling, naming the variable. A `SKIP` from such an entry after its
+  fixtures resolved counts as a failure.
 
 ### Security
 
