@@ -68,12 +68,15 @@ git commit -m "chore: bump version to X.Y.Z and update CHANGELOG"
 ### 5. Dry-run the publish: the non-skippable gate
 
 ```bash
-cargo publish --no-default-features --features transformer --dry-run
+cargo publish --locked --no-default-features --features transformer --dry-run
 ```
 
 This is what catches packaging issues no lane can see: missing files under
 `[package] exclude`, metadata validation, licence headers, the simulated
-crates.io upload. The standing rule that this step is never skipped is recorded
+crates.io upload. `--locked` mirrors `publish.yml`, so a stale `Cargo.lock`
+fails here rather than in the workflow. A dry-run needs no crates.io token,
+which matters because there is no other local publish step any more (see
+step 7). The standing rule that this step is never skipped is recorded
 as [`feedback_dry_run_before_tag.md`](../../../../.claude/projects/c--Users-Eric-JACOPIN-Documents-Code-Source-candle-mi/memory/feedback_dry_run_before_tag.md).
 
 Step 1's `preflight.ps1 -Ci` already covered the lane gauntlet on both
@@ -98,11 +101,26 @@ git push origin vX.Y.Z
 
 `publish.yml` fires on the tag match (`tags: ["v*", "!v*-*"]` — hyphenated
 tags like `v0.1.9-plt` do **not** publish; they are git-level milestones).
-The workflow runs the full lane gauntlet again on Ubuntu, then the real
-`cargo publish` step — publishes to crates.io.
+It runs two jobs, and the tag alone publishes nothing:
 
-Monitor the workflow run. On success, the crate is live at
-`https://crates.io/crates/candle-mi/X.Y.Z`.
+1. **`verify`** reruns the full lane gauntlet on Ubuntu and `cargo package`,
+   with a read-only token and no `id-token`.
+2. **`publish`** then waits for **your approval** of the `release` environment
+   (Actions UI, "Review deployments"; the environment only admits `v*` tags).
+   Once approved, it exchanges GitHub's OIDC token for a short-lived crates.io
+   token (Trusted Publishing, `rust-lang/crates-io-auth-action`) and runs
+   `cargo publish --no-verify`, which compiles nothing.
+
+crates.io has **"trusted publishing only"** enabled for candle-mi (v0.2.2 is
+the first release published this way), so a local `cargo publish` with a
+personal token is refused: the workflow is the only way out. If the
+`publish` job fails at authentication, nothing was uploaded; fix the trusted
+publisher settings on crates.io (repository, workflow `publish.yml`,
+environment `release`) and re-run the failed job. A failure that needs a code
+change needs a new commit, so delete and re-push the tag, which is safe only
+while crates.io does not yet show the version.
+
+On success, the crate is live at `https://crates.io/crates/candle-mi/X.Y.Z`.
 
 ### 8. Cut the GitHub Release, after the crates.io publish is green
 
