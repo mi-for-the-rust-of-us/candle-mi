@@ -10,7 +10,7 @@
 
 *Mechanistic Interpretability for the Rust of us.*
 
-> **Note:** v0.2.1 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
+> **Note:** v0.2.2 — the API may change between minor versions. See the [CHANGELOG](CHANGELOG.md).
 
 ## Supported model families
 
