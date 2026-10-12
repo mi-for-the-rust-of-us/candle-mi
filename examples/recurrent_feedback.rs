@@ -561,8 +561,8 @@ fn run() -> candle_mi::Result<()> {
 fn load_transformer(
     model_id: &str,
 ) -> candle_mi::Result<(GenericTransformer, MITokenizer, TransformerConfig, Vec<u32>)> {
-    // hf-fetch-model 0.9.x: go through the shared builder so HF_TOKEN is read
-    // for gated models.
+    // Go through the shared builder; the token of a gated model resolves
+    // inside hf-fetch-model.
     // BORROW: explicit .to_owned() — &str → String for download API
     let fetch_config = candle_mi::fetch_config_builder()
         .build()

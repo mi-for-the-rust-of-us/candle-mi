@@ -163,6 +163,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   freshness. Since `hf-fetch-model` 0.12.2 (above), this pin is the only
   `hypomnesis` requirement in the tree, so it alone decides what resolves.
 
+- **`fetch_config_builder()` no longer calls `.token_from_env()`, and the CLT
+  module no longer reads `HF_TOKEN` itself** (`src/download.rs`,
+  `src/clt/mod.rs`). `hf-fetch-model` 0.12.2 (above) resolves a token for
+  every request that carries none, so the explicit read was redundant, and it
+  differed from that lookup in two ways a user could see: it sent `HF_TOKEN`
+  even under `HF_HUB_DISABLE_IMPLICIT_TOKEN=1`, and it sent it untrimmed, so
+  an exported token with a trailing newline failed with 401 where the lookup
+  trims it. **With that opt-out set, candle-mi's downloads are now
+  anonymous**, as the Python tools' are. `CrossLayerTranscoder::open`'s repo
+  listing and its `GemmaScope` header probe now take their token, revision and
+  cache root from the same `FetchConfig` as its downloads
+  (`FetchConfig::token()` and `inspect_npz_with_config`, new in
+  `hf-fetch-model` 0.12.3), so the three can no longer disagree.
+  `fetch_config_builder()` keeps its signature.
+
 ### Security
 
 - **Release pipeline hardened against registry-token theft**, the root cause

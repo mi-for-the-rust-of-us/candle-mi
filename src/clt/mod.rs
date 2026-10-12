@@ -393,9 +393,9 @@ impl CrossLayerTranscoder {
     // gain in reuse, so we suppress the pedantic length lint here.
     #[allow(clippy::too_many_lines)]
     pub fn open(clt_repo: &str) -> Result<Self> {
-        // Route through the shared builder so HF_TOKEN is picked up for any
-        // gated transcoder repository (hf-fetch-model 0.9.x requires explicit
-        // opt-in).
+        // Start from the shared builder so every candle-mi download carries
+        // the same configuration; the token of a gated transcoder repository
+        // resolves inside hf-fetch-model.
         let fetch_config = crate::download::fetch_config_builder()
             .on_progress(|event| {
                 tracing::info!(
@@ -412,20 +412,18 @@ impl CrossLayerTranscoder {
         // List repo files (no downloads needed) for schema detection and layer counting.
         let rt = tokio::runtime::Runtime::new()
             .map_err(|e| MIError::Download(format!("failed to create tokio runtime: {e}")))?;
-        // hf-fetch-model 0.9.6 takes a shared reqwest client for the metadata
-        // listing. Thread HF_TOKEN through so gated transcoder repos work
-        // (currently mntss/* are public, but the call site must stay uniform
-        // with the rest of the auth handling).
-        // BORROW: std::env::var returns an owned String; .as_deref() hands the
-        // inner &str to build_client without cloning.
-        let hf_token = std::env::var("HF_TOKEN").ok();
-        let http_client = hf_fetch_model::build_client(hf_token.as_deref())
+        // hf-fetch-model takes a shared reqwest client for the metadata
+        // listing. Hand it the config's token so the listing authenticates
+        // exactly as the downloads do: `token()` is `None` unless one was set
+        // explicitly, and both calls then resolve the implicit one (`HF_TOKEN`,
+        // `HUGGING_FACE_HUB_TOKEN`, then the `hf auth login` token file).
+        let http_client = hf_fetch_model::build_client(fetch_config.token())
             .map_err(|e| MIError::Download(format!("failed to build HTTP client: {e}")))?;
         let repo_files = rt
             .block_on(hf_fetch_model::repo::list_repo_files_with_metadata(
                 clt_repo,
-                None,
-                None,
+                fetch_config.token(),
+                fetch_config.revision(),
                 &http_client,
             ))
             .map_err(|e| MIError::Download(format!("failed to list repo files: {e}")))?;
@@ -646,7 +644,12 @@ impl CrossLayerTranscoder {
         // reachable: a proxy or mirror that ignores `Range` headers, or an
         // archive laid out so that walking it exceeds the inspector's request
         // budget. Neither should turn a working `open()` into an error.
-        match probe_gemmascope_npz_shape(rt, GEMMASCOPE_WEIGHTS_REPO, first_npz_relpath) {
+        match probe_gemmascope_npz_shape(
+            rt,
+            &fetch_config,
+            GEMMASCOPE_WEIGHTS_REPO,
+            first_npz_relpath,
+        ) {
             Ok((n_features_per_layer, d_model)) => {
                 return Ok(Self::assemble_gemmascope(
                     clt_repo,
@@ -2807,13 +2810,15 @@ fn gemmascope_dims_from_w_enc_shape(w_enc_shape: &[usize], source: &str) -> Resu
 /// Probe `(n_features_per_layer, d_model)` from a `GemmaScope` `.npz`
 /// without downloading it, via `hf-fetch-model`'s HTTP Range inspector.
 ///
-/// `hf_fetch_model::inspect::inspect_npz` is cache-first: if the file is
-/// already in the `HuggingFace` cache it parses the local copy with no
-/// network at all, and only otherwise opens an `HttpRangeReader` and reads
-/// the `ZIP` central directory plus the per-entry `NPY` headers. Either
-/// way no tensor data crosses the wire, which is the whole point here: the
-/// layer-0 `width_16k` archive is ~288 MiB and we want two integers out of
-/// it.
+/// `hf_fetch_model::inspect_npz_with_config` is cache-first: if the file is
+/// already in the cache `fetch_config` downloads into, it parses the local
+/// copy with no network at all, and only otherwise opens an `HttpRangeReader`
+/// and reads the `ZIP` central directory plus the per-entry `NPY` headers.
+/// Either way no tensor data crosses the wire, which is the whole point here:
+/// the layer-0 `width_16k` archive is ~288 MiB and we want two integers out
+/// of it. Taking `fetch_config` rather than a bare token means the probe
+/// authenticates, picks its revision and finds a cached copy exactly as the
+/// download fallback in `open_gemmascope` would.
 ///
 /// Must be driven from `rt` rather than a runtime of its own. The call is
 /// `async` and internally hands the reader to `tokio::task::spawn_blocking`
@@ -2825,8 +2830,8 @@ fn gemmascope_dims_from_w_enc_shape(w_enc_shape: &[usize], source: &str) -> Resu
 /// # Errors
 ///
 /// Returns [`MIError::Download`] if the Range probe or any range request
-/// fails, which includes a gated repo (HTTP 401/403 when `HF_TOKEN` is
-/// absent or unauthorised) and a server without Range support.
+/// fails, which includes a gated repo (HTTP 401/403 when no token resolves,
+/// or the one that does is unauthorised) and a server without Range support.
 /// Returns [`MIError::Config`] if the archive parses but carries no 2-D
 /// `W_enc`.
 ///
@@ -2837,26 +2842,15 @@ fn gemmascope_dims_from_w_enc_shape(w_enc_shape: &[usize], source: &str) -> Resu
 #[cfg(feature = "sae")]
 fn probe_gemmascope_npz_shape(
     rt: &tokio::runtime::Runtime,
+    fetch_config: &hf_fetch_model::FetchConfig,
     repo_id: &str,
     relpath: &str,
 ) -> Result<(usize, usize)> {
-    // The token cannot be recovered from the `FetchConfig` this module was
-    // handed: `FetchConfig`'s fields are `pub(crate)` and it exposes no
-    // accessors, while `inspect_npz` takes a bare `Option<&str>`. Re-reading
-    // the environment mirrors what `fetch_config_builder()`'s
-    // `token_from_env()` did, and is correct for every call path candle-mi
-    // has today, but it would diverge from a token set explicitly through
-    // `FetchConfig::builder().token(..)`. Filed upstream; see
-    // `docs/dogfooding-feedbacks/` in the hf-fetch-model repo.
-    // BORROW: owned String from the environment; .as_deref() hands out the &str.
-    let token = std::env::var("HF_TOKEN").ok();
-
     let (header, source, stats) = rt
-        .block_on(hf_fetch_model::inspect::inspect_npz(
+        .block_on(hf_fetch_model::inspect_npz_with_config(
             repo_id,
             relpath,
-            token.as_deref(),
-            None,
+            fetch_config,
         ))
         .map_err(|e| {
             MIError::Download(format!("range-probe of {repo_id}/{relpath} failed: {e}"))
@@ -4090,8 +4084,10 @@ mod tests {
     #[ignore = "hits the HuggingFace API; run with --ignored"]
     fn probing_gemmascope_reads_dimensions_without_downloading_weights() {
         let rt = tokio::runtime::Runtime::new().unwrap();
+        let fetch_config = crate::download::fetch_config_builder().build().unwrap();
         let (n_features_per_layer, d_model) = probe_gemmascope_npz_shape(
             &rt,
+            &fetch_config,
             GEMMASCOPE_WEIGHTS_REPO,
             "layer_0/width_16k/average_l0_76/params.npz",
         )

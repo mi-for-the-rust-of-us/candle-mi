@@ -181,8 +181,8 @@ impl MIModel {
         let dtype = DType::F32;
 
         // --- Download / resolve local files ---
-        // hf-fetch-model 0.9.x requires explicit opt-in to HF_TOKEN; go through
-        // the shared builder so gated models (Llama/Mistral/Gemma/Qwen) work.
+        // Go through the shared builder; the token of a gated model
+        // (Llama/Mistral/Gemma) resolves inside hf-fetch-model.
         let fetch_config = crate::download::fetch_config_builder()
             .build()
             .map_err(|e| MIError::Download(format!("failed to build fetch config: {e}")))?;

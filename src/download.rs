@@ -29,20 +29,22 @@ use std::path::PathBuf;
 
 use crate::error::{MIError, Result};
 
-/// Returns a pre-configured [`hf_fetch_model::FetchConfigBuilder`] that reads
-/// `HF_TOKEN` from the environment for gated/private `HuggingFace` repos.
+/// Returns the [`hf_fetch_model::FetchConfigBuilder`] every candle-mi download
+/// starts from, so all call sites share one configuration.
 ///
-/// hf-fetch-model requires explicit opt-in via `.token_from_env()` — the
-/// public `download_files(...)` convenience wrappers build a no-token default
-/// config that silently fails 401 on gated models (Llama, Mistral, Gemma,
-/// Qwen, etc.). Every candle-mi call site that downloads from HF should start
-/// from this helper so the token handling stays uniform.
+/// It sets no token. Since `hf-fetch-model` 0.12.2 a request without an
+/// explicit token resolves one the way `huggingface_hub` does: `HF_TOKEN`,
+/// then `HUGGING_FACE_HUB_TOKEN`, then the token file `hf auth login` writes.
+/// Gated repositories (Llama, Mistral, Gemma) therefore work with any of the
+/// three, and `HF_HUB_DISABLE_IMPLICIT_TOKEN=1` turns the lookup off. Until
+/// candle-mi 0.2.1 this helper also called `.token_from_env()`, which sent
+/// `HF_TOKEN` even under that opt-out, and without trimming it.
 ///
-/// Callers can chain further configuration (`.on_progress(...)`, etc.) before
-/// calling `.build()`.
+/// Callers can chain further configuration (`.token(...)`, `.on_progress(...)`,
+/// etc.) before calling `.build()`.
 #[must_use]
 pub fn fetch_config_builder() -> hf_fetch_model::FetchConfigBuilder {
-    hf_fetch_model::FetchConfig::builder().token_from_env()
+    hf_fetch_model::FetchConfig::builder()
 }
 
 /// Downloads all files from a `HuggingFace` model repository.
