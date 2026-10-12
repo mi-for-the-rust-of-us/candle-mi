@@ -91,7 +91,16 @@ tracing = "0.1"
 # 0.12.1 (quant-aware fit planning: `inspect --group-by`, `hf-fm quants`
 # `--fits`, `inspect --cache-headers`) moves it once more for freshness — no
 # MSRV change, no anamnesis lockstep bump (still ^0.7.7).
-hf-fetch-model = { version = "0.12.1", features = ["indicatif"] }
+# 0.12.3 is the first floor candle-mi needs for its own code: it adds
+# `FetchConfig::token()` and `inspect_npz_with_config`, which let the CLT
+# module stop re-reading `HF_TOKEN` itself. It also carries 0.12.2's two
+# changes that reach this crate: every request without an explicit token now
+# resolves one the way `huggingface_hub` does (`HF_TOKEN`, then
+# `HUGGING_FACE_HUB_TOKEN`, then the `hf auth login` token file), and
+# hypomnesis became optional behind hf-fetch-model's `cli` feature, so a
+# candle-mi build without `memory` compiles no hypomnesis at all. 0.12.2 moved
+# its anamnesis floor to ^0.7.10 (lockstep bump below). No MSRV change.
+hf-fetch-model = { version = "0.12.3", features = ["indicatif"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: process RAM + GPU VRAM measurement, delegated to the standalone
@@ -114,7 +123,13 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 # 0.2.12 skips the bad adapter and keeps walking, as 0.2.10 had already done
 # for two other walks. `hmn watch --filter`/`--min` and the 0.2.12 `hmn` split
 # are CLI surface this `default-features = false` pin never compiles.
-hypomnesis = { version = "0.2.12", optional = true, default-features = false, features = [
+# Floor moved 0.2.12 -> 0.2.14 for freshness, with no fix this crate needs:
+# candle-mi calls only `Snapshot::now(0)` and `process_rss`, and on Windows and
+# Linux 0.2.13/0.2.14 change neither (they are `hmn` CLI work, an additive
+# `process_exists`, and macOS sandbox handling). Since hf-fetch-model 0.12.2
+# takes hypomnesis only behind its `cli` feature, this is the only hypomnesis
+# requirement in candle-mi's tree, so its floor is the floor that resolves.
+hypomnesis = { version = "0.2.14", optional = true, default-features = false, features = [
     "nvml",
     "dxgi",
     "nvidia-smi-fallback",
@@ -129,13 +144,10 @@ hypomnesis = { version = "0.2.12", optional = true, default-features = false, fe
 # resolves a single anamnesis copy across the tree rather than two
 # semver-incompatible ones (same hazard as the v0.1.18 windows-sys dedup).
 # Bump this alongside any future hf-fetch-model release that moves its own
-# anamnesis floor. Moved ^0.7.7 -> ^0.7.8 for hf-fetch-model's pending 0.12.2,
-# which moves its own floor to ^0.7.8; the `hf-fetch-model` pin above still
-# reads 0.12.1 until that release is published and adopted. Both requirements
-# are caret ranges over the same 0.7 line, so cargo resolves one 0.7.8 copy
-# either way, and this floor being briefly ahead of the released
-# hf-fetch-model's costs nothing.
-anamnesis = { version = "0.7.8", optional = true }
+# anamnesis floor. Moved ^0.7.7 -> ^0.7.10 with hf-fetch-model 0.12.2, which
+# moved its own floor to ^0.7.10 (0.12.3 keeps it). Both requirements are caret
+# ranges over the same 0.7 line, so cargo resolves one 0.7.10 copy.
+anamnesis = { version = "0.7.10", optional = true }
 
 [dev-dependencies]
 clap = { version = "4", features = ["derive"] }

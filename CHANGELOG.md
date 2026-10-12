@@ -48,44 +48,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   holds the post-scale scores). Whole-loop parity against the PyTorch oracle,
   changed in step, holds at a worst step of 1.56e-7 with step 0 bit-identical.
 
-- **`anamnesis` bumped `^0.7.7` → `^0.7.8`**, keeping the lockstep with
+- **`hf-fetch-model` bumped `^0.12.1` to `^0.12.3`.** The new floor is what
+  candle-mi's own code now needs (`FetchConfig::token()` and
+  `inspect_npz_with_config`, see the token entry below), and it brings in
+  0.12.2, which changes four things a candle-mi user can see:
+  - **A download authenticates the way the Python tools do.** With no token
+    set explicitly, every request now resolves one from `HF_TOKEN`, then the
+    legacy `HUGGING_FACE_HUB_TOKEN`, then the token file `hf auth login`
+    writes (`HF_TOKEN_PATH`, or `token` under `HF_HOME`). A gated model
+    (Llama, Mistral, Gemma) therefore loads after `hf auth login` alone, where
+    it used to fail with `authentication failed` unless `HF_TOKEN` was
+    exported, even with the model already in the cache.
+    `HF_HUB_DISABLE_IMPLICIT_TOKEN=1` turns the lookup off.
+  - **`HF_ENDPOINT` no longer splits a download.** `hf-fetch-model`'s own
+    requests always went to `https://huggingface.co` while its `hf-hub` client
+    followed `HF_ENDPOINT`; both are now pinned to `huggingface.co`, so a
+    mirror set through `HF_ENDPOINT` serves no part of a download.
+  - **A dead peer times out after 30 seconds** on the repo listing (which
+    `CrossLayerTranscoder::open` calls) and on single-connection downloads,
+    where both used to wait for the operating system, two minutes or more on
+    Linux.
+  - **A build without `memory` no longer compiles `hypomnesis`.**
+    `hf-fetch-model` now takes it only behind its own `cli` feature, which
+    candle-mi does not enable, so a `--no-default-features --features
+    transformer` build drops `hypomnesis` and, on Windows, `libloading`
+    (verified with `cargo tree -i`). With `memory` on, the only `hypomnesis`
+    requirement left in the tree is candle-mi's own pin (below).
+
+  `Cargo.lock` gains `dirs` 7.0.0 beside the 6.0.0 that `hf-xet` already
+  brought in (the token-file lookup uses 7; both share one `dirs-sys`).
+  `deny.toml` allows duplicate versions, so the `deny` job is unaffected. No
+  MSRV change.
+
+- **`anamnesis` bumped `^0.7.7` to `^0.7.10`**, keeping the lockstep with
   `hf-fetch-model`'s own anamnesis requirement that `Cargo.toml` documents
-  (`hf-fetch-model`'s pending 0.12.2 moves its floor to `^0.7.8`; both are
-  caret ranges over the same 0.7 line, so cargo resolves one `0.7.8` copy and
-  the `windows-sys`-style duplicate hazard stays closed, verified as a single
-  `anamnesis` entry in `Cargo.lock`). Upstream is a hardening release, and
-  candle-mi calls only `parse`, `parse_npz`, `parse_pth` and `inspect_npz`
-  (plus `AnamnesisError` and `TargetDtype`), never `remember` or `convert`, so
-  the duplicate-tensor-name rejections on the *write* paths, the cancelled-run
-  guarantee and the `"gptq_bits": "0"` divide-by-zero are all inert here. What
-  does land, across the three lanes that enable anamnesis:
-  - **`sae`** — a `.npz` archive that repeats an array name is now rejected
-    with `AnamnesisError::Parse` by both `parse_npz` and `inspect_npz`, where
-    before one kept the last copy and the other listed both, so the two could
-    describe different archives. A shape with a zero dimension after an
-    overflowing one now counts as empty rather than `usize::MAX` elements.
-  - **`stoicheia`** — a `.pth` archive that repeats `data.pkl` or `byteorder`
-    is likewise rejected instead of silently resolved, and `.pth` parse errors
-    no longer format the offending pickle value with `{:?}`: a 64 MiB
-    `BINBYTES` payload within every cap used to become a roughly 320 MiB error
-    string, allocated outside the parse limits. Messages now name the value's
-    kind and length and quote at most 48 characters.
-  - **`quantized`** — `dequantize_bnb4_double_quant` now rejects a weight
-    buffer of the wrong length. A short one was already caught downstream, but
-    an over-long one decoded without error with its tail silently ignored, on
-    the `NF4` path this lane reaches through `parse` with a `TargetDtype`.
-  - **All three** — upstream now states the `AnamnesisError::Parse` versus
+  (0.12.2 moved its floor to `^0.7.10`). Both are caret ranges over the same
+  0.7 line, so cargo resolves one copy, verified as a single `anamnesis` entry
+  in `Cargo.lock`. The three releases are hardening, and they reach candle-mi
+  through more than the parsers: `sae` calls `parse_npz` and `inspect_npz`;
+  `stoicheia` calls `parse_pth`, then `ParsedPth::to_safetensors_bytes`, which
+  materialises every tensor; `quantized` calls `parse`, then
+  `remember_to_bytes` to dequantize to `BF16`. Only `convert` is never called.
+  Valid files load exactly as before. What changes is what a malformed or
+  hostile file does, by lane:
+  - **`sae`**: a `.npz` archive that repeats an array name is rejected with
+    `AnamnesisError::Parse` by both `parse_npz` and `inspect_npz`, where one
+    kept the last copy and the other listed both (0.7.8). An array with more
+    than 64 dimensions is now `LimitExceeded` (0.7.9). A ZIP entry's declared
+    size no longer sizes a buffer before its bytes exist: a 204-byte `.npz`
+    claiming 3 GB used to commit 3 GB (0.7.9). A shape with a zero dimension
+    after an overflowing one counts as empty rather than `usize::MAX`
+    elements (0.7.8).
+  - **`stoicheia`**: a `.pth` tensor view that would materialise more bytes
+    than its storage holds (a zero stride on a dimension larger than 1), or
+    that reads past its storage, is rejected at parse time (0.7.9). Before,
+    `to_safetensors_bytes` sized its output from the declared shape alone, so
+    a 380-byte file could abort the process with a 4 EiB allocation. Also new
+    in 0.7.9: a 64-dimension cap, a cap of 16 times the storage bytes on what
+    tied weights may materialise, and a 256-deep cap on the pickle `MARK`
+    stack. A repeated `data.pkl`, `byteorder` or tensor-storage entry is
+    rejected instead of silently resolved, and parse errors no longer format
+    the offending pickle value with `{:?}`, which turned a 64 MiB `BINBYTES`
+    payload into a roughly 320 MiB error string (0.7.8). One fix runs the
+    other way: an empty non-contiguous tensor, previously refused with
+    `max stride offset overflow`, now loads (0.7.9).
+  - **`quantized`**: two panics in `remember` reached this lane, and both are
+    now `AnamnesisError::Parse`, which `backend.rs` reports as
+    `MIError::Config` (0.7.8): a `GPTQ` or `AWQ` checkpoint carrying both
+    `<layer>.qweight` and a plain `<layer>.weight` (the first is renamed onto
+    the second), and a header declaring `"gptq_bits": "0"`, which divided by
+    zero. `dequantize_bnb4_double_quant` now rejects an over-long `NF4` weight
+    buffer it used to decode with the tail silently ignored (0.7.8). A model
+    parameter whose name merely ends like a quantization companion (a
+    `layer_scale`, a `logit_scale`) is no longer dropped from `remember`'s
+    output, where it surfaced as a missing tensor when the `VarBuilder`
+    loaded (0.7.10). An NVIDIA ModelOpt `NVFP4` checkpoint, which this lane
+    misread as fine-grained `FP8` and failed on with
+    `unsupported scale dtype: F8_E4M3`, is now refused by name; candle-mi does
+    not enable anamnesis's new `nvfp4` feature (0.7.10). Header processing is
+    no longer quadratic in the tensor count (0.7.9).
+  - **All three**: upstream now states the `AnamnesisError::Parse` versus
     `Io` split as a contract, and fixed three sites that broke it, among them
     `.npz` entry reads, which mapped *every* failure to `Parse`, disk errors
-    included. Because [`src/error.rs`](src/error.rs)'s
+    included (0.7.8). Because [`src/error.rs`](src/error.rs)'s
     `From<AnamnesisError> for MIError` maps `Parse` to `MIError::Config` and
     `Io` to `MIError::Io`, **a genuine read failure on a `.npz` file now
     surfaces as `MIError::Io` where it previously surfaced as
     `MIError::Config`**: the correct variant, arriving for free, but a visible
     change for anything matching on it. `.npz` `Parse` messages also reword
-    from `… read failed: …` to `failed to decode …: …`.
+    from `... read failed: ...` to `failed to decode ...: ...`. Finally,
+    `remember_to_bytes` and `to_safetensors_bytes` can now return
+    `LimitExceeded` for a file that parsed (0.7.9); candle-mi reports it as
+    `MIError::Config` (`quantized`) or `MIError::Model` (`stoicheia`).
 
-- **`hypomnesis` bumped `^0.2.9` → `^0.2.12`.** The floor moves for a
+- **`hypomnesis` bumped `^0.2.9` to `^0.2.14`.** The floor moves for a
   correctness fix in the `dxgi` path this crate enables: through 0.2.11 the
   per-index `DXGI` lookups (`query`, `adapter_name`, `adapter_luid`,
   `adapter_dedicated_video_memory`) aborted the whole adapter walk whenever an
@@ -101,7 +157,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   crate's `default-features = false` pin never compiles. `Snapshot::ram_mb`
   becoming a `const fn` is additive, and the `MemoryReport` `MB`-means-`MiB`
   clarification is documentation upstream kept deliberately for candle-mi
-  parity, so no names or output change here.
+  parity, so no names or output change here. 0.2.13 and 0.2.14 change nothing
+  candle-mi calls on Windows or Linux (`hmn` CLI work, an additive
+  `process_exists`, and macOS sandbox handling); the floor moves to them for
+  freshness. Since `hf-fetch-model` 0.12.2 (above), this pin is the only
+  `hypomnesis` requirement in the tree, so it alone decides what resolves.
 
 ### Security
 

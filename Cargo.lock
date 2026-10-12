@@ -39,9 +39,9 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "anamnesis"
-version = "0.7.8"
+version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9579c73464aec39b66795c4487f17934c6edde9813867ce5bfcddc904f48536b"
+checksum = "9be5929c3dd97db2697f73c4c2d77970dd799936a87a454f3efe2aaac8d59818"
 dependencies = [
  "flate2",
  "float8",
@@ -50,6 +50,7 @@ dependencies = [
  "safetensors 0.8.0",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 2.0.18",
 ]
 
@@ -938,6 +939,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dirs"
+version = "7.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d57d423b3c82e89b9a24ca3091fee61f456a26edbd28d26c65906f4bc1dcd8f"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
 name = "dirs-sys"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1650,18 +1660,17 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.12.1"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ccef1f8aa2ffe457c2b53cfa3b2a4b47b6ce0e5b8cddc67cd33abdb88e64541"
+checksum = "931c641e3fef82b2ca2cf3da1ad5fb35385ac4391d0bddfe9e81c05bfcefe1f9"
 dependencies = [
  "anamnesis",
- "dirs",
+ "dirs 7.0.0",
  "flate2",
  "fs2",
  "futures-util",
  "globset",
  "hf-hub",
- "hypomnesis",
  "indicatif",
  "reqwest",
  "serde",
@@ -1843,9 +1852,9 @@ dependencies = [
 
 [[package]]
 name = "hypomnesis"
-version = "0.2.12"
+version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c79d13266cfec610b23ba4000ae415f66fd3fcb3501f83c42697b52117039ab"
+checksum = "1fae3b3ea03f1c1a6b1945775c7b6c40a070ff4dda1f1a7e900a1069fc19d918"
 dependencies = [
  "libloading 0.9.0",
  "objc2",
@@ -3526,7 +3535,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32824fab5e16e6c4d86dc1ba84489390419a39f97699852b66480bb87d297ed8"
 dependencies = [
  "bstr",
- "dirs",
+ "dirs 6.0.0",
  "os_str_bytes",
 ]
 
@@ -4846,7 +4855,7 @@ dependencies = [
  "colored",
  "const-str",
  "ctor",
- "dirs",
+ "dirs 6.0.0",
  "futures",
  "git-version",
  "humantime",
