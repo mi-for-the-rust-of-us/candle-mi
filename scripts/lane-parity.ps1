@@ -160,6 +160,7 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host ("Lane parity OK: ci.yml, publish.yml and preflight.ps1 run the same {0} cargo commands; " -f ($ci | Sort-Object -Unique).Count) -NoNewline
-Write-Host ("docs.rs and CI cover every feature but {0}." -f ($excluded -join ', ')) -ForegroundColor Green
+$summary = "Lane parity OK: ci.yml, publish.yml and preflight.ps1 run the same {0} cargo commands; " +
+"docs.rs and CI cover every feature but {1}."
+Write-Host ($summary -f ($ci | Sort-Object -Unique).Count, ($excluded -join ', ')) -ForegroundColor Green
 exit 0
