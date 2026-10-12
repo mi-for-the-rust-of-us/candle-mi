@@ -9,7 +9,8 @@ release steps on future version bumps (v0.1.10, v0.1.11, …).
 On a commit that is ready to become a release tag. Before starting:
 
 - [`CLAUDE.md`](../../CLAUDE.md) pre-commit gate has already passed
-  (`cargo fmt`, `cargo clippy --all-targets --all-features -- -D warnings`,
+  (`cargo fmt`, `cargo clippy --all-targets --no-default-features --features
+  <lane> -- -D warnings` per lane touched, never `--all-features`, and
   `cargo test`).
 - `CHANGELOG.md` has bullets under `[Unreleased]` for every user-visible
   change since the last tag.
@@ -143,16 +144,14 @@ use because they rotted silently. `preflight.ps1` is now the maintained
 instrument for that job, and `-Ci` runs every CI step on both toolchains, so
 the only correct move is to call it rather than re-copy it.
 
-The one drift risk that remains is **`preflight.ps1` itself falling behind the
-workflows**. Check that, not this file:
-
-```bash
-grep -E "^\s+run: cargo" .github/workflows/ci.yml
-grep -E "^\s+run: cargo" .github/workflows/publish.yml
-```
-
-If a lane appears there that `scripts/preflight.ps1` does not run, fix the
-script.
+The one drift risk that remained was **`preflight.ps1` itself falling behind
+the workflows**, and it is now checked mechanically. `scripts/lane-parity.ps1`,
+run first by every unfiltered `preflight.ps1` and by `ci.yml`'s `lanes` job,
+fails when `ci.yml`, `publish.yml` and `preflight.ps1` do not run the same cargo
+commands, or when a feature is missing from the docs.rs list or from every CI
+lane without being excluded in `Cargo.toml`'s `[package.metadata.lane-parity]`
+(candle-mi#2). If it fails, fix the file it names; this one holds nothing to
+update.
 
 ## Alternative: `act`
 

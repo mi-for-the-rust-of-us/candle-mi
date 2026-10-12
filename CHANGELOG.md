@@ -34,6 +34,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   composed attention gives 3.4e-5 (RTX 5060 Ti); a CI lane runs its routing
   and fused-vs-composed tests.
 
+- **A lane-parity check, `scripts/lane-parity.ps1`**, run first by
+  `preflight.ps1` and by a new `lanes` job in `ci.yml`
+  ([#2](https://github.com/mi-for-the-rust-of-us/candle-mi/issues/2)). The
+  feature lanes are written out by hand in four places (`ci.yml`,
+  `publish.yml`, `preflight.ps1` and the docs.rs list in `Cargo.toml`), and
+  they had drifted twice. The check fails when `publish.yml` does not run
+  exactly `ci.yml`'s cargo commands (plus its own `cargo package` and
+  `cargo publish`), when `preflight.ps1` does not (read through its new
+  `-PrintCommands` switch, so nothing parses PowerShell), or when a feature is
+  missing from the docs.rs list or from every CI lane without being listed in
+  the new `[package.metadata.lane-parity]` exclusions. Those are `default`,
+  `cuda` and `metal`, the features neither docs.rs nor the CI runners can
+  build. Its first run found the two gaps under Fixed below, and three
+  `ci.yml` builds preflight never ran (`sae`, `mmap`, `memory-debug`), now
+  added.
+
 ### Changed
 
 - **`OthelloGpt` attention folds the `1/√d` scale into Q before `QKᵀ`**
@@ -177,6 +193,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   (`FetchConfig::token()` and `inspect_npz_with_config`, new in
   `hf-fetch-model` 0.12.3), so the three can no longer disagree.
   `fetch_config_builder()` keeps its signature.
+
+### Fixed
+
+- **`publish.yml` now runs the `diffusion,fused-attn` lane** (clippy, tests
+  and rustdoc). `ci.yml` and `preflight.ps1` gained it with the feature, but
+  the publish gate did not, so it checked less than CI did.
+- **docs.rs builds with `fused-attn` and `memory-debug` too.** Neither gates a
+  public item today, so no page changes. The list now names every feature
+  docs.rs can build, so it no longer depends on judging which features gate
+  public items, the call that left `optim::AdamW`, `fold_ema` and `FoldPath`
+  without docs.rs pages in 0.1.22.
 
 ### Security
 

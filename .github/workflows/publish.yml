@@ -151,6 +151,15 @@ jobs:
       - name: Tests (Diffusion)
         run: cargo test --locked --no-default-features --features diffusion --lib --test validate_mdlm_forward --test validate_othello_forward --test validate_patch_at
 
+      # `fused-attn` (default-off) routes OthelloGpt's attention through
+      # candle-fused-attn; no other lane compiles that path. Mirrors ci.yml (on
+      # CPU, candle-fused-attn's composed reference).
+      - name: Clippy (Diffusion + fused-attn, pedantic)
+        run: cargo clippy --locked --all-targets --no-default-features --features "diffusion,fused-attn" -- -W clippy::pedantic
+
+      - name: Tests (Diffusion + fused-attn)
+        run: cargo test --locked --no-default-features --features "diffusion,fused-attn" --lib --test validate_othello_forward
+
       # validate_bidirectional_sampler + validate_bidirectional_forward need
       # transformer + diffusion; both #[ignore], so compile-check them.
       - name: Tests compile (transformer + diffusion)
@@ -205,7 +214,7 @@ jobs:
           set -e
           for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" \
                    "quantized,transformer" "sae,transformer" "mmap,transformer" \
-                   "diffusion" "memory" "memory-debug" "training" \
+                   "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" \
                    "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training"; do
             echo "::group::cargo doc --features '$f'"
             cargo doc --locked --no-default-features ${f:+--features "$f"} --no-deps

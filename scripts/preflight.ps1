@@ -1,7 +1,9 @@
 ﻿# Preflight checks — run before every push.
 #
 # Mirrors the per-feature lanes in .github/workflows/ci.yml so that a clean run
-# here predicts a clean run on CI. CI runs a matrix of two toolchains:
+# here predicts a clean run on CI; scripts/lane-parity.ps1, which an unfiltered
+# run calls first, fails when the two (or publish.yml, or the docs.rs list) stop
+# agreeing. CI runs a matrix of two toolchains:
 # MSRV (1.91) and stable, each executing fmt + build/clippy/test for the
 # transformer, rwkv, stoicheia, clt and diffusion feature sets, plus bare
 # and all-software-features builds.
@@ -36,6 +38,11 @@
 # A filtered run freshens no toolchain, runs stable only unless -Ci, and is
 # NOT "green preflight = green CI". Run the script bare before pushing.
 #
+# Introspection (runs nothing):
+#   ./scripts/preflight.ps1 -PrintCommands    # the stable mirror's cargo commands,
+#                                             # one per line; lane-parity.ps1
+#                                             # compares them against ci.yml
+#
 # The `rustup update stable` at the top is the whole point: CI tracks rolling
 # stable, so a dry-run on a stale local toolchain can pass while CI fails on a
 # lint only the newer compiler knows (this is how clippy::suboptimal_flops from
@@ -56,7 +63,8 @@ param(
     [switch]$Ci,
     [string[]]$Only = @(),
     [string[]]$Skip = @(),
-    [switch]$ListLanes
+    [switch]$ListLanes,
+    [switch]$PrintCommands
 )
 
 $ErrorActionPreference = "Stop"
@@ -90,6 +98,11 @@ function Invoke-Cargo {
         Write-Host "--- skipped: $Name" -ForegroundColor DarkGray
         return
     }
+    if ($PrintCommands) {
+        # Emit the command instead of running it; lane-parity.ps1 reads these.
+        Write-Output ("cargo " + ($CargoArgs -join ' '))
+        return
+    }
     Write-Host "`n=== $Name ===" -ForegroundColor Cyan
     & cargo "+$Tc" @CargoArgs
     if ($LASTEXITCODE -ne 0) {
@@ -98,7 +111,8 @@ function Invoke-Cargo {
     }
 }
 
-# Feature sets and the all-software set. Keep in sync with ci.yml.
+# Feature sets and the all-software set. Keep in sync with ci.yml;
+# lane-parity.ps1 fails when they are not.
 #
 # `Id` is the -Only/-Skip slug; `Features` is what cargo actually receives.
 # The slug is the short name of the lane, not the feature string, so
@@ -230,10 +244,18 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Tests (Quantized)" $Tc `
         @("test", "--no-default-features", "--features", "quantized,transformer", "--lib", "--test", "validate_quantized_loading") -Lane 'quantized'
 
+    # SAE and mmap have a build step in ci.yml but no test step of their own;
+    # lane-parity.ps1 found these two (and memory-debug's below) missing here.
+    Invoke-Cargo "[$Tc] Build (SAE)" $Tc `
+        @("build", "--no-default-features", "--features", "sae,transformer") -Lane 'sae'
+
     # validate_plt_gemma needs clt+sae+transformer together; no single-feature
     # lane builds that test binary. The test is #[ignore], so compile-check it.
     Invoke-Cargo "[$Tc] Tests compile (clt+sae+transformer)" $Tc `
         @("test", "--no-default-features", "--features", "clt,sae,transformer", "--test", "validate_plt_gemma", "--no-run") -Lane @('clt','sae')
+
+    Invoke-Cargo "[$Tc] Build (mmap)" $Tc `
+        @("build", "--no-default-features", "--features", "mmap,transformer") -Lane 'mmap'
 
     Invoke-Cargo "[$Tc] Build (Diffusion + examples)" $Tc `
         @("build", "--no-default-features", "--features", "diffusion", "--examples") -Lane 'diffusion'
@@ -259,6 +281,11 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Tests (memory)" $Tc `
         @("test", "--no-default-features", "--features", "memory", "--lib", "--test", "validate_memory") -Lane 'memory'
 
+    # memory-debug gates no candle-mi source; its build is a feature-resolution
+    # guard for the hypomnesis debug-output combination, as in ci.yml.
+    Invoke-Cargo "[$Tc] Build (memory-debug)" $Tc `
+        @("build", "--no-default-features", "--features", "memory-debug") -Lane 'memory-debug'
+
     # Checkpointable AdamW (`training`, default-off). Adding the feature to
     # `$featureSets` only buys a clippy lane; the parity tests need running, and
     # they are the claim the module rests on (our transcribed update rule vs
@@ -280,12 +307,21 @@ function Invoke-Lanes {
         @("build", "--no-default-features", "--features", $allSoftware) -Lane 'all'
 }
 
-# --- Freshen toolchains (match CI's rolling stable; ensure MSRV present) ---
+# -PrintCommands: list the stable mirror's cargo commands and stop, before any
+# toolchain is touched. One toolchain suffices: CI runs the same steps on both.
+if ($PrintCommands) {
+    Invoke-Lanes -Tc "stable" -LintOnly $false
+    exit 0
+}
+
+# --- Lane parity, then freshen toolchains (match CI's rolling stable) ---
 #
 # A filtered run skips all of this. Freshening is minutes of network for a
 # guarantee (`local stable == CI stable`) that a partial run cannot make
-# anyway, and an ad-hoc lane check should be seconds.
+# anyway, and an ad-hoc lane check should be seconds. Lane parity runs first
+# because it takes seconds and a drifted lane list makes the rest moot.
 if (-not $filtered) {
+    Invoke-Step "Lane parity (ci.yml, publish.yml, preflight, docs.rs)" { & (Join-Path $PSScriptRoot 'lane-parity.ps1') }
     Invoke-Step "Update stable toolchain" { rustup update stable }
     Invoke-Step "Ensure MSRV 1.91 toolchain" { rustup toolchain install 1.91 }
     Invoke-Step "Ensure 1.91 components (clippy, rustfmt)" { rustup component add clippy rustfmt --toolchain 1.91 }

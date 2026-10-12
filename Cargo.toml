@@ -550,7 +550,17 @@ must_use_candidate        = "warn"      # Rule 17
 # CPU-safe features so the generated docs cover the full public API surface.
 [package.metadata.docs.rs]
 no-default-features = true
-features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "stoicheia", "training"]
+features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "memory-debug", "stoicheia", "training", "fused-attn"]
+
+# Read by `scripts/lane-parity.ps1`; cargo and docs.rs ignore it. Every feature
+# in `[features]` must be in the docs.rs list above and in at least one ci.yml
+# lane, except these: `cuda` and `metal` need a GPU toolchain that neither
+# docs.rs nor the CI runners have, and `default` contains `cuda`. A feature
+# goes here only for that reason, so the docs.rs list never has to judge
+# whether a feature "gates a public item" (the call that omitted `training`
+# until v0.1.23).
+[package.metadata.lane-parity]
+excluded = ["default", "cuda", "metal"]
 
 [profile.release]
 lto = true

@@ -238,6 +238,22 @@ jobs:
       - name: Build (all software features)
         run: cargo build --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
 
+  # The lane list is hand-maintained in four places (this file, publish.yml,
+  # scripts/preflight.ps1 and Cargo.toml's docs.rs list) and drifted twice
+  # (candle-mi#2). This job fails when they disagree; it runs no cargo command,
+  # so it needs no toolchain. See scripts/lane-parity.ps1.
+  lanes:
+    name: "Lane parity"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Compare the lane lists
+        shell: pwsh
+        run: ./scripts/lane-parity.ps1
+
   # Dependency supply chain, per `deny.toml`. Build scripts and
   # proc-macros run arbitrary code at build time, so a compromised or yanked
   # dependency is worth failing the build over.
