@@ -39,7 +39,8 @@
 #   defaults to the askesis sibling repo's copy when that holds the files; when
 #   neither does, the run stops before compiling instead of letting the oracle
 #   SKIP inside a green run. A SKIP from such an entry after its fixtures
-#   resolved counts as FAIL.
+#   resolved (e.g. the GPU half with no CUDA device visible) counts as FAIL,
+#   quoting the test's own `SKIP:` reason.
 #
 # Read-only:
 #   -Status   print how stale the suite is (oldest entry, entries past the
@@ -492,14 +493,23 @@ try {
         $durationByName[$e.Name] = $elapsed
 
         $skipped = @($teeOut | Select-String -SimpleMatch 'SKIP').Count -gt 0
+        # The tests' own reasons (`SKIP: <reason>`), so a report quotes the test
+        # rather than guessing: the Othello GPU test, for one, also skips when no
+        # CUDA device is visible, fixtures or not.
+        $skipReasons = @($teeOut | Select-String -Pattern 'SKIP:\s*(.+)' |
+            ForEach-Object { $_.Matches[0].Groups[1].Value.Trim() } | Sort-Object -Unique)
+        $why = if ($skipReasons.Count -gt 0) { $skipReasons -join '; ' } else { 'no reason printed' }
         if ($code -ne 0) { $entryStatus = 'FAIL'; $color = 'Red' }
         elseif ($skipped -and $e.Fixtures) {
-            # Its fixtures were resolved above, so a SKIP means the test did not
-            # read them: a failure of the check, not a missing model.
-            Write-Host "  $($e.Id) reported SKIP although $($e.Fixtures) resolved; counting it as FAIL" -ForegroundColor Red
+            # Its fixtures resolved above, so a skip here leaves part of the check
+            # unrun, whatever the test's reason: a failure, not a missing model.
+            Write-Host "  $($e.Id) skipped part of its check ($why); counting it as FAIL" -ForegroundColor Red
             $entryStatus = 'FAIL'; $color = 'Red'
         }
-        elseif ($skipped) { $entryStatus = 'SKIP'; $color = 'DarkYellow' }
+        elseif ($skipped) {
+            Write-Host "  skipped: $why" -ForegroundColor DarkYellow
+            $entryStatus = 'SKIP'; $color = 'DarkYellow'
+        }
         else { $entryStatus = 'PASS'; $color = 'Green' }
 
         # Recover the SpillReport. It is emitted last, so scan from the end for
