@@ -18,7 +18,8 @@
 //! `scripts/clt_train_reference.json`. This test loads the same weights into [`TrainableClt`] and checks, at the
 //! reference's stated bar (`1e-4`): the `TopK` activations, the reconstruction, the loss, the gradient of every
 //! parameter, and the parameters after one Adam step (candle-mi's `AdamW` with zero weight decay is `torch.optim.Adam`).
-//! Then the export: the circuit-tracer files, read back, reproduce the encoder and decoder in raw units.
+//! Then the export: the circuit-tracer files, read back, reproduce the encoder and decoder in raw units, and
+//! `CrossLayerTranscoder::open_local` on them encodes (with `TopK`) and decodes exactly as the trained CLT.
 //!
 //! CPU-only and tiny, so it is not `#[ignore]`d and runs in CI.
 
@@ -26,6 +27,7 @@ use std::collections::HashMap;
 
 use candle_core::{DType, Device, Tensor};
 use candle_mi::clt::train::{TrainableClt, TrainableCltConfig};
+use candle_mi::clt::{CltFeatureId, CrossLayerTranscoder};
 use candle_mi::optim::{AdamW, ParamsAdamW};
 use serde_json::Value;
 
@@ -269,5 +271,76 @@ fn export_folds_the_scales_into_raw_units() {
         &recon_raw,
         &recon.broadcast_mul(&s_out).unwrap(),
     );
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn open_local_encodes_and_decodes_like_the_trained_clt() {
+    let Case { clt, x, .. } = case();
+    let c = clt.config();
+    let ones = vec![1.0f32; c.n_layers];
+    let dir = std::env::temp_dir().join(format!("candle_mi_clt_open_local_{}", std::process::id()));
+    clt.export_circuit_tracer(&dir, &ones, &ones, "fixture")
+        .unwrap();
+    let mut local = CrossLayerTranscoder::open_local(&dir).unwrap();
+    let cfg = local.config();
+    assert_eq!(
+        (
+            cfg.n_layers,
+            cfg.d_model,
+            cfg.n_features_per_layer,
+            cfg.top_k,
+            cfg.model_name.as_str()
+        ),
+        (
+            c.n_layers,
+            c.d_model,
+            c.n_features,
+            Some(c.top_k),
+            "fixture"
+        )
+    );
+
+    // encode, one position at a time, equals the trained CLT's TopK activations.
+    let acts = clt.encode(&x).unwrap();
+    for l in 0..c.n_layers {
+        local.load_encoder(l, &Device::Cpu).unwrap();
+        for n in 0..x.dims()[0] {
+            let residual = x.get(n).unwrap().get(l).unwrap();
+            let sparse = local.encode(&residual, l).unwrap();
+            assert!(sparse.features.len() <= c.top_k, "more than top_k active");
+            let mut dense = vec![0f32; c.n_features];
+            for (id, v) in &sparse.features {
+                assert_eq!(id.layer, l);
+                dense[id.index] = *v;
+            }
+            let dense = Tensor::from_vec(dense, c.n_features, &Device::Cpu).unwrap();
+            assert_close(
+                &format!("encode n{n} l{l}"),
+                &dense,
+                &acts.get(n).unwrap().get(l).unwrap(),
+            );
+        }
+    }
+
+    // decoder_vector(feature, target) is the trained decoder's row, at the target layer's block.
+    let (_, w_dec_1) = clt
+        .vars()
+        .into_iter()
+        .find(|(name, _)| name == "w_dec_1")
+        .unwrap();
+    let feature = CltFeatureId { layer: 1, index: 3 };
+    for target in 1..c.n_layers {
+        let ours = local
+            .decoder_vector(&feature, target, &Device::Cpu)
+            .unwrap();
+        let trained = w_dec_1
+            .as_tensor()
+            .get(3)
+            .unwrap()
+            .narrow(0, (target - 1) * c.d_model, c.d_model)
+            .unwrap();
+        assert_close(&format!("decoder_vector target {target}"), &ours, &trained);
+    }
     std::fs::remove_dir_all(&dir).unwrap();
 }
