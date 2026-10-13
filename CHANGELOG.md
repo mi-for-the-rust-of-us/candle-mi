@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   PyTorch reference it reproduces (askesis's `clt.py`): activations,
   reconstruction, loss, every gradient and one Adam step agree to 1e-4 on a
   fixture produced by that class (`scripts/clt_train_validation.py`,
-  `tests/validate_clt_train.rs`, CPU, runs in CI).
+  `tests/validate_clt_train.rs`, CPU, runs in CI). `forward_detached` evaluates
+  on detached parameters (no backward graph) for evaluation and replacement models.
 - **`CrossLayerTranscoder::open_local(dir)`**: open a CLT from a local directory
   (the `safetensors` schemas), nothing downloaded -- e.g. one exported by
   `clt::train`.

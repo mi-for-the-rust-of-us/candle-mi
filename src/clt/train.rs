@@ -290,13 +290,18 @@ impl TrainableClt {
     /// Returns [`MIError::Config`] if `x` does not have the expected shape.
     /// Returns [`MIError::Model`] on tensor failure.
     pub fn encode(&self, x: &Tensor) -> Result<Tensor> {
+        self.encode_with(self.w_enc.as_tensor(), self.b_enc.as_tensor(), x)
+    }
+
+    /// [`encode`](Self::encode) with the encoder parameters given (tracked or detached).
+    fn encode_with(&self, w_enc: &Tensor, b_enc: &Tensor, x: &Tensor) -> Result<Tensor> {
         self.check_activations("x", x, self.config.d_model)?;
         // CONTIGUOUS: the layer-major transpose has non-unit strides; the batched matmul needs a contiguous layout
         let by_layer = x.transpose(0, 1)?.contiguous()?;
         let pre = by_layer
-            .matmul(self.w_enc.as_tensor())?
+            .matmul(w_enc)?
             .transpose(0, 1)?
-            .broadcast_add(&self.b_enc.as_tensor().unsqueeze(0)?)?;
+            .broadcast_add(&b_enc.unsqueeze(0)?)?;
         top_k(&pre.relu()?, self.config.top_k)
     }
 
@@ -311,19 +316,23 @@ impl TrainableClt {
     /// Returns [`MIError::Config`] if `acts` does not have the expected shape.
     /// Returns [`MIError::Model`] on tensor failure.
     pub fn decode(&self, acts: &Tensor) -> Result<Tensor> {
+        let w_dec: Vec<Tensor> = self.w_dec.iter().map(|w| w.as_tensor().clone()).collect();
+        self.decode_with(&w_dec, self.b_dec.as_tensor(), acts)
+    }
+
+    /// [`decode`](Self::decode) with the decoder parameters given (tracked or detached).
+    fn decode_with(&self, w_dec: &[Tensor], b_dec: &Tensor, acts: &Tensor) -> Result<Tensor> {
         let n = self.check_activations("acts", acts, self.config.n_features)?;
         let (layers, d) = (self.config.n_layers, self.config.d_model);
-        let mut recon = self
-            .b_dec
-            .as_tensor()
+        let mut recon = b_dec
             .unsqueeze(0)?
             .broadcast_as((n, layers, d))?
             .contiguous()?;
         // EXPLICIT: the reconstruction accumulates source layer by source layer; a fold would hide the running sum
-        for (l, w) in self.w_dec.iter().enumerate() {
+        for (l, w) in w_dec.iter().enumerate() {
             // CONTIGUOUS: one layer's slice of the activations is strided; the matmul needs a contiguous layout
             let source = acts.narrow(1, l, 1)?.squeeze(1)?.contiguous()?;
-            let written = source.matmul(w.as_tensor())?.reshape((n, layers - l, d))?;
+            let written = source.matmul(w)?.reshape((n, layers - l, d))?;
             recon = (recon + written.pad_with_zeros(1, l, 0)?)?;
         }
         Ok(recon)
@@ -342,6 +351,47 @@ impl TrainableClt {
     pub fn forward(&self, x: &Tensor) -> Result<(Tensor, Tensor)> {
         let acts = self.encode(x)?;
         Ok((self.decode(&acts)?, acts))
+    }
+
+    /// [`forward`](Self::forward) on DETACHED parameters: the same numbers, and no backward graph.
+    ///
+    /// Every op on a [`Var`] is recorded for `backward`, so an evaluation through
+    /// [`forward`](Self::forward) keeps each intermediate reachable from the parameters until the
+    /// result is dropped -- over thousands of positions, gigabytes. Use this wherever no gradient
+    /// is wanted (evaluation, a replacement model, analysis).
+    ///
+    /// # Shapes
+    /// - `x`: `[n_positions, n_layers, d_model]`
+    /// - returns: (`[n_positions, n_layers, d_model]` reconstruction, `[n_positions, n_layers, n_features]` activations)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Config`] if `x` does not have the expected shape.
+    /// Returns [`MIError::Model`] on tensor failure.
+    ///
+    /// ```
+    /// use candle_core::{DType, Device, Tensor};
+    /// use candle_mi::clt::train::{TrainableClt, TrainableCltConfig};
+    ///
+    /// let clt = TrainableClt::new(&TrainableCltConfig::new(2, 4, 8, 2), 1, &Device::Cpu)?;
+    /// let x = Tensor::ones((3, 2, 4), DType::F32, &Device::Cpu)?;
+    /// let (tracked, _) = clt.forward(&x)?;
+    /// let (detached, _) = clt.forward_detached(&x)?;
+    /// let diff = (tracked - detached)?.abs()?.sum_all()?.to_scalar::<f32>()?;
+    /// assert_eq!(diff, 0.0);
+    /// # Ok::<(), candle_mi::MIError>(())
+    /// ```
+    pub fn forward_detached(&self, x: &Tensor) -> Result<(Tensor, Tensor)> {
+        let acts = self.encode_with(
+            &self.w_enc.as_tensor().detach(),
+            &self.b_enc.as_tensor().detach(),
+            &x.detach(),
+        )?;
+        let w_dec: Vec<Tensor> = self.w_dec.iter().map(|w| w.as_tensor().detach()).collect();
+        Ok((
+            self.decode_with(&w_dec, &self.b_dec.as_tensor().detach(), &acts)?,
+            acts,
+        ))
     }
 
     /// The training loss: the mean over (positions, layers, `d_model`) of the squared reconstruction error --
