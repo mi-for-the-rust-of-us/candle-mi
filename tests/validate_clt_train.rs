@@ -99,12 +99,7 @@ fn case() -> Case {
     let fx = fixture();
     let c = &fx["config"];
     let n = |k: &str| c[k].as_u64().unwrap() as usize;
-    let config = TrainableCltConfig {
-        n_layers: n("n_layers"),
-        d_model: n("d_model"),
-        n_features: n("n_features"),
-        top_k: n("top_k"),
-    };
+    let config = TrainableCltConfig::new(n("n_layers"), n("d_model"), n("n_features"), n("top_k"));
     let p = &fx["params"];
     let w_dec: Vec<Tensor> = (0..config.n_layers)
         .map(|l| {
@@ -116,7 +111,7 @@ fn case() -> Case {
         })
         .collect();
     let clt = TrainableClt::from_tensors(
-        config,
+        &config,
         &tensor(&p["W_enc"]),
         &tensor(&p["b_enc"]),
         &w_dec,
@@ -133,6 +128,7 @@ fn case() -> Case {
 
 /// Our parameter `name` in the reference's layout (decoders transposed back).
 fn as_reference(name: &str, t: &Tensor) -> (String, Tensor) {
+    // BORROW: explicit .to_owned() — the reference's parameter names are owned keys
     name.strip_prefix("w_dec_").map_or_else(
         || {
             (
@@ -258,7 +254,7 @@ fn export_folds_the_scales_into_raw_units() {
         );
     }
     let raw = TrainableClt::from_tensors(
-        c,
+        &c,
         &Tensor::stack(&w_enc, 0).unwrap(),
         &Tensor::stack(&b_enc, 0).unwrap(),
         &w_dec,

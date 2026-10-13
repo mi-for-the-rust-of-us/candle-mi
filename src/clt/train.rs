@@ -3,7 +3,7 @@
 //! A **trainable** cross-layer transcoder: the model and its loss, not a training loop.
 //!
 //! [`CrossLayerTranscoder`](super::CrossLayerTranscoder) loads a CLT someone else trained; this module builds one
-//! whose parameters are candle [`Var`]s, so a caller's loop can fit it with [`crate::optim::AdamW`] (the loop, the data
+//! whose parameters are `candle` [`Var`]s, so a caller's loop can fit it with `optim::AdamW` (`training` feature; the loop, the data
 //! and the schedule stay with the caller, as everywhere in candle-mi). Once trained,
 //! [`export_circuit_tracer`](TrainableClt::export_circuit_tracer) writes the circuit-tracer layout that
 //! [`CrossLayerTranscoder`](super::CrossLayerTranscoder) reads, so a CLT trained here is analysed with the same
@@ -25,8 +25,8 @@
 //! caller's choice (the circuit-tracer convention, and candle-mi's `encode`, read the residual stream before the MLP and
 //! reconstruct the MLP output).
 //!
-//! **`TopK` and ties.** The k-th largest activation is found by k successive row maxima (candle's sort kernel is limited
-//! to rows of 1,024 columns on CUDA, and a CLT layer has thousands of features). Values equal to a maximum are removed
+//! **`TopK` and ties.** The k-th largest activation is found by k successive row maxima (`candle`'s sort kernel is limited
+//! to rows of 1,024 columns on `CUDA`, and a CLT layer has thousands of features). Values equal to a maximum are removed
 //! together, so exact ties among positive activations keep more than k features where `torch.topk` keeps exactly k;
 //! with real-valued activations this has probability zero. Rows with fewer than k positive activations keep them all,
 //! as `torch.topk` does (the rest are zeros either way).
@@ -38,7 +38,8 @@ use candle_core::{D, DType, Device, Tensor, Var};
 
 use crate::error::{MIError, Result};
 
-/// The shape of a [`TrainableClt`].
+/// The shape of a [`TrainableClt`]. Built with [`new`](Self::new); fields stay readable and assignable.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrainableCltConfig {
     /// Number of layers the CLT reads and writes (the base model's layer count).
@@ -52,8 +53,19 @@ pub struct TrainableCltConfig {
 }
 
 impl TrainableCltConfig {
+    /// A configuration; validated when a [`TrainableClt`] is built from it.
+    #[must_use]
+    pub const fn new(n_layers: usize, d_model: usize, n_features: usize, top_k: usize) -> Self {
+        Self {
+            n_layers,
+            d_model,
+            n_features,
+            top_k,
+        }
+    }
+
     /// Reject degenerate shapes before any tensor is allocated.
-    fn validate(self) -> Result<Self> {
+    fn validate(&self) -> Result<Self> {
         if self.n_layers == 0 || self.d_model == 0 || self.n_features == 0 {
             return Err(MIError::Config(format!(
                 "trainable CLT dimensions must be positive (n_layers {}, d_model {}, n_features {})",
@@ -66,7 +78,7 @@ impl TrainableCltConfig {
                 self.top_k, self.n_features
             )));
         }
-        Ok(self)
+        Ok(*self)
     }
 }
 
@@ -123,7 +135,7 @@ impl TrainableClt {
     ///
     /// Returns [`MIError::Config`] if a dimension is zero or `top_k` exceeds `n_features`.
     /// Returns [`MIError::Model`] on tensor allocation failure.
-    pub fn new(config: TrainableCltConfig, seed: u64, device: &Device) -> Result<Self> {
+    pub fn new(config: &TrainableCltConfig, seed: u64, device: &Device) -> Result<Self> {
         let c = config.validate()?;
         // CAST: usize → f32, a feature count is far below 2^24; the bound is an initialisation scale
         #[allow(clippy::as_conversions, clippy::cast_precision_loss)]
@@ -146,7 +158,7 @@ impl TrainableClt {
             })
             .collect::<std::result::Result<Vec<_>, _>>()?;
         let b_dec = Tensor::zeros((c.n_layers, c.d_model), DType::F32, device)?;
-        Self::from_tensors(c, &w_enc, &b_enc, &w_dec, &b_dec)
+        Self::from_tensors(&c, &w_enc, &b_enc, &w_dec, &b_dec)
     }
 
     /// A transcoder from given parameter values (copied into fresh [`Var`]s).
@@ -162,7 +174,7 @@ impl TrainableClt {
     /// Returns [`MIError::Config`] if the configuration is degenerate or a tensor's shape does not match it.
     /// Returns [`MIError::Model`] on tensor failure.
     pub fn from_tensors(
-        config: TrainableCltConfig,
+        config: &TrainableCltConfig,
         w_enc: &Tensor,
         b_enc: &Tensor,
         w_dec: &[Tensor],
@@ -196,6 +208,7 @@ impl TrainableClt {
                 &[c.n_features, (c.n_layers - l) * c.d_model],
             )?;
         }
+        // PROMOTE: the parameters are trained in F32 whatever dtype the caller's tensors carry (BF16 checkpoints included)
         Ok(Self {
             config: c,
             w_enc: Var::from_tensor(&w_enc.to_dtype(DType::F32)?)?,
@@ -214,10 +227,11 @@ impl TrainableClt {
         self.config
     }
 
-    /// Every parameter with a stable name (`w_enc`, `b_enc`, `w_dec_{l}`, `b_dec`), as
-    /// [`AdamW::new`](crate::optim::AdamW::new) takes them.
+    /// Every parameter with a stable name (`w_enc`, `b_enc`, `w_dec_{l}`, `b_dec`), as `optim::AdamW::new` takes them
+    /// (`training` feature).
     #[must_use]
     pub fn vars(&self) -> Vec<(String, Var)> {
+        // BORROW: explicit .to_owned() — the optimiser keys its state by owned names
         let mut vars = vec![
             ("w_enc".to_owned(), self.w_enc.clone()),
             ("b_enc".to_owned(), self.b_enc.clone()),
@@ -283,6 +297,7 @@ impl TrainableClt {
             .unsqueeze(0)?
             .broadcast_as((n, layers, d))?
             .contiguous()?;
+        // EXPLICIT: the reconstruction accumulates source layer by source layer; a fold would hide the running sum
         for (l, w) in self.w_dec.iter().enumerate() {
             // CONTIGUOUS: one layer's slice of the activations is strided; the matmul needs a contiguous layout
             let source = acts.narrow(1, l, 1)?.squeeze(1)?.contiguous()?;
@@ -430,6 +445,7 @@ pub fn top_k(acts: &Tensor, k: usize) -> Result<Tensor> {
         .broadcast_as(acts.shape())?;
     let mut work = frozen.clone();
     let mut kth = frozen.max_keepdim(D::Minus1)?;
+    // EXPLICIT: each pass removes the current row maxima from `work`; the state carried between passes is the point
     for _ in 0..k {
         kth = work.max_keepdim(D::Minus1)?;
         let hit = work.broadcast_eq(&kth)?;
@@ -446,12 +462,7 @@ mod tests {
     use super::*;
 
     const fn tiny() -> TrainableCltConfig {
-        TrainableCltConfig {
-            n_layers: 3,
-            d_model: 4,
-            n_features: 6,
-            top_k: 2,
-        }
+        TrainableCltConfig::new(3, 4, 6, 2)
     }
 
     #[test]
@@ -469,7 +480,7 @@ mod tests {
     #[test]
     fn decoder_is_strictly_triangular() {
         // A feature at source layer 2 must leave layers 0 and 1 at their bias.
-        let clt = TrainableClt::new(tiny(), 7, &Device::Cpu).unwrap();
+        let clt = TrainableClt::new(&tiny(), 7, &Device::Cpu).unwrap();
         let mut acts = vec![0f32; 3 * 6];
         acts[2 * 6 + 1] = 1.5;
         let acts = Tensor::from_vec(acts, (1, 3, 6), &Device::Cpu).unwrap();
@@ -480,18 +491,18 @@ mod tests {
 
     #[test]
     fn shapes_are_checked() {
-        let clt = TrainableClt::new(tiny(), 7, &Device::Cpu).unwrap();
+        let clt = TrainableClt::new(&tiny(), 7, &Device::Cpu).unwrap();
         let wrong = Tensor::zeros((5, 2, 4), DType::F32, &Device::Cpu).unwrap();
         assert!(clt.encode(&wrong).is_err());
         assert!(
-            TrainableClt::new(TrainableCltConfig { top_k: 7, ..tiny() }, 0, &Device::Cpu).is_err()
+            TrainableClt::new(&TrainableCltConfig { top_k: 7, ..tiny() }, 0, &Device::Cpu).is_err()
         );
     }
 
     #[test]
     fn a_seed_is_one_initialisation() {
-        let a = TrainableClt::new(tiny(), 3, &Device::Cpu).unwrap();
-        let b = TrainableClt::new(tiny(), 3, &Device::Cpu).unwrap();
+        let a = TrainableClt::new(&tiny(), 3, &Device::Cpu).unwrap();
+        let b = TrainableClt::new(&tiny(), 3, &Device::Cpu).unwrap();
         let diff = (a.w_enc.as_tensor() - b.w_enc.as_tensor())
             .unwrap()
             .abs()

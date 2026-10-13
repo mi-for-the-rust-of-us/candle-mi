@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`clt::train`: a trainable cross-layer transcoder** (`src/clt/train.rs`, `clt`
+  feature). `TrainableClt` holds its parameters as candle `Var`s (named for
+  `optim::AdamW`), with `TopK(ReLU)` encode, a strictly triangular decoder and
+  the mean-MSE loss -- the model and its loss, no training loop (the loop stays
+  with the caller, as everywhere in the crate). `export_circuit_tracer` writes
+  the circuit-tracer layout `CrossLayerTranscoder` reads (`W_enc_{l}` /
+  `W_dec_{l}` safetensors, `F32`), folding per-layer input/output scales into
+  the weights, plus a `candle_mi_clt.json` carrying `top_k`. Parity with the
+  PyTorch reference it reproduces (askesis's `clt.py`): activations,
+  reconstruction, loss, every gradient and one Adam step agree to 1e-4 on a
+  fixture produced by that class (`scripts/clt_train_validation.py`,
+  `tests/validate_clt_train.rs`, CPU, runs in CI).
+- **`CrossLayerTranscoder::open_local(dir)`**: open a CLT from a local directory
+  (the `safetensors` schemas), nothing downloaded -- e.g. one exported by
+  `clt::train`.
+- **`CltConfig::top_k`**: `TopK` sparsity at `encode` for CLTs trained with it
+  (`None`, unchanged behaviour, for every published transcoder; `open_local`
+  reads it from `candle_mi_clt.json`).
+
 ## [0.2.2] - 2026-10-12
 
 ### Added
