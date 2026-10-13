@@ -17,8 +17,8 @@
 //! `t` must see the residual of a run with layers `< t` already replaced — the closed loop, which
 //! an open-loop splice would fail). Then a real `TrainableClt` through `ScaledClt`.
 //!
-//! CPU-only and tiny, so it is not `#[ignore]`d. Not yet in a CI lane: `ci.yml`'s clt lane
-//! runs `--lib` only.
+//! CPU-only and tiny, so it is not `#[ignore]`d and runs in CI (`ci.yml`, step "Tests (CLT train +
+//! replacement)"; mirrored in `publish.yml` and `scripts/preflight.ps1`).
 
 use std::cell::RefCell;
 

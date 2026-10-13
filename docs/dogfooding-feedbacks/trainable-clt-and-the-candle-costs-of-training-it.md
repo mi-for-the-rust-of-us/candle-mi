@@ -6,8 +6,9 @@
 > a `Reconstruct` trait with a `ScaledClt` adapter — not the `&impl MIBackend` signature §8
 > sketches, which could neither run canvas's own forward nor carry the training scales (Consistency
 > pass, item 6). **ASKED** for v0.2.3: §8 item 3 (the example). §9's two `candle` fixes are upstream
-> candidates, awaiting the maintainer. The new tests are CPU-only but not yet in a CI lane
-> (Consistency pass, item 3).
+> candidates, awaiting the maintainer. Both test files now run in CI: step "Tests (CLT train +
+> replacement)", added to `ci.yml`, `publish.yml` and `scripts/preflight.ps1` after the Consistency
+> pass (its item 3).
 
 # A CLT trains on candle-mi now, and three `candle` behaviours — not the math — set what a step costs
 

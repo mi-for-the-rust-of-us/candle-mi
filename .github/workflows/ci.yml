@@ -91,6 +91,11 @@ jobs:
       - name: Tests (CLT)
         run: cargo test --locked --no-default-features --features "clt,transformer" --lib
 
+      # The trainable CLT's oracle parity (askesis clt.py, bar 1e-4) and the replacement model's
+      # closed-loop proof: CPU-only and tiny, so they run here rather than sit behind #[ignore].
+      - name: Tests (CLT train + replacement)
+        run: cargo test --locked --no-default-features --features "clt,diffusion,training" --test validate_clt_train --test validate_clt_replacement
+
       # Quantized loading (bnb NF4/FP4/INT8, AWQ, GPTQ dequant via anamnesis) is
       # opt-in and pairs with `transformer`. It had ZERO CI presence before, so a
       # regression in the anamnesis dequant path (which already broke once from an
