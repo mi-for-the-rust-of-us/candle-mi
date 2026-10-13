@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   PyTorch reference it reproduces (askesis's `clt.py`): activations,
   reconstruction, loss, every gradient and one Adam step agree to 1e-4 on a
   fixture produced by that class (`scripts/clt_train_validation.py`,
-  `tests/validate_clt_train.rs`, CPU, runs in CI). `forward_detached` evaluates
+  `tests/validate_clt_train.rs`, CPU; not yet in a CI lane). `forward_detached` evaluates
   on detached parameters (no backward graph) for evaluation and replacement models.
 - **`clt::replacement`: the closed-loop replacement model and its faithfulness readings**
   (`clt` feature). `replacement_logits` runs a model with its MLP outputs `Clean`, `Ablated` or

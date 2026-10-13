@@ -1,9 +1,13 @@
-> **Status: PARTLY IMPLEMENTED on branch `clt-train`** (2026-10-13, unreleased; 7 commits
-> `fed8287`..`0200d3e`), from the canvas leg of askesis. §2 shipped there: `clt::train`
-> (`TrainableClt`, `forward_detached`, `export_circuit_tracer`, the sort-based `top_k`),
-> `CrossLayerTranscoder::open_local`, `CltConfig::top_k`. **ASKED** for v0.2.3: §8 items 1–3 (the
-> closed-loop replacement model, the faithfulness metrics, an example). §9's two `candle` fixes are
-> upstream candidates, awaiting the maintainer's decision.
+> **Status: PARTLY IMPLEMENTED on branch `clt-train`** (2026-10-13, unreleased), from the canvas leg
+> of askesis. §2–5 shipped there (`fed8287` through `0200d3e`): `clt::train` (`TrainableClt`,
+> `forward_detached`, `export_circuit_tracer`, the sort-based `top_k`),
+> `CrossLayerTranscoder::open_local`, `CltConfig::top_k`. §8 items 1–2 shipped as a **variant** in
+> `fd2994b` (`clt::replacement`): the forward is the caller's closure and the transcoder sits behind
+> a `Reconstruct` trait with a `ScaledClt` adapter — not the `&impl MIBackend` signature §8
+> sketches, which could neither run canvas's own forward nor carry the training scales (Consistency
+> pass, item 6). **ASKED** for v0.2.3: §8 item 3 (the example). §9's two `candle` fixes are upstream
+> candidates, awaiting the maintainer. The new tests are CPU-only but not yet in a CI lane
+> (Consistency pass, item 3).
 
 # A CLT trains on candle-mi now, and three `candle` behaviours — not the math — set what a step costs
 
@@ -261,3 +265,60 @@ canvas clt-train --checkpoint <ck> --data-dir <d> --out-dir <o> --features 4096 
 candle-mi side: `cargo test --no-default-features --features clt,training --test
 validate_clt_train`; the fixture is regenerated with `<python with torch>
 scripts/clt_train_validation.py [path/to/clt.py]`.
+
+## Consistency pass (2026-10-13, same day), against the files
+
+An independent read-only pass checked every claim above against the repositories, the logs and the
+Nsight CSV. The numbers held — commit contents, versions, `backprop.rs:568`, `sort.rs:87–93`, the
+verbatim `sort.cu` comment, `ternary.cu`'s three strided lookups, 72 of 288 active, the 67 tests,
+the Nsight rows digit for digit against `data/analysis/clt_profile/kern_sum.csv`, the phase and
+size-pilot tables, the `training` and `bench_alloc` quotes. What did not hold, corrected here
+rather than in the prose above:
+
+1. **§1, Me21 "at the shuffled-label null" — too strong.** The logbook reads *near* the null, with
+   a faint, consistent tilt for O: O exceeds its own null by +0.4 to +7.5 points, and on two of five
+   seeds it is indistinguishable from it.
+2. **§1, "0.94 on the optimal move" — one worked example, not a rate.** O plans optimally on
+   99.9–100 % of the problems where the `US` policy does not (Me19); 0.94 is O s0's probability on
+   the single optimal sacrifice among four live blocks in one example.
+3. **§2, "(CPU, in CI)" — wrong.** No CI lane runs `validate_clt_train` (nor, since,
+   `validate_clt_replacement`): `ci.yml`'s clt lane runs `--lib` only, its training lane only
+   `validate_optim_parity`. The same claim stood in `CHANGELOG.md` and both test headers; corrected
+   there. Adding the two files to a lane is the maintainer's call.
+4. **§7, "~52 min (0.155 s with evaluations)" — the pilots' rate, not the run's.** The pilots
+   evaluated every 250 steps; the 20,000-step run evaluates every 500 and logs 0.142 s/step
+   (`data/clt/O_s0_f4096.log`): ~47 min.
+5. **§6, "§4–5's numbers are quoted against the steady figure" — only §5's are.** §4's 327.5 ms is
+   the phase-synced total, its `TopK` times are per call, and §4's "150–200 against 327" compares
+   paper estimates with that phase-synced total.
+6. **§8 item 1, "nothing in it is canvas-specific" — wrong in two ways, and the sketched signature
+   inherits both.** canvas runs O through `forward_no_carry` (a `NONE` carry grid), not
+   `MIBackend::forward` (no carry), and the reconstruction needs the training scales. `fd2994b`
+   therefore took a forward closure and a scaled adapter (status above).
+7. **§8 item 2, "ten lines each" — less.** `loss_recovered` is one line, `fvu_per_layer` four, and
+   the dead measure was an inline share in `evaluate`, not a count.
+8. **§4 and §9, the comparison kernels "drop to their strided path" — half-strided.**
+   `binary_op_macros.cuh` has a branch for one contiguous side, and `eq` takes it: only the
+   broadcast operand pays the per-element index arithmetic. `where` is fully strided as stated.
+9. **§3, "6.9 GiB of 15.7 … 158 MiB against 80 MiB" — from the 300-step pilot**
+   (`data/clt/pilot`, printed to the terminal, no log file). The nearest logged run, `size_4096`,
+   reads 6.8 GiB and 171 / 91 MiB.
+10. **§6, "17.8–21.9 ms" — 21.9 is from the profile after `0200d3e`,** whose table is not shown
+    above (draw 21.9 ms, steady 134.5 ms).
+11. **Unlabelled estimates.** TF32 "~4×" (Not asked for) is unmeasured and likely wrong for this
+    card: NVIDIA's GeForce specifications list dense TF32 tensor throughput about equal to FP32 —
+    HYPOTHESIS at best. "~5×" for the strided path (§9) has no contiguous baseline measured. "~20 %
+    of the step" for `TopK` divides the stacked-shape call (29 ms) by the per-layer step (134.5 ms);
+    the per-layer `top_k` was not timed.
+12. **Not verbatim.** The §5 `STEADY` lines carry an added "before / after"; the Nsight block is a
+    reformatting of `kern_sum.csv` from a shorter capture (`--steps 5 --warmup 2`, 12 `TopK` calls),
+    not of the 20-step profile; "How to reproduce" omits the capture itself:
+    `nsys profile --trace=cuda --sample=none --cpuctxsw=none -o <rep> examples/clt_step_profile ...`
+    then `nsys stats --report cuda_gpu_kern_sum --format csv <rep>.nsys-rep`.
+13. **Style.** The title's "three `candle` behaviours" are §3's graph retention (memory), §4's
+    strided kernels and §5's `Narrow` backward (speed) — §9 lists only the two kernel-level ones as
+    upstream candidates. The severity's house word is "Throughput ceiling". §3's HYPOTHESIS should
+    have named its settling measurement: the evaluation unchunked under `hmn spill`, not run because
+    the arithmetic sufficed. §8 item 2 gave no Rust signatures — `fd2994b`'s are
+    `loss_recovered(f64, f64, f64) -> f64`, `fvu_per_layer(&Tensor, &Tensor) -> Result<Vec<f32>>`,
+    `cross_entropy_at`, `top_tokens_at`, `dead_fraction`.

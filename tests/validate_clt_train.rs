@@ -21,7 +21,8 @@
 //! Then the export: the circuit-tracer files, read back, reproduce the encoder and decoder in raw units, and
 //! `CrossLayerTranscoder::open_local` on them encodes (with `TopK`) and decodes exactly as the trained CLT.
 //!
-//! CPU-only and tiny, so it is not `#[ignore]`d and runs in CI.
+//! CPU-only and tiny, so it is not `#[ignore]`d. Not yet in a CI lane: `ci.yml`'s clt lane
+//! runs `--lib` only.
 
 use std::collections::HashMap;
 
