@@ -282,6 +282,10 @@ required-features = ["stoicheia"]
 name = "fast_download"
 
 [[test]]
+name = "validate_clt_train"
+required-features = ["clt", "training"]
+
+[[test]]
 name = "validate_optim_parity"
 required-features = ["training"]
 
