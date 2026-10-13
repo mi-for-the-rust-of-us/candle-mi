@@ -42,6 +42,7 @@ use tracing::info;
 use crate::error::{MIError, Result};
 
 pub mod gemmascope;
+pub mod replacement;
 pub mod train;
 
 use crate::clt::gemmascope::GEMMASCOPE_WEIGHTS_REPO;

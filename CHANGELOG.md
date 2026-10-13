@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   fixture produced by that class (`scripts/clt_train_validation.py`,
   `tests/validate_clt_train.rs`, CPU, runs in CI). `forward_detached` evaluates
   on detached parameters (no backward graph) for evaluation and replacement models.
+- **`clt::replacement`: the closed-loop replacement model and its faithfulness readings**
+  (`clt` feature). `replacement_logits` runs a model with its MLP outputs `Clean`, `Ablated` or
+  `Replaced` by a transcoder's reconstruction, closed loop: pass `t` reads the residual of the
+  run with layers `< t` already replaced (`tests/validate_clt_replacement.rs` proves it against
+  an open-loop splice). The forward is the caller's closure (`replacement_logits_for` uses
+  `MIBackend::forward`). `Reconstruct` is the transcoder seam; `ScaledClt` adapts a trained
+  `TrainableClt` to raw units, detached and chunked. Metrics: `loss_recovered`, `fvu_per_layer`,
+  `cross_entropy_at`, `top_tokens_at`, `dead_fraction`.
 - **`CrossLayerTranscoder::open_local(dir)`**: open a CLT from a local directory
   (the `safetensors` schemas), nothing downloaded -- e.g. one exported by
   `clt::train`.
