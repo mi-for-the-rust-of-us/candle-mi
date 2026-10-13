@@ -25,10 +25,10 @@
 //! caller's choice (the circuit-tracer convention, and candle-mi's `encode`, read the residual stream before the MLP and
 //! reconstruct the MLP output).
 //!
-//! **`TopK` and ties.** The k-th largest activation is found by k successive row maxima (`candle`'s sort kernel is limited
-//! to rows of 1,024 columns on `CUDA`, and a CLT layer has thousands of features). Values equal to a maximum are removed
-//! together, so exact ties among positive activations keep more than k features where `torch.topk` keeps exactly k;
-//! with real-valued activations this has probability zero. Rows with fewer than k positive activations keep them all,
+//! **`TopK` and ties.** The k-th largest activation of each row is read off one descending row sort (`candle`'s
+//! bitonic sort, which handles rows wider than its 1,024-thread block), then every entry at least that large is kept.
+//! Exact ties at the k-th value therefore keep more than k features where `torch.topk` keeps exactly k; with
+//! real-valued activations this has probability zero. Rows with fewer than k positive activations keep them all,
 //! as `torch.topk` does (the rest are zeros either way).
 
 use std::collections::HashMap;
@@ -521,18 +521,12 @@ impl TrainableClt {
 ///
 /// Returns [`MIError::Model`] on tensor failure.
 pub fn top_k(acts: &Tensor, k: usize) -> Result<Tensor> {
-    let frozen = acts.detach();
-    let removed = Tensor::new(f32::NEG_INFINITY, acts.device())?
-        .to_dtype(acts.dtype())?
-        .broadcast_as(acts.shape())?;
-    let mut work = frozen.clone();
-    let mut kth = frozen.max_keepdim(D::Minus1)?;
-    // EXPLICIT: each pass removes the current row maxima from `work`; the state carried between passes is the point
-    for _ in 0..k {
-        kth = work.max_keepdim(D::Minus1)?;
-        let hit = work.broadcast_eq(&kth)?;
-        work = hit.where_cond(&removed, &work)?;
-    }
+    // The selection is a constant: computed on a detached copy, so no gradient flows through the sort.
+    // CONTIGUOUS: the row sort requires a contiguous layout
+    let frozen = acts.detach().contiguous()?;
+    let order = frozen.arg_sort_last_dim(false)?;
+    let kth_index = order.narrow(D::Minus1, k - 1, 1)?.contiguous()?;
+    let kth = frozen.gather(&kth_index, D::Minus1)?;
     let keep = frozen.broadcast_ge(&kth)?.to_dtype(acts.dtype())?;
     Ok((acts * keep)?)
 }
