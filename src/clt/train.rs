@@ -54,6 +54,13 @@ pub struct TrainableCltConfig {
 
 impl TrainableCltConfig {
     /// A configuration; validated when a [`TrainableClt`] is built from it.
+    ///
+    /// ```
+    /// use candle_mi::clt::train::TrainableCltConfig;
+    ///
+    /// let config = TrainableCltConfig::new(6, 384, 4096, 16);
+    /// assert_eq!((config.n_layers, config.top_k), (6, 16));
+    /// ```
     #[must_use]
     pub const fn new(n_layers: usize, d_model: usize, n_features: usize, top_k: usize) -> Self {
         Self {
@@ -85,6 +92,21 @@ impl TrainableCltConfig {
 /// A cross-layer transcoder whose parameters are trainable [`Var`]s.
 ///
 /// See the [module documentation](self) for the architecture.
+///
+/// ```
+/// use candle_core::{DType, Device, Tensor};
+/// use candle_mi::clt::train::{TrainableClt, TrainableCltConfig};
+///
+/// // 2 layers, width 4, 8 features per layer, 2 active per (position, layer).
+/// let clt = TrainableClt::new(&TrainableCltConfig::new(2, 4, 8, 2), 0, &Device::Cpu)?;
+/// let x = Tensor::ones((3, 2, 4), DType::F32, &Device::Cpu)?;
+/// let (recon, acts) = clt.forward(&x)?;
+/// assert_eq!((recon.dims(), acts.dims()), (&[3, 2, 4][..], &[3, 2, 8][..]));
+/// let most_active = acts.gt(0.0)?.to_dtype(DType::F32)?.sum(2)?.flatten_all()?.max(0)?;
+/// assert!(most_active.to_scalar::<f32>()? <= 2.0);
+/// assert_eq!(clt.loss(&x, &x)?.dims(), &[] as &[usize]);
+/// # Ok::<(), candle_mi::MIError>(())
+/// ```
 pub struct TrainableClt {
     /// Shape of the transcoder.
     config: TrainableCltConfig,
@@ -430,6 +452,16 @@ impl TrainableClt {
 
 /// Keep the `k` largest entries of each row (last dimension), zero the rest; the selection is a constant mask, so the
 /// gradient flows to the kept entries only (as `torch.topk` + `scatter` in the reference).
+///
+/// ```
+/// use candle_core::{Device, Tensor};
+/// use candle_mi::clt::train::top_k;
+///
+/// let acts = Tensor::new(&[[0.5f32, 3.0, 0.0, 2.0], [0.0, 0.7, 0.0, 0.0]], &Device::Cpu)?;
+/// // Row 0 keeps its two largest; row 1 has a single positive entry and keeps it.
+/// assert_eq!(top_k(&acts, 2)?.to_vec2::<f32>()?, [[0.0, 3.0, 0.0, 2.0], [0.0, 0.7, 0.0, 0.0]]);
+/// # Ok::<(), candle_mi::MIError>(())
+/// ```
 ///
 /// # Shapes
 /// - `acts`: `[..., n_features]`, non-negative (post-`ReLU`)
