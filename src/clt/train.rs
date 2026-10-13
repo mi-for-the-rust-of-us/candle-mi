@@ -290,19 +290,29 @@ impl TrainableClt {
     /// Returns [`MIError::Config`] if `x` does not have the expected shape.
     /// Returns [`MIError::Model`] on tensor failure.
     pub fn encode(&self, x: &Tensor) -> Result<Tensor> {
-        self.encode_with(self.w_enc.as_tensor(), self.b_enc.as_tensor(), x)
+        let layers = self.encode_layers(self.w_enc.as_tensor(), self.b_enc.as_tensor(), x)?;
+        Ok(Tensor::stack(&layers, 1)?)
     }
 
-    /// [`encode`](Self::encode) with the encoder parameters given (tracked or detached).
-    fn encode_with(&self, w_enc: &Tensor, b_enc: &Tensor, x: &Tensor) -> Result<Tensor> {
+    /// The activations of each source layer as its OWN tensor, `[n_positions, n_features]`, with
+    /// the encoder parameters given (tracked or detached).
+    ///
+    /// One tensor per layer, rather than a `[n_positions, n_layers, n_features]` block sliced per
+    /// layer, is a measured choice: the backward of each per-layer slice of the block allocates zero
+    /// padding and a full-size concatenation, six times per step (the `Narrow` backward of
+    /// `candle-core`).
+    fn encode_layers(&self, w_enc: &Tensor, b_enc: &Tensor, x: &Tensor) -> Result<Vec<Tensor>> {
         self.check_activations("x", x, self.config.d_model)?;
-        // CONTIGUOUS: the layer-major transpose has non-unit strides; the batched matmul needs a contiguous layout
-        let by_layer = x.transpose(0, 1)?.contiguous()?;
-        let pre = by_layer
-            .matmul(w_enc)?
-            .transpose(0, 1)?
-            .broadcast_add(&b_enc.unsqueeze(0)?)?;
-        top_k(&pre.relu()?, self.config.top_k)
+        (0..self.config.n_layers)
+            .map(|l| {
+                // CONTIGUOUS: one layer's slice of the inputs is strided; the matmul needs a contiguous layout
+                let input = x.narrow(1, l, 1)?.squeeze(1)?.contiguous()?;
+                let pre = input
+                    .matmul(&w_enc.get(l)?)?
+                    .broadcast_add(&b_enc.get(l)?)?;
+                top_k(&pre.relu()?, self.config.top_k)
+            })
+            .collect()
     }
 
     /// Reconstruction from feature activations, through the triangular decoder.
@@ -316,23 +326,38 @@ impl TrainableClt {
     /// Returns [`MIError::Config`] if `acts` does not have the expected shape.
     /// Returns [`MIError::Model`] on tensor failure.
     pub fn decode(&self, acts: &Tensor) -> Result<Tensor> {
+        self.check_activations("acts", acts, self.config.n_features)?;
+        let layers = (0..self.config.n_layers)
+            .map(|l| acts.narrow(1, l, 1)?.squeeze(1))
+            .collect::<std::result::Result<Vec<_>, _>>()?;
         let w_dec: Vec<Tensor> = self.w_dec.iter().map(|w| w.as_tensor().clone()).collect();
-        self.decode_with(&w_dec, self.b_dec.as_tensor(), acts)
+        self.decode_layers(&w_dec, self.b_dec.as_tensor(), &layers)
     }
 
-    /// [`decode`](Self::decode) with the decoder parameters given (tracked or detached).
-    fn decode_with(&self, w_dec: &[Tensor], b_dec: &Tensor, acts: &Tensor) -> Result<Tensor> {
-        let n = self.check_activations("acts", acts, self.config.n_features)?;
+    /// [`decode`](Self::decode) from one activation tensor per source layer (`[n_positions,
+    /// n_features]` each), with the decoder parameters given (tracked or detached).
+    fn decode_layers(&self, w_dec: &[Tensor], b_dec: &Tensor, acts: &[Tensor]) -> Result<Tensor> {
         let (layers, d) = (self.config.n_layers, self.config.d_model);
+        let n = match acts.first().map(Tensor::dims) {
+            Some(&[n, f]) if acts.len() == layers && f == self.config.n_features => n,
+            _ => {
+                return Err(MIError::Config(format!(
+                    "decoder input must be {layers} tensors [n_positions, {}]",
+                    self.config.n_features
+                )));
+            }
+        };
         let mut recon = b_dec
             .unsqueeze(0)?
             .broadcast_as((n, layers, d))?
             .contiguous()?;
         // EXPLICIT: the reconstruction accumulates source layer by source layer; a fold would hide the running sum
-        for (l, w) in w_dec.iter().enumerate() {
-            // CONTIGUOUS: one layer's slice of the activations is strided; the matmul needs a contiguous layout
-            let source = acts.narrow(1, l, 1)?.squeeze(1)?.contiguous()?;
-            let written = source.matmul(w)?.reshape((n, layers - l, d))?;
+        for (l, (w, source)) in w_dec.iter().zip(acts).enumerate() {
+            // CONTIGUOUS: a layer's activations may come from a slice; the matmul needs a contiguous layout
+            let written = source
+                .contiguous()?
+                .matmul(w)?
+                .reshape((n, layers - l, d))?;
             recon = (recon + written.pad_with_zeros(1, l, 0)?)?;
         }
         Ok(recon)
@@ -349,8 +374,10 @@ impl TrainableClt {
     /// Returns [`MIError::Config`] if `x` does not have the expected shape.
     /// Returns [`MIError::Model`] on tensor failure.
     pub fn forward(&self, x: &Tensor) -> Result<(Tensor, Tensor)> {
-        let acts = self.encode(x)?;
-        Ok((self.decode(&acts)?, acts))
+        let layers = self.encode_layers(self.w_enc.as_tensor(), self.b_enc.as_tensor(), x)?;
+        let w_dec: Vec<Tensor> = self.w_dec.iter().map(|w| w.as_tensor().clone()).collect();
+        let recon = self.decode_layers(&w_dec, self.b_dec.as_tensor(), &layers)?;
+        Ok((recon, Tensor::stack(&layers, 1)?))
     }
 
     /// [`forward`](Self::forward) on DETACHED parameters: the same numbers, and no backward graph.
@@ -382,16 +409,14 @@ impl TrainableClt {
     /// # Ok::<(), candle_mi::MIError>(())
     /// ```
     pub fn forward_detached(&self, x: &Tensor) -> Result<(Tensor, Tensor)> {
-        let acts = self.encode_with(
+        let layers = self.encode_layers(
             &self.w_enc.as_tensor().detach(),
             &self.b_enc.as_tensor().detach(),
             &x.detach(),
         )?;
         let w_dec: Vec<Tensor> = self.w_dec.iter().map(|w| w.as_tensor().detach()).collect();
-        Ok((
-            self.decode_with(&w_dec, &self.b_dec.as_tensor().detach(), &acts)?,
-            acts,
-        ))
+        let recon = self.decode_layers(&w_dec, &self.b_dec.as_tensor().detach(), &layers)?;
+        Ok((recon, Tensor::stack(&layers, 1)?))
     }
 
     /// The training loss: the mean over (positions, layers, `d_model`) of the squared reconstruction error --
@@ -408,7 +433,10 @@ impl TrainableClt {
     /// Returns [`MIError::Model`] on tensor failure.
     pub fn loss(&self, x: &Tensor, target: &Tensor) -> Result<Tensor> {
         self.check_activations("target", target, self.config.d_model)?;
-        let (recon, _) = self.forward(x)?;
+        // The per-layer path end to end: the stacked activations of `forward` are not needed here.
+        let layers = self.encode_layers(self.w_enc.as_tensor(), self.b_enc.as_tensor(), x)?;
+        let w_dec: Vec<Tensor> = self.w_dec.iter().map(|w| w.as_tensor().clone()).collect();
+        let recon = self.decode_layers(&w_dec, self.b_dec.as_tensor(), &layers)?;
         Ok((recon - target)?.sqr()?.mean_all()?)
     }
 
