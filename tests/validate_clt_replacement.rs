@@ -282,3 +282,69 @@ fn a_mask_of_the_wrong_shape_is_refused() {
             .is_err()
     );
 }
+
+#[test]
+fn a_mask_within_a_row_ablates_exactly_the_marked_positions_closed_loop() {
+    // An independent oracle: zero each layer's MLP output at the marked positions only, layer by
+    // layer, each pass running on the residual the previous zeroings produced.
+    let (model, ids) = model();
+    let zeros = Fixed {
+        fixed: Tensor::zeros((12, LAYERS, D), DType::F32, &Device::Cpu).unwrap(),
+        fed: RefCell::new(Vec::new()),
+    };
+    let marks = [[1u32, 0, 1, 1, 0, 0], [0, 1, 0, 0, 1, 1]];
+    let at = Tensor::new(&marks, &Device::Cpu).unwrap();
+    let got =
+        replacement_logits_where(forward_of(&model, &ids), &zeros, Splice::Replaced, &at).unwrap();
+    let keep = Tensor::new(
+        &[
+            [[0f32], [1.0], [0.0], [0.0], [1.0], [1.0]],
+            [[1.0], [0.0], [1.0], [1.0], [0.0], [0.0]],
+        ],
+        &Device::Cpu,
+    )
+    .unwrap();
+    let mut done: Vec<Tensor> = Vec::new();
+    for t in 0..LAYERS {
+        let mut spec = HookSpec::new();
+        spec.capture(HookPoint::MlpOut(t));
+        for (l, r) in done.iter().enumerate() {
+            spec.intervene(HookPoint::MlpOut(l), Intervention::Replace(r.clone()));
+        }
+        let own = model
+            .forward(&ids, &spec)
+            .unwrap()
+            .get(&HookPoint::MlpOut(t))
+            .unwrap()
+            .clone();
+        done.push(own.broadcast_mul(&keep).unwrap());
+    }
+    let mut spec = HookSpec::new();
+    for (l, r) in done.into_iter().enumerate() {
+        spec.intervene(HookPoint::MlpOut(l), Intervention::Replace(r));
+    }
+    let want = model.forward(&ids, &spec).unwrap().output().clone();
+    assert!(
+        max_abs_diff(&got, &want) < 1e-6,
+        "{}",
+        max_abs_diff(&got, &want)
+    );
+}
+
+#[test]
+fn a_non_finite_reconstruction_never_reaches_an_unmarked_position() {
+    let (model, ids) = model();
+    let nan = Fixed {
+        fixed: Tensor::full(f32::NAN, (12, LAYERS, D), &Device::Cpu).unwrap(),
+        fed: RefCell::new(Vec::new()),
+    };
+    let clean = replacement_logits_for(&model, &ids, &nan, Splice::Clean).unwrap();
+    let nowhere = Tensor::zeros((2, 6), DType::U8, &Device::Cpu).unwrap();
+    let masked =
+        replacement_logits_where(forward_of(&model, &ids), &nan, Splice::Replaced, &nowhere)
+            .unwrap();
+    assert!(
+        max_abs_diff(&clean, &masked) < 1e-6,
+        "an unmarked position took the NaN reconstruction"
+    );
+}

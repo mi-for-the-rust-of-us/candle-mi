@@ -37,8 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   grid's non-padding cells): splicing the others measures its reconstruction outside its domain,
   which attention carries to every position (askesis, 2026-10-14: a 6-layer grid model's
   agreement at the cell read rose from 59 % to 93 % once padding was left to the model). Every
-  position marked is `replacement_logits`; none, the clean model (`tests/validate_clt_replacement.rs`,
-  four new tests).
+  position marked is `replacement_logits`; none, the clean model. The splice is a select, not a 0/1
+  product, so a non-finite reconstruction outside the domain never reaches a kept position
+  (`tests/validate_clt_replacement.rs`, six new tests, including a within-row mask against an
+  independent layer-by-layer oracle and a NaN reconstructor).
 - **`CrossLayerTranscoder::open_local(dir)`**: open a CLT from a local directory
   (the `safetensors` schemas), nothing downloaded -- e.g. one exported by
   `clt::train`.

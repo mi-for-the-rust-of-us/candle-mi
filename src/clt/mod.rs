@@ -3004,10 +3004,6 @@ fn probe_gemmascope_npz_shape(
     gemmascope_dims_from_w_enc_shape(w_enc_shape, &full)
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 /// `top_k` and `model_name` of a local transcoder directory ([`CrossLayerTranscoder::open_local`]):
 /// from an optional `candle_mi_clt.json`, the model name falling back to `config.yaml`'s, then
 /// `"unknown"`.
@@ -3046,6 +3042,10 @@ fn local_metadata(dir: &Path) -> Result<(Option<usize>, String)> {
         .unwrap_or_else(|| "unknown".to_owned());
     Ok((top_k, model_name))
 }
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
