@@ -528,8 +528,10 @@ impl TrainableClt {
     }
 }
 
-/// Keep the `k` largest entries of each row (last dimension), zero the rest; the selection is a constant mask, so the
-/// gradient flows to the kept entries only (as `torch.topk` + `scatter` in the reference).
+/// Keep the `k` largest entries of each row (last dimension), zero the rest.
+///
+/// The selection is a constant mask, so the gradient flows to the kept entries only (as `torch.topk` + `scatter` in
+/// the reference).
 ///
 /// ```
 /// use candle_core::{Device, Tensor};
@@ -613,6 +615,7 @@ mod tests {
             .unwrap()
             .sum_all()
             .unwrap();
-        assert_eq!(diff.to_scalar::<f32>().unwrap(), 0.0);
+        // Same seed, same weights: the summed absolute difference is exactly zero.
+        assert!(diff.to_scalar::<f32>().unwrap().abs() < f32::MIN_POSITIVE);
     }
 }
