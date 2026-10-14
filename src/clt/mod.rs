@@ -636,33 +636,7 @@ impl CrossLayerTranscoder {
                 dir.display()
             )));
         }
-        let meta: Option<serde_json::Value> =
-            match std::fs::read_to_string(dir.join("candle_mi_clt.json")) {
-                Ok(text) => Some(serde_json::from_str(&text).map_err(|e| {
-                    MIError::Config(format!("failed to parse candle_mi_clt.json: {e}"))
-                })?),
-                Err(_) => None,
-            };
-        let top_k = match meta.as_ref().and_then(|m| m.get("top_k")) {
-            None | Some(serde_json::Value::Null) => None,
-            Some(v) => Some(
-                v.as_u64()
-                    .and_then(|k| usize::try_from(k).ok())
-                    .ok_or_else(|| MIError::Config(format!("top_k {v} is not a count")))?,
-            ),
-        };
-        let model_name = meta
-            .as_ref()
-            .and_then(|m| m.get("model_name"))
-            .and_then(serde_json::Value::as_str)
-            // BORROW: explicit str::to_owned — the configuration owns its model name
-            .map(str::to_owned)
-            .or_else(|| {
-                std::fs::read_to_string(dir.join("config.yaml"))
-                    .ok()
-                    .and_then(|text| parse_yaml_value(&text, "model_name"))
-            })
-            .unwrap_or_else(|| "unknown".to_owned());
+        let (top_k, model_name) = local_metadata(dir)?;
 
         let (enc0_filename, enc_tensor_name, _) = encoder_file_and_tensor_names(schema, 0, &[])?;
         let data = std::fs::read(dir.join(&enc0_filename))?;
@@ -3033,6 +3007,45 @@ fn probe_gemmascope_npz_shape(
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+/// `top_k` and `model_name` of a local transcoder directory ([`CrossLayerTranscoder::open_local`]):
+/// from an optional `candle_mi_clt.json`, the model name falling back to `config.yaml`'s, then
+/// `"unknown"`.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if `candle_mi_clt.json` exists but is not JSON, or its `top_k` is
+/// not a count.
+fn local_metadata(dir: &Path) -> Result<(Option<usize>, String)> {
+    let meta: Option<serde_json::Value> =
+        match std::fs::read_to_string(dir.join("candle_mi_clt.json")) {
+            Ok(text) => Some(serde_json::from_str(&text).map_err(|e| {
+                MIError::Config(format!("failed to parse candle_mi_clt.json: {e}"))
+            })?),
+            Err(_) => None,
+        };
+    let top_k = match meta.as_ref().and_then(|m| m.get("top_k")) {
+        None | Some(serde_json::Value::Null) => None,
+        Some(v) => Some(
+            v.as_u64()
+                .and_then(|k| usize::try_from(k).ok())
+                .ok_or_else(|| MIError::Config(format!("top_k {v} is not a count")))?,
+        ),
+    };
+    let model_name = meta
+        .as_ref()
+        .and_then(|m| m.get("model_name"))
+        .and_then(serde_json::Value::as_str)
+        // BORROW: explicit str::to_owned — the configuration owns its model name
+        .map(str::to_owned)
+        .or_else(|| {
+            std::fs::read_to_string(dir.join("config.yaml"))
+                .ok()
+                .and_then(|text| parse_yaml_value(&text, "model_name"))
+        })
+        .unwrap_or_else(|| "unknown".to_owned());
+    Ok((top_k, model_name))
+}
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used)]

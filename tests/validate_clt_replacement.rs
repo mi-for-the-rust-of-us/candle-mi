@@ -25,6 +25,7 @@ use std::cell::RefCell;
 use candle_core::{DType, Device, Tensor};
 use candle_mi::clt::replacement::{
     Reconstruct, ScaledClt, Splice, cross_entropy_at, loss_recovered, replacement_logits_for,
+    replacement_logits_where,
 };
 use candle_mi::clt::train::{TrainableClt, TrainableCltConfig};
 use candle_mi::diffusion::{OthelloGpt, OthelloGptConfig};
@@ -198,4 +199,86 @@ fn a_trained_transcoder_runs_through_scaled_clt() {
     };
     let recovered = loss_recovered(ce(Splice::Clean), ce(Splice::Replaced), ce(Splice::Ablated));
     assert!(recovered.is_finite());
+}
+
+/// The model's forward, as `replacement_logits_where` takes it.
+fn forward_of<'a>(
+    model: &'a OthelloGpt,
+    ids: &'a Tensor,
+) -> impl Fn(&HookSpec) -> candle_mi::Result<candle_mi::HookCache> + 'a {
+    move |hooks| model.forward(ids, hooks)
+}
+
+#[test]
+fn splicing_every_position_is_the_plain_replacement_model() {
+    let (model, ids) = model();
+    let clt =
+        TrainableClt::new(&TrainableCltConfig::new(LAYERS, D, 16, 4), 5, &Device::Cpu).unwrap();
+    let scaled = ScaledClt::new(&clt, &[1.0, 2.0, 0.5], &[1.5, 1.0, 2.0]).unwrap();
+    let everywhere = Tensor::ones((2, 6), DType::F32, &Device::Cpu).unwrap();
+    for splice in [Splice::Replaced, Splice::Ablated] {
+        let plain = replacement_logits_for(&model, &ids, &scaled, splice).unwrap();
+        let masked =
+            replacement_logits_where(forward_of(&model, &ids), &scaled, splice, &everywhere)
+                .unwrap();
+        assert!(
+            max_abs_diff(&plain, &masked) < 1e-5,
+            "{splice:?}: {}",
+            max_abs_diff(&plain, &masked)
+        );
+    }
+}
+
+#[test]
+fn splicing_no_position_is_the_clean_model() {
+    let (model, ids) = model();
+    let zeros = Fixed {
+        fixed: Tensor::zeros((12, LAYERS, D), DType::F32, &Device::Cpu).unwrap(),
+        fed: RefCell::new(Vec::new()),
+    };
+    let clean = replacement_logits_for(&model, &ids, &zeros, Splice::Clean).unwrap();
+    let nowhere = Tensor::zeros((2, 6), DType::U8, &Device::Cpu).unwrap();
+    for splice in [Splice::Replaced, Splice::Ablated] {
+        let masked =
+            replacement_logits_where(forward_of(&model, &ids), &zeros, splice, &nowhere).unwrap();
+        assert!(max_abs_diff(&clean, &masked) < 1e-6, "{splice:?}");
+    }
+}
+
+#[test]
+fn a_row_left_unmarked_keeps_the_model_while_a_marked_row_is_ablated() {
+    // Attention mixes positions within a row, never across rows: so with row 0 marked and row 1
+    // not, row 0 must be the ablated model's and row 1 the clean model's.
+    let (model, ids) = model();
+    let zeros = Fixed {
+        fixed: Tensor::zeros((12, LAYERS, D), DType::F32, &Device::Cpu).unwrap(),
+        fed: RefCell::new(Vec::new()),
+    };
+    let row_zero = Tensor::new(&[[1u32; 6], [0u32; 6]], &Device::Cpu).unwrap();
+    let mixed = replacement_logits_where(
+        forward_of(&model, &ids),
+        &zeros,
+        Splice::Replaced,
+        &row_zero,
+    )
+    .unwrap();
+    let clean = replacement_logits_for(&model, &ids, &zeros, Splice::Clean).unwrap();
+    let ablated = replacement_logits_for(&model, &ids, &zeros, Splice::Ablated).unwrap();
+    let row = |t: &Tensor, r: usize| t.narrow(0, r, 1).unwrap();
+    assert!(max_abs_diff(&row(&mixed, 0), &row(&ablated, 0)) < 1e-6);
+    assert!(max_abs_diff(&row(&mixed, 1), &row(&clean, 1)) < 1e-6);
+}
+
+#[test]
+fn a_mask_of_the_wrong_shape_is_refused() {
+    let (model, ids) = model();
+    let zeros = Fixed {
+        fixed: Tensor::zeros((12, LAYERS, D), DType::F32, &Device::Cpu).unwrap(),
+        fed: RefCell::new(Vec::new()),
+    };
+    let wrong = Tensor::ones((2, 5), DType::F32, &Device::Cpu).unwrap();
+    assert!(
+        replacement_logits_where(forward_of(&model, &ids), &zeros, Splice::Replaced, &wrong)
+            .is_err()
+    );
 }

@@ -247,6 +247,122 @@ pub fn replacement_logits_for(
     replacement_logits(|hooks| backend.forward(input_ids, hooks), clt, splice)
 }
 
+/// [`replacement_logits`] with the splice confined to the positions `at` marks: elsewhere every
+/// layer runs the model's own MLP, on the residual the splice has produced.
+///
+/// A transcoder trained on some positions only -- a grid's non-padding cells, say -- is not a
+/// model of the others, and splicing them anyway measures its reconstruction outside its domain
+/// (which, through attention, reaches every position). `at` marks the domain. Both
+/// [`Splice::Replaced`] and [`Splice::Ablated`] run closed loop here: pass `t` captures
+/// `ResidMid(t)` and the model's own `MlpOut(t)` with the layers below already treated, and layer
+/// `t` becomes the treated output where `at` is nonzero and the model's own where it is zero.
+/// [`Splice::Clean`] ignores `at`. With every position marked, this is [`replacement_logits`];
+/// with none, the clean model.
+///
+/// # Shapes
+/// - `at`: `[batch, seq]`, any dtype -- nonzero where the transcoder splices
+/// - returns: the forward's output, `[batch, seq, vocab]` for a language model
+///
+/// # Errors
+///
+/// Returns [`MIError::Hook`] if the forward does not provide `ResidMid(t)` or `MlpOut(t)` for a
+/// layer, [`MIError::Config`] if `at` is not `[batch, seq]` of the residual stream, and
+/// propagates the forward's and the transcoder's errors.
+pub fn replacement_logits_where<F>(
+    forward: F,
+    clt: &impl Reconstruct,
+    splice: Splice,
+    at: &Tensor,
+) -> Result<Tensor>
+where
+    F: Fn(&HookSpec) -> Result<HookCache>,
+{
+    if splice == Splice::Clean {
+        return Ok(forward(&HookSpec::new())?.output().clone());
+    }
+    let layers = clt.n_layers();
+    let mut treated: Vec<Tensor> = Vec::with_capacity(layers);
+    let mut inputs: Option<Tensor> = None;
+    // EXPLICIT: pass t needs the treated layers of passes < t, a sequential dependency
+    for t in 0..layers {
+        let mut pass = HookSpec::new();
+        pass.capture(HookPoint::ResidMid(t))
+            .capture(HookPoint::MlpOut(t));
+        for (l, r) in treated.iter().enumerate() {
+            pass.intervene(HookPoint::MlpOut(l), Intervention::Replace(r.clone()));
+        }
+        let cache = forward(&pass)?;
+        let captured = |hook: HookPoint| {
+            cache
+                .get(&hook)
+                .cloned()
+                .ok_or_else(|| MIError::Hook(format!("hook point {hook:?} not captured")))
+        };
+        let resid = captured(HookPoint::ResidMid(t))?;
+        let own = captured(HookPoint::MlpOut(t))?;
+        let (spliced, kept) = splice_masks(at, &resid)?;
+        let layer = if splice == Splice::Replaced {
+            let (layer, x) = reconstruct_layer(clt, &resid, t, inputs.take())?;
+            inputs = Some(x);
+            layer
+        } else {
+            resid.zeros_like()?
+        };
+        treated.push((layer.broadcast_mul(&spliced)? + own.broadcast_mul(&kept)?)?);
+    }
+    let mut spec = HookSpec::new();
+    for (l, r) in treated.into_iter().enumerate() {
+        spec.intervene(HookPoint::MlpOut(l), Intervention::Replace(r));
+    }
+    Ok(forward(&spec)?.output().clone())
+}
+
+/// The 0/1 masks of [`replacement_logits_where`]: where the transcoder splices, and where the model
+/// keeps its own MLP, each `[batch, seq, 1]` in the residual's dtype.
+fn splice_masks(at: &Tensor, resid: &Tensor) -> Result<(Tensor, Tensor)> {
+    let (batch, seq, _) = resid.dims3()?;
+    if at.dims() != [batch, seq] {
+        return Err(MIError::Config(format!(
+            "the splice mask is {:?}, the residual stream [{batch}, {seq}]",
+            at.dims()
+        )));
+    }
+    // PROMOTE: the 0/1 mask is built in F32, then takes the model's dtype
+    let spliced = at
+        .to_dtype(DType::F32)?
+        .ne(0.0)?
+        .to_dtype(resid.dtype())?
+        .unsqueeze(2)?;
+    let kept = spliced.affine(-1.0, 1.0)?;
+    Ok((spliced, kept))
+}
+
+/// Layer `t`'s closed-loop reconstruction from the spliced residual `resid` (`ResidMid(t)`), with
+/// the inputs gathered by the passes below (`None` at the first); returns it in the residual's
+/// shape and dtype, and the inputs with column `t` filled.
+fn reconstruct_layer(
+    clt: &impl Reconstruct,
+    resid: &Tensor,
+    t: usize,
+    inputs: Option<Tensor>,
+) -> Result<(Tensor, Tensor)> {
+    let (batch, seq, d) = resid.dims3()?;
+    let rows = batch * seq;
+    // PROMOTE: the transcoder reads F32 whatever dtype the model runs in
+    let column = resid.to_dtype(DType::F32)?.reshape((rows, 1, d))?;
+    let base = match inputs {
+        Some(x) => x,
+        None => Tensor::zeros((rows, clt.n_layers(), d), DType::F32, resid.device())?,
+    };
+    let x = base.slice_assign(&[0..rows, t..t + 1, 0..d], &column)?;
+    let layer = clt
+        .reconstruct(&x)?
+        .narrow(1, t, 1)?
+        .reshape((batch, seq, d))?
+        .to_dtype(resid.dtype())?;
+    Ok((layer, x))
+}
+
 /// Loss recovered by a replacement: `1 - (spliced - clean) / (ablated - clean)`, where each is the
 /// cross-entropy at the same positions. 1 is perfect; 0 is no better than zeroing the MLPs.
 ///
