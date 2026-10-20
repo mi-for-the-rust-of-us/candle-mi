@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`clt::train`: a trainable cross-layer transcoder** (`src/clt/train.rs`, `clt`
+  feature). `TrainableClt` holds its parameters as candle `Var`s (named for
+  `optim::AdamW`), with `TopK(ReLU)` encode, a strictly triangular decoder and
+  the mean-MSE loss -- the model and its loss, no training loop (the loop stays
+  with the caller, as everywhere in the crate). `export_circuit_tracer` writes
+  the circuit-tracer layout `CrossLayerTranscoder` reads (`W_enc_{l}` /
+  `W_dec_{l}` safetensors, `F32`), folding per-layer input/output scales into
+  the weights, plus a `candle_mi_clt.json` carrying `top_k`. Parity with the
+  PyTorch reference it reproduces (askesis's `clt.py`): activations,
+  reconstruction, loss, every gradient and one Adam step agree to 1e-4 on a
+  fixture produced by that class (`scripts/clt_train_validation.py`,
+  `tests/validate_clt_train.rs`, CPU, runs in CI). `forward_detached` evaluates
+  on detached parameters (no backward graph) for evaluation and replacement models.
+- **`clt::replacement`: the closed-loop replacement model and its faithfulness readings**
+  (`clt` feature). `replacement_logits` runs a model with its MLP outputs `Clean`, `Ablated` or
+  `Replaced` by a transcoder's reconstruction, closed loop: pass `t` reads the residual of the
+  run with layers `< t` already replaced (`tests/validate_clt_replacement.rs` proves it against
+  an open-loop splice). The forward is the caller's closure (`replacement_logits_for` uses
+  `MIBackend::forward`). `Reconstruct` is the transcoder seam; `ScaledClt` adapts a trained
+  `TrainableClt` to raw units, detached and chunked. Metrics: `loss_recovered`, `fvu_per_layer`,
+  `cross_entropy_at`, `top_tokens_at`, `dead_fraction`. Both test files run in CI (new step
+  "Tests (CLT train + replacement)" in `ci.yml`, `publish.yml` and `scripts/preflight.ps1`).
+- **`clt::replacement::replacement_logits_where`**: the closed-loop replacement model with the
+  splice confined to marked positions (`at`, `[batch, seq]`); elsewhere every layer runs the
+  model's own MLP on the spliced residual. For a transcoder trained on some positions only (a
+  grid's non-padding cells): splicing the others measures its reconstruction outside its domain,
+  which attention carries to every position (askesis, 2026-10-14: a 6-layer grid model's
+  agreement at the cell read rose from 59 % to 93 % once padding was left to the model). Every
+  position marked is `replacement_logits`; none, the clean model. The splice is a select, not a 0/1
+  product, so a non-finite reconstruction outside the domain never reaches a kept position
+  (`tests/validate_clt_replacement.rs`, six new tests, including a within-row mask against an
+  independent layer-by-layer oracle and a NaN reconstructor).
+- **`CrossLayerTranscoder::open_local(dir)`**: open a CLT from a local directory
+  (the `safetensors` schemas), nothing downloaded -- e.g. one exported by
+  `clt::train`.
+- **`CltConfig::top_k`**: `TopK` sparsity at `encode` for CLTs trained with it
+  (`None`, unchanged behaviour, for every published transcoder; `open_local`
+  reads it from `candle_mi_clt.json`).
+
 ### Security
 
 - **`rustls` 0.23.45 -> 0.23.46 in `Cargo.lock`**, clearing RUSTSEC-2026-0346,

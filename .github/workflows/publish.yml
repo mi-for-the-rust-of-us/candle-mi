@@ -108,6 +108,11 @@ jobs:
       - name: Tests (CLT)
         run: cargo test --locked --no-default-features --features "clt,transformer" --lib
 
+      # The trainable CLT's oracle parity (askesis clt.py, bar 1e-4) and the replacement model's
+      # closed-loop proof: CPU-only and tiny, so they run here rather than sit behind #[ignore].
+      - name: Tests (CLT train + replacement)
+        run: cargo test --locked --no-default-features --features "clt,diffusion,training" --test validate_clt_train --test validate_clt_replacement
+
       # Quantized loading (bnb/AWQ/GPTQ dequant via anamnesis), opt-in, pairs with
       # `transformer`. Mirrors ci.yml so a quantized-path regression can't slip
       # through publish either. Parity tests are #[ignore]; this compiles them.

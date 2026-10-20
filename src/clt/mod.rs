@@ -42,6 +42,8 @@ use tracing::info;
 use crate::error::{MIError, Result};
 
 pub mod gemmascope;
+pub mod replacement;
+pub mod train;
 
 use crate::clt::gemmascope::GEMMASCOPE_WEIGHTS_REPO;
 
@@ -264,6 +266,11 @@ pub struct CltConfig {
     /// `mntss/gemma-scope-transcoders/config.yaml`. Populated by `open()`
     /// for `GemmaScopeNpz` schemas; empty for `CltSplit` / `PltBundle`.
     pub gemmascope_npz_paths: Vec<String>,
+    /// `TopK` sparsity applied after the activation: keep the `k` largest features per encoded position. `None` for
+    /// every published transcoder (plain `ReLU` / `JumpReLU`); `Some(k)` for a CLT trained with
+    /// [`train::TrainableClt`] and opened with [`open_local`](CrossLayerTranscoder::open_local), which reads it from
+    /// `candle_mi_clt.json`.
+    pub top_k: Option<usize>,
 }
 
 // ---------------------------------------------------------------------------
@@ -555,6 +562,7 @@ impl CrossLayerTranscoder {
             model_name,
             schema,
             gemmascope_npz_paths: Vec::new(),
+            top_k: None,
         };
         info!(
             "CLT config: {} layers, d_model={}, features_per_layer={}, total={}, schema={:?}",
@@ -567,6 +575,116 @@ impl CrossLayerTranscoder {
 
         Ok(Self {
             repo_id: clt_repo.to_owned(),
+            fetch_config,
+            encoder_paths,
+            decoder_paths,
+            config,
+            loaded_encoder: None,
+            steering_cache: HashMap::new(),
+        })
+    }
+
+    /// Open a transcoder from a LOCAL directory in the layout [`open`](Self::open) reads from a repository --
+    /// typically one written by [`train::TrainableClt::export_circuit_tracer`]. Nothing is downloaded: every weight
+    /// file's path is known up front.
+    ///
+    /// Supported layouts: the `safetensors` schemas ([`TranscoderSchema::CltSplit`],
+    /// [`TranscoderSchema::CltSplitJumpReLU`], [`TranscoderSchema::PltBundle`]). An optional `candle_mi_clt.json`
+    /// supplies `top_k` (stored in [`CltConfig::top_k`]) and `model_name`; without it, `config.yaml`'s
+    /// `model_name` is used if present.
+    ///
+    /// # Memory
+    ///
+    /// Reads the layer-0 encoder file to `CPU` to probe the dimensions (`n_features * d_model` weights; ~25 MB for a
+    /// 4,096 x 384 `F32` layer) and drops it before returning; nothing is moved to a device.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MIError::Io`] if the directory or a file cannot be read.
+    /// Returns [`MIError::Config`] if the layout is unrecognised or not a `safetensors` schema, no encoder file is found,
+    /// the layer-0 encoder cannot be parsed or is not 2-D, or `candle_mi_clt.json` is malformed.
+    /// Returns [`MIError::Download`] if the (offline) fetch configuration cannot be built.
+    pub fn open_local(dir: &Path) -> Result<Self> {
+        let filenames: Vec<String> = std::fs::read_dir(dir)?
+            // BORROW: explicit .into_owned() — the names outlive the directory iterator
+            .map(|entry| entry.map(|e| e.file_name().to_string_lossy().into_owned()))
+            .collect::<std::result::Result<_, _>>()?;
+        let names: Vec<&str> = filenames.iter().map(String::as_str).collect();
+        let schema = classify_transcoder_schema(&names).map_err(|_| {
+            MIError::Config(format!(
+                "unrecognised transcoder layout in {}",
+                dir.display()
+            ))
+        })?;
+        let prefix = match schema {
+            TranscoderSchema::CltSplit | TranscoderSchema::CltSplitJumpReLU => "W_enc_",
+            TranscoderSchema::PltBundle => "layer_",
+            TranscoderSchema::GemmaScopeNpz => {
+                return Err(MIError::Config(format!(
+                    "local GemmaScope NPZ layouts are not supported ({})",
+                    dir.display()
+                )));
+            }
+        };
+        let n_layers = names
+            .iter()
+            .filter(|n| n.starts_with(prefix) && n.ends_with(".safetensors"))
+            .count();
+        if n_layers == 0 {
+            return Err(MIError::Config(format!(
+                "no encoder files found in {} (schema={schema:?})",
+                dir.display()
+            )));
+        }
+        let (top_k, model_name) = local_metadata(dir)?;
+
+        let (enc0_filename, enc_tensor_name, _) = encoder_file_and_tensor_names(schema, 0, &[])?;
+        let data = std::fs::read(dir.join(&enc0_filename))?;
+        let tensors = SafeTensors::deserialize(&data)
+            .map_err(|e| MIError::Config(format!("failed to deserialize {enc0_filename}: {e}")))?;
+        let w_enc_view = tensors
+            .tensor(&enc_tensor_name)
+            .map_err(|e| MIError::Config(format!("tensor '{enc_tensor_name}' not found: {e}")))?;
+        let (n_features_per_layer, d_model) = match w_enc_view.shape() {
+            &[f, d] => (f, d),
+            shape => {
+                return Err(MIError::Config(format!(
+                    "expected 2D encoder weight, got shape {shape:?}"
+                )));
+            }
+        };
+        let encoder_paths = (0..n_layers)
+            .map(|l| {
+                encoder_file_and_tensor_names(schema, l, &[]).map(|(f, _, _)| Some(dir.join(f)))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let decoder_paths = (0..n_layers)
+            .map(|l| decoder_file_and_tensor_name(schema, l, &[]).map(|(f, _)| Some(dir.join(f))))
+            .collect::<Result<Vec<_>>>()?;
+        let fetch_config = crate::download::fetch_config_builder()
+            .build()
+            .map_err(|e| MIError::Download(format!("failed to build fetch config: {e}")))?;
+        let config = CltConfig {
+            n_layers,
+            d_model,
+            n_features_per_layer,
+            n_features_total: n_layers * n_features_per_layer,
+            model_name,
+            schema,
+            gemmascope_npz_paths: Vec::new(),
+            top_k,
+        };
+        info!(
+            "Local CLT {}: {} layers, d_model={}, features_per_layer={}, top_k={:?}, schema={:?}",
+            dir.display(),
+            config.n_layers,
+            config.d_model,
+            config.n_features_per_layer,
+            config.top_k,
+            config.schema,
+        );
+        Ok(Self {
+            repo_id: dir.display().to_string(),
             fetch_config,
             encoder_paths,
             decoder_paths,
@@ -731,6 +849,7 @@ impl CrossLayerTranscoder {
             model_name,
             schema: TranscoderSchema::GemmaScopeNpz,
             gemmascope_npz_paths,
+            top_k: None,
         };
         info!(
             "GemmaScope config: {} layers, d_model={}, features_per_layer={}, total={}",
@@ -1228,6 +1347,12 @@ impl CrossLayerTranscoder {
                     pre_acts.relu()?
                 }
             }
+        };
+
+        // A CLT trained with TopK (`clt::train`) keeps its k largest features at encode, as it did in training.
+        let acts = match self.config.top_k {
+            Some(k) => train::top_k(&acts, k)?,
+            None => acts,
         };
 
         // Transfer to CPU for sparse extraction.
@@ -2879,6 +3004,45 @@ fn probe_gemmascope_npz_shape(
     gemmascope_dims_from_w_enc_shape(w_enc_shape, &full)
 }
 
+/// `top_k` and `model_name` of a local transcoder directory ([`CrossLayerTranscoder::open_local`]):
+/// from an optional `candle_mi_clt.json`, the model name falling back to `config.yaml`'s, then
+/// `"unknown"`.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if `candle_mi_clt.json` exists but is not JSON, or its `top_k` is
+/// not a count.
+fn local_metadata(dir: &Path) -> Result<(Option<usize>, String)> {
+    let meta: Option<serde_json::Value> =
+        match std::fs::read_to_string(dir.join("candle_mi_clt.json")) {
+            Ok(text) => Some(serde_json::from_str(&text).map_err(|e| {
+                MIError::Config(format!("failed to parse candle_mi_clt.json: {e}"))
+            })?),
+            Err(_) => None,
+        };
+    let top_k = match meta.as_ref().and_then(|m| m.get("top_k")) {
+        None | Some(serde_json::Value::Null) => None,
+        Some(v) => Some(
+            v.as_u64()
+                .and_then(|k| usize::try_from(k).ok())
+                .ok_or_else(|| MIError::Config(format!("top_k {v} is not a count")))?,
+        ),
+    };
+    let model_name = meta
+        .as_ref()
+        .and_then(|m| m.get("model_name"))
+        .and_then(serde_json::Value::as_str)
+        // BORROW: explicit str::to_owned — the configuration owns its model name
+        .map(str::to_owned)
+        .or_else(|| {
+            std::fs::read_to_string(dir.join("config.yaml"))
+                .ok()
+                .and_then(|text| parse_yaml_value(&text, "model_name"))
+        })
+        .unwrap_or_else(|| "unknown".to_owned());
+    Ok((top_k, model_name))
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -2997,6 +3161,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: Some(LoadedEncoder {
                 layer: 0,
@@ -3033,6 +3198,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: Some(LoadedEncoder {
                 layer: 0,
@@ -3088,6 +3254,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::GemmaScopeNpz,
                 gemmascope_npz_paths: vec!["dummy/path/params.npz".to_owned()],
+                top_k: None,
             },
             loaded_encoder: Some(LoadedEncoder {
                 layer: 0,
@@ -3140,6 +3307,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::GemmaScopeNpz,
                 gemmascope_npz_paths: vec!["dummy".to_owned()],
+                top_k: None,
             },
             loaded_encoder: Some(LoadedEncoder {
                 layer: 0,
@@ -3187,6 +3355,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache,
@@ -3238,6 +3407,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache,
@@ -3469,6 +3639,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -3533,6 +3704,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -3592,6 +3764,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -3649,6 +3822,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -3711,6 +3885,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -3763,6 +3938,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -4371,6 +4547,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::PltBundle,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -4441,6 +4618,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -4512,6 +4690,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::PltBundle,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -4594,6 +4773,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::PltBundle,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),
@@ -4624,6 +4804,7 @@ mod tests {
                 model_name: "test".to_owned(),
                 schema: TranscoderSchema::CltSplit,
                 gemmascope_npz_paths: Vec::new(),
+                top_k: None,
             },
             loaded_encoder: None,
             steering_cache: HashMap::new(),

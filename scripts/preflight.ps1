@@ -236,6 +236,8 @@ function Invoke-Lanes {
         @("build", "--no-default-features", "--features", "clt,transformer") -Lane 'clt'
     Invoke-Cargo "[$Tc] Tests (CLT)" $Tc `
         @("test", "--no-default-features", "--features", "clt,transformer", "--lib") -Lane 'clt'
+    Invoke-Cargo "[$Tc] Tests (CLT train + replacement)" $Tc `
+        @("test", "--no-default-features", "--features", "clt,diffusion,training", "--test", "validate_clt_train", "--test", "validate_clt_replacement") -Lane 'clt'
 
     # Quantized loading (bnb/AWQ/GPTQ dequant); parity tests are #[ignore], so
     # this compiles the test binary to catch signature/API breaks.
