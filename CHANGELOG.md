@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+
+- **`rustls` 0.23.45 -> 0.23.46 in `Cargo.lock`**, clearing RUSTSEC-2026-0346,
+  -0347, -0348 and -0349. It reaches candle-mi through `reqwest` on the model
+  download path (`hf-fetch-model`, `hf-hub`).
+- **RUSTSEC-2026-0367, -0368 and -0369 (`zip` 8.6.0) accepted in `deny.toml`.**
+  `zip` is a required dependency of `candle-core` 0.11, which holds it at `^8.6`,
+  and the fix is in `zip` 9. All three advisories concern `extract()`, which
+  candle never calls: its `.npz` / `.pth` readers use only `by_index` and
+  `by_name`. The ignores go when `candle-core` moves to `zip` 9.
+
 ## [0.2.2] - 2026-10-12
 
 ### Added
