@@ -10,8 +10,15 @@ implemented; every fact below was read from this repository on that date (file a
 
 **Validated** 2026-10-31 in a second pass: every file and line reference was re-read, and the recipe was compiled and
 run as a throwaway spike (CPU, 5.2 s, since deleted). The corrections it produced are folded in below; the numbers
-are recorded under "Validation record". The recipe is therefore now known to compile, but the example itself is still
-unwritten.
+are recorded under "Validation record".
+
+**Status 2026-10-31: implemented on `main`, not pushed.** The example (`examples/clt_train_tiny.rs`), its CI lane
+(`clt-train`: clippy, rustdoc, build, run, in `ci.yml`, `publish.yml` and `scripts/preflight.ps1`), S1, S2 and S3 are
+done, in five commits. D4 to D8 went as recommended; D6 (no root re-exports) is recorded in
+`docs/roadmaps/v0.3.0-api-ergonomics.md`. Still open and not candle-mi work: S4 (the two upstream `candle` issues, a
+maintainer decision after re-measuring) and the parked `candle` 0.11.1 move. Still to do before v0.2.3: the release
+ritual in `CLAUDE.md` (`preflight.ps1 -Ci` on the full tree, version bump, dry-run publish). Measured on the first
+run: the new lint lane found nothing to fix in the two existing test files, contrary to the expectation below.
 
 **Source of the ask:** [`docs/dogfooding-feedbacks/trainable-clt-and-the-candle-costs-of-training-it.md`](../dogfooding-feedbacks/trainable-clt-and-the-candle-costs-of-training-it.md)
 §8 item 3, "An example, `clt_train_tiny`: a complete loop on a small model, as a recipe — the loop stays out of the

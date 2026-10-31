@@ -50,7 +50,7 @@
 //! | `rwkv-tokenizer` | no | RWKV world tokenizer (required for RWKV inference) |
 //! | `diffusion` | no | MDLM masked-diffusion backend (bidirectional `DiT`; standalone) |
 //! | `fused-attn` | no | `OthelloGpt`'s attention through the `candle-fused-attn` crate: fused `F32` forward and backward, with a bit-reproducible backward on CUDA, at every layer with no attention-internal hook (use with `diffusion`) |
-//! | `clt` | no | Cross-Layer Transcoder support |
+//! | `clt` | no | Cross-Layer Transcoders: load and analyse a published one, train one (`clt::train`, fitted with `optim::AdamW`, which needs `training`), and run its closed-loop replacement model (`clt::replacement`) |
 //! | `sae` | no | Sparse Autoencoder support (NPZ via `anamnesis`) |
 //! | `quantized` | no | Load quantized checkpoints (bitsandbytes `NF4`/`FP4`/`INT8`, `AWQ`, `GPTQ`) by dequantizing to `BF16` via `anamnesis` |
 //! | `mmap` | no | Memory-mapped weight loading (required for sharded models) |
@@ -216,6 +216,15 @@
 //! trajectory is held to candle's own by `tests/validate_optim_parity.rs`.
 //! It buys no throughput, only resumability.
 //!
+//! A cross-layer transcoder trains the same way. With the `clt` feature,
+//! `clt::train::TrainableClt` holds its parameters as candle `Var`s (fitted with
+//! `optim::AdamW`, so with `training` too), `clt::replacement` reads the result back through
+//! the closed-loop replacement model (loss recovered, fraction of variance
+//! unexplained, dead features), and `TrainableClt::export_circuit_tracer` writes
+//! the files `CrossLayerTranscoder::open_local` reads. The loop is still the
+//! caller's: `examples/clt_train_tiny.rs` is a complete one that needs no download
+//! and no GPU (`--features clt,diffusion,training`).
+//!
 //! ## Fast downloads
 //!
 //! candle-mi uses [`hf-fetch-model`](https://github.com/mi-for-the-rust-of-us/hf-fetch-model)
@@ -247,7 +256,7 @@
 //!   how to add a new model architecture (auto-config, config parser, or
 //!   custom `MIBackend`).
 //! - [`examples/README.md`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/examples/README.md) —
-//!   42 runnable examples covering inference, logit lens, attention patterns,
+//!   43 runnable examples covering inference, logit lens, attention patterns,
 //!   knockout, steering, activation patching, `CounterFact` replication,
 //!   CLT circuits, SAE encoding, RWKV inference, `AlgZoo` analysis, and more.
 

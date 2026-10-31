@@ -621,7 +621,10 @@ candle-mi/
 │   │   └── norm.rs                 — LayerNorm (with bias, RWKV-style)
 │   │
 │   ├── clt/                        — Cross-layer transcoder (feature: "clt") ✅ Phase 3
-│   │   └── mod.rs                  — CrossLayerTranscoder, CltConfig, CltFeatureId, SparseActivations, encode/top_k/inject
+│   │   ├── mod.rs                  — CrossLayerTranscoder, CltConfig, CltFeatureId, SparseActivations, encode/top_k/inject, open_local
+│   │   ├── gemmascope.rs           — Parser for the Gemma Scope transcoder curation config.yaml (a hand-rolled reader for its minimal schema)
+│   │   ├── train.rs                — TrainableClt, TrainableCltConfig, sort-based top_k, export_circuit_tracer (fitted with optim::AdamW, feature: "training")
+│   │   └── replacement.rs          — Reconstruct, ScaledClt, Splice, replacement_logits*, loss_recovered, fvu_per_layer, cross_entropy_at, top_tokens_at, dead_fraction
 │   │
 │   ├── sae/                        — Sparse autoencoder (feature: "sae") ✅ Phase 4
 │   │   ├── mod.rs                  — SparseAutoencoder, SaeConfig, encode/inject

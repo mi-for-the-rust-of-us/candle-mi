@@ -1,14 +1,17 @@
-> **Status: PARTLY IMPLEMENTED on branch `clt-train`** (2026-10-13, unreleased), from the canvas leg
-> of askesis. §2–5 shipped there (`fed8287` through `0200d3e`): `clt::train` (`TrainableClt`,
-> `forward_detached`, `export_circuit_tracer`, the sort-based `top_k`),
-> `CrossLayerTranscoder::open_local`, `CltConfig::top_k`. §8 items 1–2 shipped as a **variant** in
-> `fd2994b` (`clt::replacement`): the forward is the caller's closure and the transcoder sits behind
-> a `Reconstruct` trait with a `ScaledClt` adapter — not the `&impl MIBackend` signature §8
-> sketches, which could neither run canvas's own forward nor carry the training scales (Consistency
-> pass, item 6). **ASKED** for v0.2.3: §8 item 3 (the example). §9's two `candle` fixes are upstream
-> candidates, awaiting the maintainer. Both test files now run in CI: step "Tests (CLT train +
-> replacement)", added to `ci.yml`, `publish.yml` and `scripts/preflight.ps1` after the Consistency
-> pass (its item 3).
+> **Status: IMPLEMENTED on `main`, unreleased (v0.2.3 pending)** (2026-10-31), from the canvas leg
+> of askesis. The work was written on branch `clt-train` and merged through PR #4 (merge commit
+> `0a789b8`). §2 to §5 shipped as `clt::train` (`TrainableClt`, `forward_detached`,
+> `export_circuit_tracer`, the sort-based `top_k`), `CrossLayerTranscoder::open_local` and
+> `CltConfig::top_k`. §8 items 1 and 2 shipped as a **variant** (`clt::replacement`): the forward is
+> the caller's closure and the transcoder sits behind a `Reconstruct` trait with a `ScaledClt`
+> adapter, not the `&impl MIBackend` signature §8 sketches, which could neither run canvas's own
+> forward nor carry the training scales (Consistency pass, item 6). §8 item 3 shipped as the
+> `clt_train_tiny` example (offline, CPU, a few seconds, run by CI). §9's two `candle` fixes remain
+> upstream candidates, awaiting the maintainer; they must be re-measured on unpatched `candle` first
+> (the numbers below come from a sibling clone on branch `gradstore-accumulate-0.11`, see
+> `docs/roadmaps/PLAN-CLT-TRAIN-TINY.md`, S4). Both test files and the example run in CI: steps
+> "Tests (CLT train + replacement)" and "Run example (clt_train_tiny)" in `ci.yml`, `publish.yml`
+> and `scripts/preflight.ps1`. Update this header again when v0.2.3 is tagged.
 
 # A CLT trains on candle-mi now, and three `candle` behaviours — not the math — set what a step costs
 
