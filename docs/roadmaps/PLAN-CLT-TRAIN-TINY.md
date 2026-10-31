@@ -14,7 +14,7 @@ are recorded under "Validation record".
 
 **Status 2026-10-31: implemented on `main`, not pushed.** The example (`examples/clt_train_tiny.rs`), its CI lane
 (`clt-train`: clippy, rustdoc, build, run, in `ci.yml`, `publish.yml` and `scripts/preflight.ps1`), S1, S2 and S3 are
-done, in five commits. D4 to D8 went as recommended; D6 (no root re-exports) is recorded in
+done, in four commits and a follow-up that applied an independent audit. D4 to D8 went as recommended; D6 (no root re-exports) is recorded in
 `docs/roadmaps/v0.3.0-api-ergonomics.md`. Still open and not candle-mi work: S4 (the two upstream `candle` issues, a
 maintainer decision after re-measuring) and the parked `candle` 0.11.1 move. Still to do before v0.2.3: the release
 ritual in `CLAUDE.md` (`preflight.ps1 -Ci` on the full tree, version bump, dry-run publish). Measured on the first

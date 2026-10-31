@@ -12,8 +12,8 @@
 //!    that can be constructed with no download.
 //! 2. Generates seeded pseudo-random token sequences (no `rand` dependency). They are **not**
 //!    legal Othello games; with random weights there is nothing to be legal for.
-//! 3. Captures every layer's MLP input (`ResidMid`) and output (`MlpOut`) in one forward, then
-//!    detaches them: the model is built over a `VarMap`, so its activations would otherwise drag
+//! 3. Captures, for every layer, the residual stream entering the MLP sublayer (`ResidMid`, the
+//!    CLT's input) and the MLP's output (`MlpOut`, its target) in one forward, then detaches them: the model is built over a `VarMap`, so its activations would otherwise drag
 //!    the backbone's graph into every `backward()`.
 //! 4. Fits one scalar scale per layer and side (the RMS of the activations), so the CLT trains on
 //!    `x / scale_in` and `target / scale_out`.
@@ -62,6 +62,8 @@ const N_FEATURES: usize = 64;
 const TOP_K: usize = 4;
 /// Seed of the backbone's initialisation, the CLT's initialisation and the token generator.
 const SEED: u64 = 20_261_031;
+/// Mixed into [`SEED`] (by exclusive or) so the held-out batch is a different token stream.
+const HELD_OUT_SALT: u64 = 0x5eed;
 /// Sequences in the training batch.
 const TRAIN_SEQS: usize = 300;
 /// Sequences in the held-out batch (a different seed).
@@ -70,15 +72,22 @@ const EVAL_SEQS: usize = 100;
 const STEPS: usize = 300;
 /// Steps between loss lines.
 const LOG_EVERY: usize = 100;
-/// `AdamW` learning rate.
+/// `AdamW` learning rate (the betas and epsilon in [`fit`] are Adam's usual defaults).
 const LEARNING_RATE: f64 = 3e-3;
+/// The training loss must fall to at most this fraction of its first value.
+const LOSS_FALL: f32 = 0.5;
+/// Largest held-out fraction of variance unexplained, per layer, for the reconstruction to count
+/// as working. A CLT fed the wrong way round (`x * scale_in`) sits far above it.
+const FVU_CEILING: f32 = 0.5;
 /// Smallest `ablated - clean` cross-entropy gap (nats) at which `loss_recovered` is a ratio of
 /// something rather than of noise.
 const GAP_FLOOR: f64 = 1e-4;
 /// Largest disagreement tolerated between a reloaded encoder and the trained CLT's activations.
 const ENCODE_TOLERANCE: f32 = 1e-3;
-/// Rows (sequences) of the held-out batch whose encodings are compared after the reload.
-const RELOAD_ROWS: usize = 8;
+/// Stride between the held-out *positions* (flattened `batch * SEQ` rows) whose encodings are
+/// compared after the reload. 25 is coprime to [`SEQ`], so the sample visits every position of
+/// a sequence, and it keeps the comparison to a few dozen encodings.
+const RELOAD_STRIDE: usize = 25;
 
 /// Counts the self-checks that held; one that does not holds the example back (non-zero exit).
 struct Checks {
@@ -110,7 +119,12 @@ impl Checks {
 ///
 /// Returns [`MIError::Config`] if `value` does not fit in `U`.
 fn convert<T: Copy + Display, U: TryFrom<T>>(value: T) -> candle_mi::Result<U> {
-    U::try_from(value).map_err(|_| MIError::Config(format!("value {value} out of range")))
+    U::try_from(value).map_err(|_| {
+        MIError::Config(format!(
+            "value {value} out of range for {}",
+            std::any::type_name::<U>()
+        ))
+    })
 }
 
 /// Seeded pseudo-random token ids: a linear congruential generator, so there is no `rand`
@@ -127,6 +141,7 @@ fn random_ids(n_seqs: usize, seed: u64, device: &Device) -> candle_mi::Result<(V
     let vocab: u64 = convert(VOCAB)?;
     let mut state = seed;
     let mut flat = Vec::with_capacity(n_seqs * SEQ);
+    // Knuth's MMIX constants. The high bits of an LCG are the well-mixed ones, hence `>> 33`.
     // EXPLICIT: the generator carries `state` from one draw to the next; `.map()` would hide it
     for _ in 0..n_seqs * SEQ {
         state = state
@@ -147,8 +162,8 @@ fn random_ids(n_seqs: usize, seed: u64, device: &Device) -> candle_mi::Result<(V
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Hook`] if the backbone does not provide a hook point, and
-/// [`MIError::Model`] on tensor failure.
+/// Returns [`MIError::Hook`] if the backbone does not provide a hook point.
+/// Returns [`MIError::Model`] on tensor failure.
 fn capture_mlp_io(model: &OthelloGpt, ids: &Tensor) -> candle_mi::Result<(Tensor, Tensor)> {
     let mut spec = HookSpec::new();
     for layer in 0..LAYERS {
@@ -248,26 +263,28 @@ fn max_abs_diff(a: &Tensor, b: &Tensor) -> candle_mi::Result<f32> {
 }
 
 /// Export `clt` as circuit-tracer files, reload them with the loader that reads published CLTs,
-/// and check that it encodes like the trained CLT. Returns how many (position, layer) encodings
-/// were compared.
+/// and check that it encodes like the trained CLT on every `RELOAD_STRIDE`-th position.
+///
+/// Only the encoder side is compared here; the decoder side of the export (the folded
+/// `scale_out`) is proved against the trained decoder by `tests/validate_clt_train.rs`.
 ///
 /// # Shapes
 /// - `x_eval`: `[rows, LAYERS, D]` -- raw MLP inputs
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Io`] if the directory cannot be written or removed, [`MIError::Config`] if
-/// the reloaded configuration cannot be read, and [`MIError::Model`] on tensor failure or a
-/// failed self-check.
+/// Returns [`MIError::Io`] if the directory cannot be written or removed.
+/// Returns [`MIError::Config`] if the reloaded configuration cannot be read.
+/// Returns [`MIError::Model`] on tensor failure or a failed self-check.
 fn export_and_reload(
     clt: &TrainableClt,
     scale_in: &[f32],
     scale_out: &[f32],
     x_eval: &Tensor,
     checks: &mut Checks,
-) -> candle_mi::Result<usize> {
+) -> candle_mi::Result<()> {
     let dir = std::env::temp_dir().join(format!("clt_train_tiny_{}", std::process::id()));
-    let outcome = (|| -> candle_mi::Result<usize> {
+    let outcome = (|| -> candle_mi::Result<()> {
         clt.export_circuit_tracer(&dir, scale_in, scale_out, "clt_train_tiny")?;
         let mut local = CrossLayerTranscoder::open_local(&dir)?;
         let config = local.config();
@@ -280,47 +297,59 @@ fn export_and_reload(
             ) == (LAYERS, D, N_FEATURES, Some(TOP_K)),
             "the reloaded CLT has the trained (layers, d_model, features, top_k)",
         )?;
-        // The trained CLT's activations on the *scaled* inputs; the reloaded one takes the raw
-        // residual, because the export folded the scales into the weights.
-        let trained = clt.encode(&scaled(x_eval, scale_in)?)?;
-        let mut compared = 0;
+        // The trained CLT's activations on the *scaled* inputs (detached: nothing here trains);
+        // the reloaded one takes the raw residual, because the export folded the scales in.
+        let (_, trained) = clt.forward_detached(&scaled(x_eval, scale_in)?)?;
+        let mut compared = 0_usize;
         let mut worst = 0.0_f32;
+        let mut missing = 0_usize;
         let mut within_top_k = true;
         // EXPLICIT: `load_encoder` mutates the loader, and each layer's encoder is loaded once
         for layer in 0..LAYERS {
-            local.load_encoder(layer, &Device::Cpu)?;
-            for row in 0..RELOAD_ROWS {
+            local.load_encoder(layer, x_eval.device())?;
+            for row in (0..x_eval.dim(0)?).step_by(RELOAD_STRIDE) {
                 let residual = x_eval.get(row)?.get(layer)?;
                 let sparse = local.encode(&residual, layer)?;
                 let dense = trained.get(row)?.get(layer)?.to_vec1::<f32>()?;
-                within_top_k &= sparse.features.len() <= TOP_K && !sparse.features.is_empty();
+                within_top_k &= sparse.features.len() <= TOP_K;
+                // Every feature the reloaded encoder keeps has the trained activation...
                 for (id, value) in &sparse.features {
                     let want = dense.get(id.index).copied().unwrap_or(f32::INFINITY);
                     worst = worst.max((value - want).abs());
+                }
+                // ...and every feature the trained CLT clearly fires is kept.
+                for (index, want) in dense.iter().enumerate() {
+                    let kept = sparse.features.iter().any(|(id, _)| id.index == index);
+                    missing += usize::from(*want > ENCODE_TOLERANCE && !kept);
                 }
                 compared += 1;
             }
         }
         checks.expect(
             within_top_k,
-            "every reloaded encoding keeps between 1 and top_k features",
+            "no reloaded encoding keeps more than top_k features",
         )?;
         checks.expect(
             worst <= ENCODE_TOLERANCE,
-            "the reloaded encoder agrees with the trained CLT's activations",
+            "every feature the reloaded encoder keeps has the trained activation",
+        )?;
+        checks.expect(
+            missing == 0,
+            "every feature the trained CLT clearly fires is kept by the reloaded encoder",
         )?;
         println!("  largest encoder disagreement over {compared} encodings: {worst:.2e}");
-        Ok(compared)
+        Ok(())
     })();
     // Remove the directory whether or not the checks held, then report the first failure.
     let cleanup = std::fs::remove_dir_all(&dir);
-    let compared = outcome?;
+    outcome?;
     cleanup?;
-    Ok(compared)
+    Ok(())
 }
 
-/// The replacement model with the CLT confined to the first half of each row; the model's own
-/// MLPs run on the rest, on the residual the splice has produced.
+/// The replacement model with the CLT confined to the first `marked` positions of each row; the
+/// model's own MLPs run on the rest, on the residual the splice has produced. `marked = SEQ` is
+/// the plain replacement model and `marked = 0` the clean one.
 ///
 /// # Shapes
 /// - `ids`: `[batch, SEQ]` -- token ids
@@ -328,17 +357,18 @@ fn export_and_reload(
 ///
 /// # Errors
 ///
-/// Returns [`MIError::Hook`] if the backbone does not provide a hook point, and
-/// [`MIError::Model`] on tensor failure.
+/// Returns [`MIError::Hook`] if the backbone does not provide a hook point.
+/// Returns [`MIError::Model`] on tensor failure.
 fn confined_splice(
     model: &OthelloGpt,
     ids: &Tensor,
     clt: &ScaledClt<'_>,
+    marked: usize,
 ) -> candle_mi::Result<Tensor> {
     // The mask is `[batch, seq]` and nonzero where the CLT splices.
     let batch = ids.dim(0)?;
     let mask: Vec<f32> = (0..batch * SEQ)
-        .map(|i| if i % SEQ < SEQ / 2 { 1.0 } else { 0.0 })
+        .map(|i| if i % SEQ < marked { 1.0 } else { 0.0 })
         .collect();
     let at = Tensor::from_vec(mask, (batch, SEQ), ids.device())?;
     replacement_logits_where(
@@ -347,6 +377,83 @@ fn confined_splice(
         Splice::Replaced,
         &at,
     )
+}
+
+/// The replacement model on the held-out batch: cross-entropy under each splice, `loss_recovered`
+/// with its denominator, and the confined splice.
+///
+/// # Shapes
+/// - `eval_ids`: `[batch, SEQ]` -- token ids
+/// - `eval_flat`: `batch * SEQ` -- the same ids, flat; the cross-entropy target at each position
+///
+/// # Errors
+///
+/// Returns [`MIError::Hook`] if the backbone does not provide a hook point.
+/// Returns [`MIError::Config`] if a position index does not fit in `u32`.
+/// Returns [`MIError::Model`] on tensor failure or a failed self-check.
+fn replacement_readings(
+    model: &OthelloGpt,
+    eval_ids: &Tensor,
+    eval_flat: &[u32],
+    scaled_clt: &ScaledClt<'_>,
+    checks: &mut Checks,
+) -> candle_mi::Result<()> {
+    let positions: Vec<u32> = (0..eval_flat.len())
+        .map(convert::<usize, u32>)
+        .collect::<candle_mi::Result<_>>()?;
+    // Bidirectional model, so the target at a position is the token that is there.
+    let clean = replacement_logits_for(model, eval_ids, scaled_clt, Splice::Clean)?;
+    let replaced = replacement_logits_for(model, eval_ids, scaled_clt, Splice::Replaced)?;
+    let ablated = replacement_logits_for(model, eval_ids, scaled_clt, Splice::Ablated)?;
+    let ce_clean = cross_entropy_at(&clean, &positions, eval_flat)?;
+    let ce_replaced = cross_entropy_at(&replaced, &positions, eval_flat)?;
+    let ce_ablated = cross_entropy_at(&ablated, &positions, eval_flat)?;
+    let gap = ce_ablated - ce_clean;
+    let recovered = loss_recovered(ce_clean, ce_replaced, ce_ablated);
+    println!(
+        "   cross-entropy: clean {ce_clean:.4}, replaced {ce_replaced:.4}, ablated {ce_ablated:.4}"
+    );
+    println!(
+        "   ablated - clean = {gap:.4} nats; loss_recovered = {recovered:.3}, a ratio of that gap"
+    );
+    println!("   (with random weights the MLPs barely matter, so it says nothing about the CLT)");
+    checks.expect(
+        [ce_clean, ce_replaced, ce_ablated, recovered]
+            .iter()
+            .all(|v| v.is_finite()),
+        "the replacement-model readings are finite",
+    )?;
+    checks.expect(
+        gap.abs() > GAP_FLOOR,
+        "ablating the MLPs moves the cross-entropy, so loss_recovered is not a ratio of noise",
+    )?;
+    let moved_replaced = max_abs_diff(&replaced, &clean)?;
+    let moved_ablated = max_abs_diff(&ablated, &clean)?;
+    checks.expect(
+        0.0 < moved_replaced && moved_replaced < moved_ablated,
+        "the replaced model moves the logits, but less than zeroing every MLP does",
+    )?;
+
+    // The confined splice: marking every position is the plain replacement model, marking none is
+    // the clean model, and marking some moves the logits (the model is bidirectional, so a splice
+    // at some positions still reaches the others through attention).
+    let everywhere = confined_splice(model, eval_ids, scaled_clt, SEQ)?;
+    let nowhere = confined_splice(model, eval_ids, scaled_clt, 0)?;
+    checks.expect(
+        max_abs_diff(&everywhere, &replaced)? < 1e-5 && max_abs_diff(&nowhere, &clean)? < 1e-6,
+        "confining the splice to every position is the replacement model, to none the clean one",
+    )?;
+    let some = confined_splice(model, eval_ids, scaled_clt, SEQ / 2)?;
+    let moved_some = max_abs_diff(&some, &clean)?;
+    println!(
+        "   largest logit change vs clean: replaced {moved_replaced:.4}, ablated {moved_ablated:.4}, replaced at the first {} positions only {moved_some:.4}",
+        SEQ / 2
+    );
+    checks.expect(
+        moved_some > 0.0,
+        "a splice confined to some positions still moves the logits",
+    )?;
+    Ok(())
 }
 
 fn main() {
@@ -378,7 +485,7 @@ fn run() -> candle_mi::Result<()> {
     );
     println!("   (seeded pseudo-random ids, not legal games)");
     let (_, train_ids) = random_ids(TRAIN_SEQS, SEED, &device)?;
-    let (eval_flat, eval_ids) = random_ids(EVAL_SEQS, SEED ^ 0x5eed, &device)?;
+    let (eval_flat, eval_ids) = random_ids(EVAL_SEQS, SEED ^ HELD_OUT_SALT, &device)?;
     let (x_train, target_train) = capture_mlp_io(&model, &train_ids)?;
     let (x_eval, target_eval) = capture_mlp_io(&model, &eval_ids)?;
     println!(
@@ -406,7 +513,7 @@ fn run() -> candle_mi::Result<()> {
     let (first, last) = fit(&clt, &xs, &ts)?;
     println!("   fitted in {:.2?}", fit_started.elapsed());
     checks.expect(
-        first.is_finite() && last.is_finite() && last < 0.5 * first,
+        first.is_finite() && last.is_finite() && last < LOSS_FALL * first,
         "the training loss fell by more than half",
     )?;
 
@@ -417,54 +524,17 @@ fn run() -> candle_mi::Result<()> {
     let fvu = fvu_per_layer(&recon, &target_eval)?;
     let dead = dead_fraction(&fired)?;
     println!("   fraction of variance unexplained, per layer: {fvu:.3?}");
-    println!("   dead features: {:.1} %", 100.0 * dead);
+    println!(
+        "   dead features: {:.1} % (of {} held-out positions, so rare features are overcounted)",
+        100.0 * dead,
+        eval_flat.len()
+    );
     checks.expect(
-        fvu.iter().all(|v| v.is_finite()) && dead.is_finite(),
-        "the reconstruction readings are finite",
+        fvu.iter().all(|v| *v < FVU_CEILING) && dead < 1.0,
+        "the held-out reconstruction explains most of the variance in every layer and some features fire",
     )?;
 
-    let positions: Vec<u32> = (0..eval_flat.len())
-        .map(convert::<usize, u32>)
-        .collect::<candle_mi::Result<_>>()?;
-    // Bidirectional model, so the target at a position is the token that is there.
-    let clean = replacement_logits_for(&model, &eval_ids, &scaled_clt, Splice::Clean)?;
-    let replaced = replacement_logits_for(&model, &eval_ids, &scaled_clt, Splice::Replaced)?;
-    let ablated = replacement_logits_for(&model, &eval_ids, &scaled_clt, Splice::Ablated)?;
-    let ce_clean = cross_entropy_at(&clean, &positions, &eval_flat)?;
-    let ce_replaced = cross_entropy_at(&replaced, &positions, &eval_flat)?;
-    let ce_ablated = cross_entropy_at(&ablated, &positions, &eval_flat)?;
-    let gap = ce_ablated - ce_clean;
-    let recovered = loss_recovered(ce_clean, ce_replaced, ce_ablated);
-    println!(
-        "   cross-entropy: clean {ce_clean:.4}, replaced {ce_replaced:.4}, ablated {ce_ablated:.4}"
-    );
-    println!(
-        "   ablated - clean = {gap:.4} nats; loss_recovered = {recovered:.3}, a ratio of that gap"
-    );
-    println!("   (with random weights the MLPs barely matter, so it says nothing about the CLT)");
-    checks.expect(
-        [ce_clean, ce_replaced, ce_ablated, recovered]
-            .iter()
-            .all(|v| v.is_finite()),
-        "the replacement-model readings are finite",
-    )?;
-    checks.expect(
-        gap.abs() > GAP_FLOOR,
-        "ablating the MLPs moves the cross-entropy, so loss_recovered is not a ratio of noise",
-    )?;
-    let moved_replaced = max_abs_diff(&replaced, &clean)?;
-    let moved_ablated = max_abs_diff(&ablated, &clean)?;
-    checks.expect(
-        moved_replaced > 0.0 && moved_ablated > 0.0,
-        "Replaced and Ablated change the logits (Clean is the plain forward by definition)",
-    )?;
-
-    let confined = confined_splice(&model, &eval_ids, &scaled_clt)?;
-    println!(
-        "   largest logit change vs clean: splice everywhere {moved_replaced:.4}, first {} positions only {:.4}",
-        SEQ / 2,
-        max_abs_diff(&confined, &clean)?
-    );
+    replacement_readings(&model, &eval_ids, &eval_flat, &scaled_clt, &mut checks)?;
 
     // 7. Export, reload through the published-CLT loader, compare.
     println!("7. Export (circuit-tracer layout) and reload with CrossLayerTranscoder::open_local");

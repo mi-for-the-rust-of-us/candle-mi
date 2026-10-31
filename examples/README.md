@@ -688,34 +688,39 @@ by `CrossLayerTranscoder::open_local`, the loader that reads published CLTs.
   step  100  loss 0.05043
   step  200  loss 0.02777
   step  300  loss 0.02076
-   fitted in 4.29s
+   fitted in 4.35s
   [ok] the training loss fell by more than half
 6. Held-out readings (raw units)
    fraction of variance unexplained, per layer: [0.033, 0.022, 0.016]
-   dead features: 32.3 %
-  [ok] the reconstruction readings are finite
+   dead features: 32.3 % (of 600 held-out positions, so rare features are overcounted)
+  [ok] the held-out reconstruction explains most of the variance in every layer and some features fire
    cross-entropy: clean 2.4800, replaced 2.4807, ablated 2.4893
    ablated - clean = 0.0094 nats; loss_recovered = 0.919, a ratio of that gap
    (with random weights the MLPs barely matter, so it says nothing about the CLT)
   [ok] the replacement-model readings are finite
   [ok] ablating the MLPs moves the cross-entropy, so loss_recovered is not a ratio of noise
-  [ok] Replaced and Ablated change the logits (Clean is the plain forward by definition)
-   largest logit change vs clean: splice everywhere 0.0354, first 3 positions only 0.0294
+  [ok] the replaced model moves the logits, but less than zeroing every MLP does
+  [ok] confining the splice to every position is the replacement model, to none the clean one
+   largest logit change vs clean: replaced 0.0354, ablated 0.1561, replaced at the first 3 positions only 0.0294
+  [ok] a splice confined to some positions still moves the logits
 7. Export (circuit-tracer layout) and reload with CrossLayerTranscoder::open_local
   [ok] the reloaded CLT has the trained (layers, d_model, features, top_k)
-  [ok] every reloaded encoding keeps between 1 and top_k features
-  [ok] the reloaded encoder agrees with the trained CLT's activations
-  largest encoder disagreement over 24 encodings: 3.58e-7
+  [ok] no reloaded encoding keeps more than top_k features
+  [ok] every feature the reloaded encoder keeps has the trained activation
+  [ok] every feature the trained CLT clearly fires is kept by the reloaded encoder
+  largest encoder disagreement over 72 encodings: 4.77e-7
 
-All 8 self-checks passed in 4.38s.
+All 11 self-checks passed in 4.49s.
 The weights are random: these readings demonstrate the mechanics, not a finding.
 ```
 
-The numbers are deterministic (seeded, CPU, `F32`); only the timings vary. Read
-`loss_recovered` with its denominator: random MLPs barely change the
-cross-entropy, so the gap is under a hundredth of a nat and the ratio is not
-evidence of anything. The example asserts its own invariants (the 8 `[ok]`
-lines) and exits non-zero if one fails, which is what lets CI run it.
+The run is seeded and uses CPU `F32`, so it repeats exactly on a given machine; another
+CPU's matmul kernels may move the last printed digit, and the self-checks leave a wide
+margin for that. Read `loss_recovered` with its denominator: random MLPs barely change the
+cross-entropy, so the gap is under a hundredth of a nat and the ratio is not evidence of
+anything. The dead-feature share is over only 600 held-out positions, so it overcounts rare
+features. The example asserts its own invariants (the 11 `[ok]` lines) and exits non-zero if
+one fails, which is what lets CI run it.
 
 ## Prerequisites
 
