@@ -6,6 +6,11 @@
 //! cargo run --no-default-features --features clt,diffusion,training --example clt_train_tiny
 //! ```
 //!
+//! This is the command CI runs. There is no `--release`: the `dev` profile (`opt-level = 1` in
+//! this crate) finishes in seconds, and `--release` would rebuild candle with fat LTO for no
+//! gain here (it works too). `--no-default-features` drops `cuda`, which needs `nvcc` to build;
+//! the example uses the CPU on purpose, since a GPU gains nothing on tensors this small.
+//!
 //! **What it does:**
 //!
 //! 1. Builds a tiny, seeded, random-weight `OthelloGpt` (`OthelloGpt::init`): the only model
@@ -35,12 +40,12 @@ use std::fmt::Display;
 use std::time::Instant;
 
 use candle_core::{Device, Tensor};
-use candle_mi::clt::CrossLayerTranscoder;
 use candle_mi::clt::replacement::{
     ScaledClt, Splice, cross_entropy_at, dead_fraction, fvu_per_layer, loss_recovered,
     replacement_logits_for, replacement_logits_where,
 };
 use candle_mi::clt::train::{TrainableClt, TrainableCltConfig};
+use candle_mi::clt::{CltFeatureId, CrossLayerTranscoder};
 use candle_mi::diffusion::{OthelloGpt, OthelloGptConfig};
 use candle_mi::optim::{AdamW, ParamsAdamW};
 use candle_mi::{HookPoint, HookSpec, MIBackend, MIError};
@@ -84,6 +89,12 @@ const FVU_CEILING: f32 = 0.5;
 const GAP_FLOOR: f64 = 1e-4;
 /// Largest disagreement tolerated between a reloaded encoder and the trained CLT's activations.
 const ENCODE_TOLERANCE: f32 = 1e-3;
+/// The feature index whose decoder vectors are compared after the reload (in every layer).
+const DECODER_FEATURE: usize = 3;
+/// Largest relative disagreement tolerated between a reloaded decoder vector and the trained
+/// one times its `scale_out`. Relative, because the scaled vectors are tiny (the output scales
+/// are about 0.007), so an absolute tolerance would pass a decoder missing its scale.
+const DECODER_TOLERANCE: f32 = 1e-4;
 /// Stride between the held-out *positions* (flattened `batch * SEQ` rows) whose encodings are
 /// compared after the reload. 25 is coprime to [`SEQ`], so the sample visits every position of
 /// a sequence, and it keeps the comparison to a few dozen encodings.
@@ -262,11 +273,57 @@ fn max_abs_diff(a: &Tensor, b: &Tensor) -> candle_mi::Result<f32> {
     Ok((a - b)?.abs()?.max_all()?.to_scalar::<f32>()?)
 }
 
+/// The largest relative disagreement between the reloaded decoder vectors of feature
+/// [`DECODER_FEATURE`] (every source layer, every target layer it writes to) and the trained
+/// decoder rows times `scale_out`, which is what the export folded into them.
+///
+/// # Errors
+///
+/// Returns [`MIError::Config`] if the trained CLT lacks a decoder parameter or `scale_out` a layer.
+/// Returns [`MIError::Model`] on tensor failure.
+fn decoder_disagreement(
+    clt: &TrainableClt,
+    local: &mut CrossLayerTranscoder,
+    scale_out: &[f32],
+    device: &Device,
+) -> candle_mi::Result<f32> {
+    let trained = clt.vars();
+    let mut worst = 0.0_f32;
+    for source in 0..LAYERS {
+        let wanted = format!("w_dec_{source}");
+        let (_, w_dec) = trained
+            .iter()
+            .find(|(name, _)| *name == wanted)
+            .ok_or_else(|| MIError::Config(format!("trained CLT has no parameter {wanted}")))?;
+        let feature = CltFeatureId {
+            layer: source,
+            index: DECODER_FEATURE,
+        };
+        for target in source..LAYERS {
+            let scale = scale_out.get(target).copied().ok_or_else(|| {
+                MIError::Config(format!("scale_out has no layer {target} ({LAYERS} layers)"))
+            })?;
+            let reloaded = local.decoder_vector(&feature, target, device)?;
+            let expected = w_dec
+                .as_tensor()
+                .get(DECODER_FEATURE)?
+                .narrow(0, (target - source) * D, D)?
+                .affine(f64::from(scale), 0.0)?;
+            let size = expected.abs()?.max_all()?.to_scalar::<f32>()?;
+            worst = worst.max(max_abs_diff(&reloaded, &expected)? / size);
+        }
+    }
+    Ok(worst)
+}
+
 /// Export `clt` as circuit-tracer files, reload them with the loader that reads published CLTs,
 /// and check that it encodes like the trained CLT on every `RELOAD_STRIDE`-th position.
 ///
-/// Only the encoder side is compared here; the decoder side of the export (the folded
-/// `scale_out`) is proved against the trained decoder by `tests/validate_clt_train.rs`.
+/// Both folds of the export are checked through the real loader, with non-unit scales: the
+/// encoder on a sample of positions, the decoder on one feature per layer. This complements
+/// `tests/validate_clt_train.rs`, whose `export_folds_the_scales_into_raw_units` reads every
+/// exported file with non-unit scales but not through the loader, and whose
+/// `open_local_encodes_and_decodes_like_the_trained_clt` uses the loader but unit scales.
 ///
 /// # Shapes
 /// - `x_eval`: `[rows, LAYERS, D]` -- raw MLP inputs
@@ -337,7 +394,13 @@ fn export_and_reload(
             missing == 0,
             "every feature the trained CLT clearly fires is kept by the reloaded encoder",
         )?;
+        let decoder = decoder_disagreement(clt, &mut local, scale_out, x_eval.device())?;
+        checks.expect(
+            decoder <= DECODER_TOLERANCE,
+            "the reloaded decoder vectors are the trained ones times scale_out",
+        )?;
         println!("  largest encoder disagreement over {compared} encodings: {worst:.2e}");
+        println!("  largest relative decoder disagreement: {decoder:.2e}");
         Ok(())
     })();
     // Remove the directory whether or not the checks held, then report the first failure.

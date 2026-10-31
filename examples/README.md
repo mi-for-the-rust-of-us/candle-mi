@@ -190,7 +190,8 @@ cargo run --release --features diffusion,mmap --example diffusion_logit_lens
 # Decoding-order analysis — random / confidence / entropy unmasking orders
 cargo run --release --features diffusion,mmap --example diffusion_decoding_order
 
-# CLT training recipe on a tiny seeded OthelloGpt (offline, CPU, seconds; the command CI runs)
+# CLT training recipe on a tiny seeded OthelloGpt (offline, CPU, seconds; the command CI runs;
+# no --release needed, though it works)
 cargo run --no-default-features --features clt,diffusion,training --example clt_train_tiny
 
 # Recurrent feedback — default (Llama 3.2 1B, unembed layers 8-15, strength 2.0)
@@ -688,7 +689,7 @@ by `CrossLayerTranscoder::open_local`, the loader that reads published CLTs.
   step  100  loss 0.05043
   step  200  loss 0.02777
   step  300  loss 0.02076
-   fitted in 4.35s
+   fitted in 4.45s
   [ok] the training loss fell by more than half
 6. Held-out readings (raw units)
    fraction of variance unexplained, per layer: [0.033, 0.022, 0.016]
@@ -708,9 +709,11 @@ by `CrossLayerTranscoder::open_local`, the loader that reads published CLTs.
   [ok] no reloaded encoding keeps more than top_k features
   [ok] every feature the reloaded encoder keeps has the trained activation
   [ok] every feature the trained CLT clearly fires is kept by the reloaded encoder
+  [ok] the reloaded decoder vectors are the trained ones times scale_out
   largest encoder disagreement over 72 encodings: 4.77e-7
+  largest relative decoder disagreement: 0.00e0
 
-All 11 self-checks passed in 4.49s.
+All 12 self-checks passed in 4.60s.
 The weights are random: these readings demonstrate the mechanics, not a finding.
 ```
 
@@ -719,7 +722,7 @@ CPU's matmul kernels may move the last printed digit, and the self-checks leave 
 margin for that. Read `loss_recovered` with its denominator: random MLPs barely change the
 cross-entropy, so the gap is under a hundredth of a nat and the ratio is not evidence of
 anything. The dead-feature share is over only 600 held-out positions, so it overcounts rare
-features. The example asserts its own invariants (the 11 `[ok]` lines) and exits non-zero if
+features. The example asserts its own invariants (the 12 `[ok]` lines) and exits non-zero if
 one fails, which is what lets CI run it.
 
 ## Prerequisites
