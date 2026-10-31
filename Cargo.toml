@@ -100,7 +100,12 @@ tracing = "0.1"
 # hypomnesis became optional behind hf-fetch-model's `cli` feature, so a
 # candle-mi build without `memory` compiles no hypomnesis at all. 0.12.2 moved
 # its anamnesis floor to ^0.7.10 (lockstep bump below). No MSRV change.
-hf-fetch-model = { version = "0.12.3", features = ["indicatif"] }
+# 0.12.4 puts a floor under the TLS stack: it requires `rustls` ^0.23.46 and
+# `rustls-webpki` ^0.103.16 directly (RUSTSEC-2026-0346 to -0349 and -0382, the
+# last being certificate verification that may accept distrusted
+# intermediates). Cargo never reads a dependency's `Cargo.lock`, so only this
+# requirement reaches whoever depends on candle-mi. No API change, no MSRV change.
+hf-fetch-model = { version = "0.12.4", features = ["indicatif"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: process RAM + GPU VRAM measurement, delegated to the standalone

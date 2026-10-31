@@ -1660,9 +1660,9 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.12.3"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "931c641e3fef82b2ca2cf3da1ad5fb35385ac4391d0bddfe9e81c05bfcefe1f9"
+checksum = "71f8e29466cf76a99930f57d43d8e1434a3a4c764f1dc965ba612b40ee839709"
 dependencies = [
  "anamnesis",
  "dirs 7.0.0",
@@ -1673,6 +1673,8 @@ dependencies = [
  "hf-hub",
  "indicatif",
  "reqwest",
+ "rustls",
+ "rustls-webpki",
  "serde",
  "serde_json",
  "sha2 0.11.0",
@@ -3287,9 +3289,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.15"
+version = "0.103.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
+checksum = "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281"
 dependencies = [
  "aws-lc-rs",
  "ring",
