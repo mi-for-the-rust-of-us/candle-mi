@@ -113,6 +113,19 @@ jobs:
       - name: Tests (CLT train + replacement)
         run: cargo test --locked --no-default-features --features "clt,diffusion,training" --test validate_clt_train --test validate_clt_replacement
 
+      # The `clt_train_tiny` example is a recipe, and a recipe that is only built rots: it is
+      # offline, CPU-only and takes seconds, so CI runs it. It asserts its own invariants and
+      # exits non-zero if one fails. The clippy step lints this feature set too, which no other
+      # lane combines (the two test files above were compiled and run here but never linted).
+      - name: Build (CLT train + examples)
+        run: cargo build --locked --no-default-features --features "clt,diffusion,training" --examples
+
+      - name: Clippy (CLT train, pedantic)
+        run: cargo clippy --locked --all-targets --no-default-features --features "clt,diffusion,training" -- -W clippy::pedantic
+
+      - name: Run example (clt_train_tiny)
+        run: cargo run --locked --no-default-features --features "clt,diffusion,training" --example clt_train_tiny
+
       # Quantized loading (bnb/AWQ/GPTQ dequant via anamnesis), opt-in, pairs with
       # `transformer`. Mirrors ci.yml so a quantized-path regression can't slip
       # through publish either. Parity tests are #[ignore]; this compiles them.
@@ -217,7 +230,7 @@ jobs:
       - name: Rustdoc (per feature)
         run: |
           set -e
-          for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" \
+          for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" "clt,diffusion,training" \
                    "quantized,transformer" "sae,transformer" "mmap,transformer" \
                    "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" \
                    "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training"; do

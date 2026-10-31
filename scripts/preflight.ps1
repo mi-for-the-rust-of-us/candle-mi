@@ -123,6 +123,7 @@ $lanes = @(
     @{ Id = 'rwkv';         Features = 'rwkv,rwkv-tokenizer' }
     @{ Id = 'stoicheia';    Features = 'stoicheia' }
     @{ Id = 'clt';          Features = 'clt,transformer' }
+    @{ Id = 'clt-train';    Features = 'clt,diffusion,training' }
     @{ Id = 'quantized';    Features = 'quantized,transformer' }
     @{ Id = 'sae';          Features = 'sae,transformer' }
     @{ Id = 'mmap';         Features = 'mmap,transformer' }
@@ -237,7 +238,15 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Tests (CLT)" $Tc `
         @("test", "--no-default-features", "--features", "clt,transformer", "--lib") -Lane 'clt'
     Invoke-Cargo "[$Tc] Tests (CLT train + replacement)" $Tc `
-        @("test", "--no-default-features", "--features", "clt,diffusion,training", "--test", "validate_clt_train", "--test", "validate_clt_replacement") -Lane 'clt'
+        @("test", "--no-default-features", "--features", "clt,diffusion,training", "--test", "validate_clt_train", "--test", "validate_clt_replacement") -Lane @('clt','clt-train')
+
+    # The clt_train_tiny example is a recipe: built with the lane's examples and RUN, since an
+    # example that is only built drifts from the API it teaches. Offline, CPU, seconds. (The
+    # clippy and rustdoc steps for this feature set come from the $lanes table.)
+    Invoke-Cargo "[$Tc] Build (CLT train + examples)" $Tc `
+        @("build", "--no-default-features", "--features", "clt,diffusion,training", "--examples") -Lane 'clt-train'
+    Invoke-Cargo "[$Tc] Run example (clt_train_tiny)" $Tc `
+        @("run", "--no-default-features", "--features", "clt,diffusion,training", "--example", "clt_train_tiny") -Lane 'clt-train'
 
     # Quantized loading (bnb/AWQ/GPTQ dequant); parity tests are #[ignore], so
     # this compiles the test binary to catch signature/API breaks.
