@@ -53,6 +53,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`rustls` 0.23.45 -> 0.23.46 in `Cargo.lock`**, clearing RUSTSEC-2026-0346,
   -0347, -0348 and -0349. It reaches candle-mi through `reqwest` on the model
   download path (`hf-fetch-model`, `hf-hub`).
+- **`hf-fetch-model` 0.12.3 -> 0.12.4.** It requires `rustls` ^0.23.46 and
+  `rustls-webpki` ^0.103.16 directly, so the floor reaches whoever depends on
+  candle-mi, not only this lockfile. The second matters here: this lockfile
+  had `rustls` 0.23.46 but `rustls-webpki` 0.103.15, which RUSTSEC-2026-0382
+  (certificate verification may accept distrusted intermediates) affects. It
+  is now 0.103.16.
+- **`quinn-proto` 0.11.16 -> 0.11.19, `webpki-root-certs` 1.0.8 -> 1.0.11 and
+  `tokio` 1.52.3 -> 1.54.1 in `Cargo.lock`.** RUSTSEC-2026-0338 to -0342,
+  -0383 and -0386. Lockfile only: no build of candle-mi compiles `quinn-proto`
+  (`cargo tree -i quinn-proto --target all` is empty) or, on a native target,
+  `webpki-root-certs`, and candle-mi never calls `tokio`'s `AsyncFd`.
 - **RUSTSEC-2026-0367, -0368 and -0369 (`zip` 8.6.0) accepted in `deny.toml`.**
   `zip` is a required dependency of `candle-core` 0.11, which holds it at `^8.6`,
   and the fix is in `zip` 9. All three advisories concern `extract()`, which
