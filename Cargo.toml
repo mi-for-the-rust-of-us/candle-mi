@@ -105,7 +105,7 @@ tracing = "0.1"
 # last being certificate verification that may accept distrusted
 # intermediates). Cargo never reads a dependency's `Cargo.lock`, so only this
 # requirement reaches whoever depends on candle-mi. No API change, no MSRV change.
-hf-fetch-model = { version = "0.12.4", features = ["indicatif"] }
+hf-fetch-model = { version = "0.12.5", features = ["indicatif"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 # Optional: process RAM + GPU VRAM measurement, delegated to the standalone
