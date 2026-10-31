@@ -47,6 +47,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`CltConfig::top_k`**: `TopK` sparsity at `encode` for CLTs trained with it
   (`None`, unchanged behaviour, for every published transcoder; `open_local`
   reads it from `candle_mi_clt.json`).
+- **`clt_train_tiny` example** (`clt`, `diffusion`, `training`): a complete CLT training recipe
+  that needs no download and no GPU. A seeded random-weight `OthelloGpt` supplies the MLP inputs
+  and outputs (captured, then detached: the backbone is built over a `VarMap`), one RMS scale per
+  layer and side, a plain `AdamW` loop (the loop stays in the example, not the crate), held-out
+  FVU and dead features, the closed-loop replacement model including the confined splice, and an
+  export reloaded by `CrossLayerTranscoder::open_local`. It asserts its own invariants and exits
+  non-zero if one fails, and the weights are random, so its numbers show the mechanics, not a
+  finding. Runs in about 5 s on CPU.
 
 ### Security
 

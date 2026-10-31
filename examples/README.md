@@ -24,7 +24,8 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
   [auto_config_dogfood](#example-output-auto_config_dogfood) |
   [figure13_planning_poems](#example-output-figure13_planning_poems) |
   [steering_convergence](#example-output-steering_convergence) |
-  [attention_routing](#example-output-attention_routing)
+  [attention_routing](#example-output-attention_routing) |
+  [clt_train_tiny](#example-output-clt_train_tiny)
 - [Prerequisites](#prerequisites)
 
 ## Available Examples
@@ -71,6 +72,7 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `stoicheia_analysis` | `stoicheia` | Full Phase B MI pipeline: standardize weights, ablate neurons, probe roles, enumerate regions, run surprise accounting |
 | `quick_start_mdlm` | `diffusion` | MDLM masked-diffusion fill-in-the-blank: mask `" Paris"`, run a bidirectional forward, apply `SUBS`, print the fill |
 | `quick_start_othello` | `diffusion` | Quick start: `OthelloGpt` masked-diffusion fill-in (plain GPT-2 backbone, learned absolute positions) |
+| `clt_train_tiny` | `clt`, `diffusion`, `training` | Train a cross-layer transcoder end to end on a tiny seeded `OthelloGpt` (no download, CPU, seconds): capture, scale, fit with `AdamW`, held-out FVU and dead features, the closed-loop replacement model, export and reload. CI runs it |
 | `diffusion_logit_lens` | `diffusion` | Diffusion-time logit lens — the `(layer × denoising-step)` slice of the `(k, ℓ, π)` object at a masked target position; watch the prediction crystallize over denoising time |
 | `diffusion_decoding_order` | `diffusion` | Decoding-order analysis — fill a masked completion under random / confidence / entropy unmasking orders; report per-order reveal-confidence and prediction-stability |
 
@@ -187,6 +189,9 @@ cargo run --release --features diffusion,mmap --example diffusion_logit_lens
 
 # Decoding-order analysis — random / confidence / entropy unmasking orders
 cargo run --release --features diffusion,mmap --example diffusion_decoding_order
+
+# CLT training recipe on a tiny seeded OthelloGpt (offline, CPU, seconds; the command CI runs)
+cargo run --no-default-features --features clt,diffusion,training --example clt_train_tiny
 
 # Recurrent feedback — default (Llama 3.2 1B, unembed layers 8-15, strength 2.0)
 cargo run --release --features transformer --example recurrent_feedback
@@ -662,8 +667,61 @@ transformers, across tasks, models, and scales.
 Full results, cross-model comparison, and prolepsis analysis in
 [`examples/results/attention_routing/`](results/attention_routing/).
 
+### Example output: `clt_train_tiny`
+
+A complete CLT training loop, with nothing to download. The backbone is a
+3-layer, 16-wide `OthelloGpt` with **random weights**, fed seeded pseudo-random
+ids (not legal games), so what the CLT learns about it means nothing. The run
+shows how the pieces fit: the training loop is plain code in the example (the
+crate ships `TrainableClt` and its loss, not a loop), the readings are taken in
+the model's raw units on a held-out batch, and the exported files are read back
+by `CrossLayerTranscoder::open_local`, the loader that reads published CLTs.
+
+```
+1. Backbone: OthelloGpt, 3 layers, d_model 16, random weights (seed 20261031)
+2. Data: 300 training and 100 held-out sequences of 6 ids in 0..12
+   (seeded pseudo-random ids, not legal games)
+3. Captured ResidMid / MlpOut of every layer: [1800, 3, 16] per batch (detached)
+4. Scales (RMS per layer) in [0.0253, 0.0256, 0.0274], out [0.0069, 0.0069, 0.0073]
+5. Training a CLT: 64 features per layer, top_k 4, 300 AdamW steps
+  step    0  loss 1.03014
+  step  100  loss 0.05043
+  step  200  loss 0.02777
+  step  300  loss 0.02076
+   fitted in 4.29s
+  [ok] the training loss fell by more than half
+6. Held-out readings (raw units)
+   fraction of variance unexplained, per layer: [0.033, 0.022, 0.016]
+   dead features: 32.3 %
+  [ok] the reconstruction readings are finite
+   cross-entropy: clean 2.4800, replaced 2.4807, ablated 2.4893
+   ablated - clean = 0.0094 nats; loss_recovered = 0.919, a ratio of that gap
+   (with random weights the MLPs barely matter, so it says nothing about the CLT)
+  [ok] the replacement-model readings are finite
+  [ok] ablating the MLPs moves the cross-entropy, so loss_recovered is not a ratio of noise
+  [ok] Replaced and Ablated change the logits (Clean is the plain forward by definition)
+   largest logit change vs clean: splice everywhere 0.0354, first 3 positions only 0.0294
+7. Export (circuit-tracer layout) and reload with CrossLayerTranscoder::open_local
+  [ok] the reloaded CLT has the trained (layers, d_model, features, top_k)
+  [ok] every reloaded encoding keeps between 1 and top_k features
+  [ok] the reloaded encoder agrees with the trained CLT's activations
+  largest encoder disagreement over 24 encodings: 3.58e-7
+
+All 8 self-checks passed in 4.38s.
+The weights are random: these readings demonstrate the mechanics, not a finding.
+```
+
+The numbers are deterministic (seeded, CPU, `F32`); only the timings vary. Read
+`loss_recovered` with its denominator: random MLPs barely change the
+cross-entropy, so the gap is under a hundredth of a nat and the ratio is not
+evidence of anything. The example asserts its own invariants (the 8 `[ok]`
+lines) and exits non-zero if one fails, which is what lets CI run it.
+
 ## Prerequisites
 
+- **clt_train_tiny** needs no model, no download and no GPU: it builds its own
+  random-weight backbone and runs on CPU in seconds. Requires
+  `--features clt,diffusion,training`.
 - **quick_start_transformer** and **quick_start_sae** require models cached
   in `~/.cache/huggingface/hub/`. Download them first with `fast_download`
   or via Python (`huggingface_hub.snapshot_download()`).

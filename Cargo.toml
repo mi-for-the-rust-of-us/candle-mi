@@ -428,6 +428,10 @@ name = "quick_start_othello"
 required-features = ["diffusion"]
 
 [[example]]
+name = "clt_train_tiny"
+required-features = ["clt", "diffusion", "training"]
+
+[[example]]
 name = "diffusion_logit_lens"
 required-features = ["diffusion"]
 
