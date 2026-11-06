@@ -21,19 +21,22 @@ ignore = [
     # `paste` is archived upstream; it reaches us only as a build-time macro
     # dependency of candle's `gemm`, with no replacement until candle moves.
     { id = "RUSTSEC-2024-0436", reason = "unmaintained, transitive via candle-core -> gemm; no upgrade available" },
-    # `zip` 8.x is a required dependency of candle-core 0.11 (`zip = "8.6.0"`,
-    # i.e. `^8.6`); the fix is zip >= 9.0.0, out of reach until candle moves
-    # (huggingface/candle#4037, #4041; candle `main` moved to zip 9.1.3 in
-    # #4078 on 2026-10-30, unreleased as of 0.11.1). All four advisories concern
+    # `zip` 8.x is a required dependency of candle-core 0.11.0 (`zip = "8.6.0"`,
+    # i.e. `^8.6`); the fix is zip >= 9.0.0 (huggingface/candle#4037, #4041;
+    # candle `main` moved to zip 9.1.3 in #4078 on 2026-10-30). candle-core
+    # 0.11.1 (2026-10-31) takes zip ^9.1.3, but needs Rust 1.94 on x86_64
+    # (AVX-512/AMX intrinsics, a safe `__cpuid_count`) without declaring a
+    # `rust-version`, above candle-mi's 1.91; the lockfile stays on 0.11.0
+    # until the MSRV moves. All four advisories concern
     # `ZipArchive::extract` / `ZipStreamReader::extract`, which candle never
     # calls: its `.npz` / `.pth` readers use only `by_index`, `by_name` and
     # `ZipWriter` (candle-core 0.11.0 `src/npy.rs`, `src/pickle.rs`), and
-    # candle-mi does not depend on zip directly. Remove once candle-core
-    # requires zip 9.
-    { id = "RUSTSEC-2026-0367", reason = "zip extract() keeps SUID/SGID bits; candle-core 0.11 pins zip ^8.6 and never calls extract()" },
-    { id = "RUSTSEC-2026-0368", reason = "zip extract() symlink escape; candle-core 0.11 pins zip ^8.6 and never calls extract()" },
-    { id = "RUSTSEC-2026-0369", reason = "zip extract() permissions through symlinks; candle-core 0.11 pins zip ^8.6 and never calls extract()" },
-    { id = "RUSTSEC-2026-0429", reason = "zip extract() aborts on a symlink entry with a huge declared size; candle-core 0.11 pins zip ^8.6 and never calls extract()" },
+    # candle-mi does not depend on zip directly. Remove with the move to
+    # candle-core 0.11.1.
+    { id = "RUSTSEC-2026-0367", reason = "zip extract() keeps SUID/SGID bits; candle-core 0.11.0 pins zip ^8.6 and never calls extract(); 0.11.1 needs Rust 1.94" },
+    { id = "RUSTSEC-2026-0368", reason = "zip extract() symlink escape; candle-core 0.11.0 pins zip ^8.6 and never calls extract(); 0.11.1 needs Rust 1.94" },
+    { id = "RUSTSEC-2026-0369", reason = "zip extract() permissions through symlinks; candle-core 0.11.0 pins zip ^8.6 and never calls extract(); 0.11.1 needs Rust 1.94" },
+    { id = "RUSTSEC-2026-0429", reason = "zip extract() aborts on a symlink entry with a huge declared size; candle-core 0.11.0 pins zip ^8.6 and never calls extract(); 0.11.1 needs Rust 1.94" },
 ]
 
 [licenses]
