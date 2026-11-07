@@ -39,9 +39,9 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "anamnesis"
-version = "0.7.10"
+version = "0.7.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9be5929c3dd97db2697f73c4c2d77970dd799936a87a454f3efe2aaac8d59818"
+checksum = "02c039cf2cf8c296b5ff561222dec8d603b85ffb176822966996a31256fa9d06"
 dependencies = [
  "flate2",
  "float8",
@@ -1660,9 +1660,9 @@ checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
 name = "hf-fetch-model"
-version = "0.12.6"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90cf8c5d111cc7faf5878225975cea54137411a68e8c27fff736f882fc6a64c5"
+checksum = "cbeba36dda8e20dd26f99dc1f594e4994212f96b9bdc92ad002fae3032dce692"
 dependencies = [
  "anamnesis",
  "dirs 7.0.0",
@@ -1672,6 +1672,7 @@ dependencies = [
  "globset",
  "hf-hub",
  "indicatif",
+ "junction",
  "reqwest",
  "rustls",
  "rustls-webpki",
@@ -2117,6 +2118,16 @@ dependencies = [
  "cfg-if 1.0.4",
  "futures-util",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "junction"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cde48f36530cbd91b65f050101e6c056d6eb743cea2a8f0f19beef69c6742ff8"
+dependencies = [
+ "scopeguard",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
