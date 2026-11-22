@@ -42,7 +42,7 @@ Most HuggingFace transformer models work out of the box via **auto-config** — 
 > cannot catch this and rewrite the message. The failure looks like:
 >
 > ```text
-> error: failed to run custom build command for `cudarc v0.19.8`
+> error: failed to run custom build command for `cudarc v0.19.10`
 >   `nvcc --version` failed.
 > ```
 >
@@ -146,7 +146,7 @@ candle-mi is (to our knowledge) the only MI toolkit with hook points for recurre
 cargo run --release --features transformer --example logit_lens -- "meta-llama/Llama-3.2-1B"
 ```
 
-This loads in ~2 seconds and runs in 80-120ms on an RTX 5060 Ti (16 GB VRAM) or ~3 seconds on CPU, revealing how factual recall emerges across layers. (Measured 2026-09-21 over 10 runs: load 2.07-2.31s, forward 80.3-119.8ms, median 82.8ms. The forward spread is bimodal rather than noisy, six runs near 82ms and four near 113ms, which is why a range is quoted instead of a single number. `meta-llama/Llama-3.2-1B` is gated, so this command needs a Hugging Face token even when the model is already cached: `HF_TOKEN`, or the token file `hf auth login` writes.) The same prompt (*"The capital of France is"*) tells three different stories:
+This loads in ~2 seconds and runs in about 37ms on an RTX 5060 Ti (16 GB VRAM) or about 0.35 seconds on CPU, revealing how factual recall emerges across layers. (Measured 2026-11-22 with v0.2.3, `--release`, 16 captures: on the GPU over 10 runs, load 2.04-2.13s and forward 36.1-37.8ms, median 36.8ms; on CPU, a Ryzen 9 5950X built with `--no-default-features --features transformer,mmap`, over 3 runs, load 2.78-2.99s and forward 344-374ms. Both forwards are 2-8x faster than at v0.2.2, from the move to candle 0.11.1: see `RELEASE_TIMINGS.md`. `meta-llama/Llama-3.2-1B` is gated, so this command needs a Hugging Face token even when the model is already cached: `HF_TOKEN`, or the token file `hf auth login` writes.) The same prompt (*"The capital of France is"*) tells three different stories:
 
 - **Llama 3.2 1B**: "Paris" appears at layer 11 (69% depth) — typical early factual resolution.
 - **Gemma 2 2B**: "Paris" appears at layer 25 (the very last layer, rank 8) — the model hedges until the end.
@@ -275,7 +275,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | [docs/experiments/README.md](docs/experiments/README.md) | Experiment findings index + motivation — the Figure-13 planning-floor line (as-is and with a composition horizon), plus the CLT/PLT, Maar, and prolepsis replications |
 | [docs/roadmaps/diffusion-lm-roadmap.md](docs/roadmaps/diffusion-lm-roadmap.md) | Masked-diffusion-LM support: the DiT vs decoder-style split, MDLM (done), and the Stage 2/3 plan |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
-| [ROADMAP.md](ROADMAP.md) | Development roadmap and architecture decisions |
+| [ROADMAP.md](ROADMAP.md) | The original Phase 0-6 plan and architecture decisions; a historical document, frozen at ~v0.1.8 (CHANGELOG.md is the status source) |
 
 ## License
 
