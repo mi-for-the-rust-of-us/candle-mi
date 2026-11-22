@@ -23,6 +23,10 @@
 #      src/lib.rs (the docs.rs front page), and neither table names anything
 #      else. They had drifted too: 0.2.2 found `fused-attn` in neither,
 #      `quantized` missing from README.md and `training` from src/lib.rs.
+#   5. ci.yml's MSRV matrix lane runs the toolchain Cargo.toml declares as
+#      `rust-version` (preflight.ps1 reads that same field), so moving the MSRV
+#      in one place without the other fails here instead of testing the wrong
+#      floor.
 #
 # Commands are compared after normalisation: `--locked` (CI only) is dropped,
 # each `--features` list is sorted, and preflight's trailing
@@ -196,6 +200,16 @@ try {
             if ($features -cnotcontains $n -or $n -eq 'default') { $failures.Add("the $($t.Key) feature table has a row for '$n', which is not a feature") }
         }
     }
+
+    # Check 5.
+    $msrv = [regex]::Match($cargoToml, '(?m)^rust-version\s*=\s*"([^"]+)"').Groups[1].Value
+    $ciYml = Get-Content -Raw -LiteralPath (Join-Path $root '.github/workflows/ci.yml')
+    $msrvLane = [regex]::Match($ciYml, '(?m)^\s*-\s*name:\s*"MSRV \(([^)]+)\)"\s*\r?\n\s*toolchain:\s*"([^"]+)"')
+    if (-not $msrv) { $failures.Add("Cargo.toml declares no rust-version") }
+    elseif (-not $msrvLane.Success) { $failures.Add("ci.yml has no 'MSRV (x.y)' matrix lane followed by its toolchain") }
+    elseif ($msrvLane.Groups[1].Value -cne $msrv -or $msrvLane.Groups[2].Value -cne $msrv) {
+        $failures.Add("ci.yml MSRV lane is '$($msrvLane.Groups[1].Value)' / toolchain '$($msrvLane.Groups[2].Value)', but Cargo.toml rust-version is '$msrv'")
+    }
 }
 catch {
     Write-Host "lane parity: $_" -ForegroundColor Red
@@ -209,6 +223,7 @@ if ($failures.Count -gt 0) {
 }
 
 $summary = "Lane parity OK: ci.yml, publish.yml and preflight.ps1 run the same {0} cargo commands; " +
-"docs.rs and CI cover every feature but {1}; both feature tables list every feature."
-Write-Host ($summary -f ($ci | Sort-Object -Unique).Count, ($excluded -join ', ')) -ForegroundColor Green
+"docs.rs and CI cover every feature but {1}; both feature tables list every feature; " +
+"ci.yml's MSRV lane matches rust-version {2}."
+Write-Host ($summary -f ($ci | Sort-Object -Unique).Count, ($excluded -join ', '), $msrv) -ForegroundColor Green
 exit 0

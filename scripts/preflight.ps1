@@ -3,20 +3,21 @@
 # Mirrors the per-feature lanes in .github/workflows/ci.yml so that a clean run
 # here predicts a clean run on CI; scripts/lane-parity.ps1, which an unfiltered
 # run calls first, fails when the two (or publish.yml, the docs.rs list, or a
-# feature table) stop agreeing. CI runs a matrix of two toolchains:
-# MSRV (1.91) and stable, each executing fmt + build/clippy/test for the
+# feature table) stop agreeing. CI runs a matrix of two toolchains: the MSRV
+# (Cargo.toml's `rust-version`, currently 1.95) and stable, each executing fmt
+# + build/clippy/test for the
 # transformer, rwkv, stoicheia, clt and diffusion feature sets, plus bare
 # and all-software-features builds.
 #
 # Tiers:
 #   ./scripts/preflight.ps1        # FAST (default): full STABLE mirror + MSRV
-#                                   # (1.91) fmt + clippy. MSRV clippy compiles on
-#                                   # 1.91, so it catches version-specific lints
-#                                   # (e.g. clippy::suboptimal_flops, which fired
-#                                   # only on 1.91) without paying for MSRV
-#                                   # build/test.
-#   ./scripts/preflight.ps1 -Ci    # FULL mirror: every ci.yml step on BOTH 1.91
-#                                   # and stable. Literal "green preflight =
+#                                   # fmt + clippy. MSRV clippy compiles on the
+#                                   # MSRV toolchain, so it catches version-specific
+#                                   # lints (e.g. clippy::suboptimal_flops, which
+#                                   # fired only on the then-MSRV 1.91) without
+#                                   # paying for MSRV build/test.
+#   ./scripts/preflight.ps1 -Ci    # FULL mirror: every ci.yml step on BOTH the
+#                                   # MSRV and stable. Literal "green preflight =
 #                                   # green CI"; use before important pushes or
 #                                   # after MSRV-sensitive changes.
 #   ./scripts/preflight.ps1 -Full   # also run the bench_hook_* CPU benches
@@ -68,6 +69,14 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# The MSRV toolchain is read from Cargo.toml's `rust-version`, the one place it
+# is declared, so moving the MSRV never means editing this script.
+# lane-parity.ps1 checks that ci.yml's MSRV lane names the same version.
+$Msrv = [regex]::Match(
+    (Get-Content -Raw -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'Cargo.toml')),
+    '(?m)^rust-version\s*=\s*"([^"]+)"').Groups[1].Value
+if (-not $Msrv) { throw "preflight: no rust-version found in Cargo.toml" }
 
 # Run a scriptblock step (used for the toolchain-setup commands that take no
 # per-lane parameters), halting the whole preflight on a non-zero exit.
@@ -334,11 +343,11 @@ if ($PrintCommands) {
 if (-not $filtered) {
     Invoke-Step "Lane parity (ci.yml, publish.yml, preflight, docs.rs)" { & (Join-Path $PSScriptRoot 'lane-parity.ps1') }
     Invoke-Step "Update stable toolchain" { rustup update stable }
-    Invoke-Step "Ensure MSRV 1.91 toolchain" { rustup toolchain install 1.91 }
-    Invoke-Step "Ensure 1.91 components (clippy, rustfmt)" { rustup component add clippy rustfmt --toolchain 1.91 }
+    Invoke-Step "Ensure MSRV $Msrv toolchain" { rustup toolchain install $Msrv }
+    Invoke-Step "Ensure $Msrv components (clippy, rustfmt)" { rustup component add clippy rustfmt --toolchain $Msrv }
     Write-Host "Using:" -ForegroundColor Yellow
     & rustc "+stable" --version
-    & rustc "+1.91" --version
+    & rustc "+$Msrv" --version
 
     Invoke-Step "Pick up latest hf-fetch-model patch" { cargo update -p hf-fetch-model }
 }
@@ -348,12 +357,12 @@ else {
     if ($Skip.Count -gt 0) { Write-Host ("  -Skip " + ($Skip -join ',')) -ForegroundColor Yellow }
 }
 
-# Stable: always the full lane set. MSRV 1.91: fmt + clippy by default; the full
+# Stable: always the full lane set. MSRV: fmt + clippy by default; the full
 # lane set only under -Ci. A filtered run stays on stable unless -Ci asks
 # otherwise, since the MSRV pass doubles the wait for an ad-hoc check.
 Invoke-Lanes -Tc "stable" -LintOnly $false
 if ((-not $filtered) -or $Ci) {
-    Invoke-Lanes -Tc "1.91" -LintOnly (-not $Ci)
+    Invoke-Lanes -Tc $Msrv -LintOnly (-not $Ci)
 }
 
 if ($filtered) {
@@ -361,7 +370,7 @@ if ($filtered) {
     Write-Host "Run './scripts/preflight.ps1' with no filter before pushing." -ForegroundColor Yellow
 }
 elseif ($Ci) {
-    Write-Host "`nAll preflight checks passed (full 1.91 + stable mirror) — safe to push." -ForegroundColor Green
+    Write-Host "`nAll preflight checks passed (full $Msrv + stable mirror) — safe to push." -ForegroundColor Green
 }
 else {
     Write-Host "`nAll preflight checks passed (full stable mirror + MSRV clippy)." -ForegroundColor Green

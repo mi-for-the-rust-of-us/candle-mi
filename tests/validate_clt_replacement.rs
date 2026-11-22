@@ -5,9 +5,12 @@
     clippy::panic,
     clippy::indexing_slicing,
     clippy::missing_docs_in_private_items,
-    clippy::missing_panics_doc
+    clippy::missing_panics_doc,
+    clippy::float_cmp
 )]
 // EXPLICIT: integration-test code — assertions panic by design.
+// EXPLICIT: `float_cmp`: two assertions compare a max-abs-diff to exactly `0.0` on purpose: a
+// clean splice and a zero splice must be bit-identical to the plain and ablated runs, not close.
 
 //! **The replacement model splices what it says, closed loop.**
 //!

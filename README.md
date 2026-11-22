@@ -3,7 +3,7 @@
 [![CI](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/workflows/ci.yml/badge.svg)](https://github.com/mi-for-the-rust-of-us/candle-mi/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/candle-mi)](https://crates.io/crates/candle-mi)
 [![docs.rs](https://img.shields.io/docsrs/candle-mi)](https://docs.rs/candle-mi)
-[![Rust 1.91+](https://img.shields.io/badge/rust-1.91%2B-orange)](https://www.rust-lang.org)
+[![Rust 1.95+](https://img.shields.io/badge/rust-1.95%2B-orange)](https://www.rust-lang.org)
 [![Edition 2024](https://img.shields.io/badge/edition-2024-orange)](https://doc.rust-lang.org/edition-guide/rust-2024/)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](LICENSE-MIT)
 [![GitHub last commit](https://img.shields.io/github/last-commit/mi-for-the-rust-of-us/candle-mi)](https://github.com/mi-for-the-rust-of-us/candle-mi/commits/main)
@@ -29,7 +29,7 @@ Most HuggingFace transformer models work out of the box via **auto-config** — 
 
 **Hardware:** candle-mi runs on a single consumer GPU (developed on an RTX 5060 Ti, 16 GB VRAM). Models up to ~7B fit in 16 GB at F32 precision — no H100 cluster required. This is a deliberate stance rather than an accident: the crate targets the GPU-poor, not the GPU-less, and `cuda` is a **default feature**. CPU-only builds are supported and tested, but you have to ask for them (see below).
 
-**Toolchain: Rust 1.91 or newer**, edition 2024.
+**Toolchain: Rust 1.95 or newer**, edition 2024.
 
 **Build-time: a CUDA toolkit (`nvcc`) on `PATH`**, for the default feature set.
 
@@ -62,27 +62,37 @@ Most HuggingFace transformer models work out of the box via **auto-config** — 
 > release and never moves you off it.**
 >
 > Cargo's resolver is MSRV-aware: rather than erroring, it picks the newest candle-mi your
-> compiler can build, and `cargo update` will not advance past it. There are two such ceilings:
+> compiler can build, and `cargo update` will not advance past it. There are three such ceilings:
 >
 > | Your Rust | You silently get | Because |
 > |---|---|---|
 > | 1.87 or older | **`0.1.4`** | `0.1.5` moved the floor to 1.88, forced by `libloading 0.9.0` |
-> | 1.88 – 1.90 | **`0.1.22`** | `0.1.23` moved the floor to 1.91, forced by `hf-fetch-model 0.11.3` |
+> | 1.88 to 1.90 | **`0.1.22`** | `0.1.23` moved the floor to 1.91, forced by `hf-fetch-model 0.11.3` |
+> | 1.91 to 1.94 | **`0.2.2`** | `0.2.3` moved the floor to 1.95, forced by `hf-xet` (via `sysinfo`) and `candle-core 0.11.1` |
 >
 > `0.1.4` predates RWKV, the masked-diffusion backends, trainable backbones, quantized weight
 > loading, and most of the CLT work described below. `0.1.22` is merely a few releases behind.
-> **If `cargo add candle-mi` gave you either, that is why:**
+> `0.2.2` lacks CLT training and the closed-loop replacement model, and worse: on 1.91 to 1.94 it
+> no longer builds from a fresh resolve at all, because the two dependencies in the next paragraph
+> have since released versions that need 1.95 without declaring it. Only a newer Rust fixes that.
+> **If `cargo add candle-mi` gave you any of these, that is why:**
 >
 > ```sh
 > rustup update && cargo update
 > ```
 >
-> **Neither floor is ours to lower.** 1.88 came from six crates in the graph (`libloading`, `time`,
-> `zip`, `cookie_store` and others). 1.91 arrives through `hf-fetch-model 0.11.3`, which adopted
-> `hf-hub` 1.0 and with it a mandatory `hf-xet`. Worth knowing if you audit this yourself: cargo's
-> MSRV resolution **under-reports** that floor as 1.89, because it reads declared `rust-version`
-> fields and `xet-core-structures` declares none while calling `str::floor_char_boundary`, stable
-> only since 1.91. The declared-metadata floor is a lower bound; only a real build proves it.
+> **None of these floors is ours to lower.** 1.88 came from six crates in the graph (`libloading`,
+> `time`, `zip`, `cookie_store` and others). 1.91 arrives through `hf-fetch-model 0.11.3`, which
+> adopted `hf-hub` 1.0 and with it a mandatory `hf-xet`. 1.95 has two sources. `hf-xet` 1.7 and
+> later require `sysinfo` 0.39, and every `sysinfo` 0.39 release needs Rust 1.95. And
+> `candle-core 0.11.1`, the first candle release off `zip` 8 and its four RustSec advisories,
+> calls `__cpuid_count` outside an `unsafe` block on x86_64, which compiles only from Rust 1.94
+> (the fix is proposed upstream as
+> [huggingface/candle#4097](https://github.com/huggingface/candle/pull/4097)).
+> Worth knowing if you audit this yourself: cargo's MSRV resolution **cannot see** the last two
+> floors, because it reads declared `rust-version` fields, and `hf-xet`, `xet-core-structures`
+> and `candle-core` declare none. The declared-metadata floor is a lower bound; only a real build
+> proves it, which is why CI now builds a fresh resolve of candle-mi on the MSRV toolchain.
 
 ## Table of Contents
 

@@ -28,12 +28,14 @@ CI runs clippy separately for each backend feature. Before pushing, also run cli
 
 When in doubt, do not guess the lane: `./scripts/preflight.ps1` runs the whole matrix in ~6 minutes, CPU only, and is the authority.
 
-Before every push, run `./scripts/preflight.ps1`. It freshens the toolchains (`rustup update stable`, and ensures the MSRV `1.91` toolchain) so local lints match CI's rolling stable — a dry-run on a stale compiler can pass while CI fails on a newer lint (this is how `clippy::suboptimal_flops` from Rust 1.96 broke a clean `main`; the same lint, on the then-MSRV 1.88, also broke a push when preflight didn't yet run the MSRV lane).
+Before every push, run `./scripts/preflight.ps1`. It freshens the toolchains (`rustup update stable`, and ensures the MSRV toolchain, read from `Cargo.toml`'s `rust-version`, currently `1.95`) so local lints match CI's rolling stable — a dry-run on a stale compiler can pass while CI fails on a newer lint (this is how `clippy::suboptimal_flops` from Rust 1.96 broke a clean `main`; the same lint, on the then-MSRV 1.88, also broke a push when preflight didn't yet run the MSRV lane).
 
-Preflight is **tiered** — CI runs a `1.91` (MSRV) + `stable` matrix, and the default fast path does not fully mirror both:
-- **Default** (`./scripts/preflight.ps1`): full **stable** mirror (every CI lane on stable) **plus** MSRV `1.91` fmt + clippy. The MSRV clippy lanes catch version-specific lints/compile errors (the gap that bit us) cheaply.
-- **`-Ci`** (`./scripts/preflight.ps1 -Ci`): the **full** both-toolchain mirror — every CI step on **both** `1.91` and `stable`. This is the run that literally means "green preflight = green CI"; use it before important pushes and after any MSRV-sensitive change.
+Preflight is **tiered** — CI runs an MSRV (`1.95`) + `stable` matrix, and the default fast path does not fully mirror both:
+- **Default** (`./scripts/preflight.ps1`): full **stable** mirror (every CI lane on stable) **plus** MSRV fmt + clippy. The MSRV clippy lanes catch version-specific lints/compile errors (the gap that bit us) cheaply.
+- **`-Ci`** (`./scripts/preflight.ps1 -Ci`): the **full** both-toolchain mirror — every CI step on **both** the MSRV and `stable`. This is the run that literally means "green preflight = green CI"; use it before important pushes and after any MSRV-sensitive change.
 - **`-Full`**: also runs the `bench_hook_*` CPU benches (composes with `-Ci`). These **skip on CI** (the gated `Llama-3.2-1B` isn't cached on runners), so they are not part of "green CI"; run `-Full` only when adding a new model family — the change that can shift the benchmarked forward/hook paths.
+
+**The MSRV is declared once**, as `rust-version` in `Cargo.toml`. Preflight and `scripts/msrv-probe.ps1` read it from there, and `lane-parity.ps1` fails if `ci.yml`'s MSRV matrix lane names a different version, so moving the MSRV means editing `Cargo.toml` and `ci.yml` (plus the prose in README.md and `src/lib.rs`), nothing else.
 
 ## Releasing
 

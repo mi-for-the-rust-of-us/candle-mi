@@ -55,6 +55,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   export reloaded by `CrossLayerTranscoder::open_local`. It asserts its own invariants and exits
   non-zero if one fails, and the weights are random, so its numbers show the mechanics, not a
   finding. Runs in about 5 s on CPU.
+### Changed
+
+- **MSRV 1.91 -> 1.95.** Two dependencies that declare no `rust-version` raised the floor, so
+  cargo's MSRV-aware resolver could see neither: `hf-xet` 1.7 and later (through
+  `hf-fetch-model` -> `hf-hub` 1.0) require `sysinfo` 0.39, and every `sysinfo` 0.39 release
+  needs Rust 1.95; `candle-core` 0.11.1 calls `__cpuid_count` outside an `unsafe` block, which
+  compiles on x86_64 only from Rust 1.94 (fix proposed upstream,
+  [huggingface/candle#4097](https://github.com/huggingface/candle/pull/4097)). A fresh
+  `cargo add candle-mi` on Rust 1.94 failed to build (`sysinfo@0.39.6 requires rustc 1.95`), and
+  so does the already published 0.2.2 on 1.91 to 1.94: no release of candle-mi can build on
+  those toolchains from a fresh resolve any more. The MSRV is now declared once, as
+  `rust-version` in `Cargo.toml`; `scripts/preflight.ps1` reads it, and `scripts/lane-parity.ps1`
+  fails if CI's MSRV lane names a different version.
+- **`candle-core` / `candle-nn` floor `0.11` -> `0.11.1`.** 0.11.1 is the first candle release
+  on `zip` 9 (see Security). A `^0.11` floor would have let a consumer's lockfile keep 0.11.0, and
+  zip 8 with it, while candle-mi is tested against 0.11.1 only. 0.11.1 changes several CPU and
+  CUDA kernels (`where_cond`, `broadcast_matmul`, argsort, conv `im2col` offsets, in-place ops);
+  the oracle suite was re-run against it before release (`RESURRECTION.md`).
+- **`tokenizers` `0.22` -> `0.23`**, following candle-core 0.11.1's own requirement (`^0.23.1`),
+  so the tree again has a single `tokenizers`. **Possibly breaking for one call:**
+  `tokenizers::Tokenizer` is public in `MITokenizer::HuggingFace` and `MITokenizer::from_hf`, so a
+  caller who builds a `tokenizers` 0.22 `Tokenizer` and passes it to `from_hf` must move to 0.23
+  as well. candle-mi's own code needed no change; existing `tokenizer.json` files load unchanged
+  (the 0.23 Rust-side change is that `add_tokens` normalises at insertion, which candle-mi never
+  calls). Same move as 0.21 -> 0.22 in v0.1.19.
+- **`safetensors` is now an optional dependency**, enabled by the `clt` and `sae` features, the
+  only code that reads raw safetensors headers. Builds without either no longer compile it.
+- **`statrs` removed.** It was a required dependency that no code used (found by Cargo 1.100's
+  new `cargo::unused_dependencies` lint); every build compiled it, and `nalgebra` with it, for
+  nothing.
+- **`hf-fetch-model` 0.12.4 -> 0.13.0** (0.12.5, 0.12.6, then 0.13.0, which adds `cache move`),
+  and **`anamnesis` 0.7.10 -> 0.7.11** in lockstep with hf-fetch-model's own floor, so the tree
+  keeps one anamnesis copy. No API change used here.
+- **`Cargo.lock` refreshed** against Rust 1.95 (182 packages, `hf-xet` 1.6 -> 1.8.1 among them),
+  so CI's lanes test the dependency tree a new user resolves today, not an older one.
+- **Removed the redundant `homepage` manifest field** (same URL as `repository`; Cargo 1.100's
+  `cargo::redundant_homepage` lint).
 
 ### Security
 
@@ -72,11 +109,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   -0383 and -0386. Lockfile only: no build of candle-mi compiles `quinn-proto`
   (`cargo tree -i quinn-proto --target all` is empty) or, on a native target,
   `webpki-root-certs`, and candle-mi never calls `tokio`'s `AsyncFd`.
-- **RUSTSEC-2026-0367, -0368 and -0369 (`zip` 8.6.0) accepted in `deny.toml`.**
-  `zip` is a required dependency of `candle-core` 0.11, which holds it at `^8.6`,
-  and the fix is in `zip` 9. All three advisories concern `extract()`, which
-  candle never calls: its `.npz` / `.pth` readers use only `by_index` and
-  `by_name`. The ignores go when `candle-core` moves to `zip` 9.
+- **`zip` 8.6.0 -> 9.8.1: RUSTSEC-2026-0367, -0368, -0369 and -0429 resolved**, through the move
+  to `candle-core` 0.11.1 (`zip` ^9.1.3), and the four `deny.toml` ignores that had accepted them
+  in the meantime are gone. `zip` reaches candle-mi only through candle, and all four concern
+  `extract()`, which candle never calls, so no released candle-mi was exploitable through them;
+  the `candle-core` floor of 0.11.1 keeps zip 8 out of consumers' lockfiles too.
+- **RUSTSEC-2026-0542 (`humantime`) and -0543 (`chrono`) accepted in `deny.toml`.** Both are
+  informational "unmaintained" notices with no patched version. They reach candle-mi only
+  through Hugging Face's xet stack (`hf-fetch-model` -> `hf-hub` -> `hf-xet`), not its own code.
 
 ## [0.2.2] - 2026-10-12
 

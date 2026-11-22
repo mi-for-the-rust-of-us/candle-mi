@@ -13,16 +13,21 @@
 //!
 //! ## Requirements
 //!
-//! **Rust 1.91 or newer**, edition 2024. On an older toolchain cargo does not
+//! **Rust 1.95 or newer**, edition 2024. On an older toolchain cargo does not
 //! report an error: because its resolver is MSRV-aware, it silently picks the
 //! newest release your compiler can build and `cargo update` never moves you
-//! past it. Two such ceilings exist — Rust 1.87 or older stops at **0.1.4**
-//! (0.1.5 raised the floor to 1.88, forced by `libloading 0.9.0`), and Rust
-//! 1.88 to 1.90 stops at **0.1.22** (0.1.23 raised it to 1.91, forced by
-//! `hf-fetch-model 0.11.3` adopting `hf-hub` 1.0 and its mandatory
-//! `hf-xet`). 0.1.4 in particular predates RWKV, the masked-diffusion
-//! backends, trainable backbones and quantized loading. If `cargo add
-//! candle-mi` gave you either, run `rustup update && cargo update`.
+//! past it. Three such ceilings exist. Rust 1.87 or older stops at **0.1.4**
+//! (0.1.5 raised the floor to 1.88, forced by `libloading 0.9.0`); Rust 1.88
+//! to 1.90 stops at **0.1.22** (0.1.23 raised it to 1.91, forced by
+//! `hf-fetch-model 0.11.3` adopting `hf-hub` 1.0 and its mandatory `hf-xet`);
+//! Rust 1.91 to 1.94 stops at **0.2.2** (0.2.3 raised it to 1.95, forced by
+//! `hf-xet` 1.7+, whose `sysinfo` 0.39 needs 1.95, and by `candle-core
+//! 0.11.1`, which on `x86_64` compiles only from 1.94; none of them declares a
+//! `rust-version`, so 0.2.2 itself no longer builds from a fresh resolve on
+//! those toolchains). 0.1.4 in particular predates RWKV, the
+//! masked-diffusion backends, trainable backbones and quantized loading. If
+//! `cargo add candle-mi` gave you any of these, run
+//! `rustup update && cargo update`.
 //!
 //! candle-mi targets a single consumer GPU: models up to ~7B fit in 16 GB at
 //! F32. CPU-only works for small models and tokenizer-only workflows.

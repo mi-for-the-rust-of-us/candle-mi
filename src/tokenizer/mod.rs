@@ -58,6 +58,12 @@ impl MITokenizer {
     }
 
     /// Wrap an already-loaded `HuggingFace` tokenizer.
+    ///
+    /// The argument is a `tokenizers::Tokenizer` from the same major line
+    /// candle-mi depends on (`tokenizers` 0.23 since candle-mi 0.2.3, matching
+    /// `candle-core` 0.11.1). A `Tokenizer` built with another line (0.22, say)
+    /// is a different type to the compiler; depend on the same `tokenizers`
+    /// version, or load from a file with [`from_hf_path`](Self::from_hf_path).
     #[must_use]
     pub fn from_hf(tokenizer: tokenizers::Tokenizer) -> Self {
         Self::HuggingFace(Box::new(tokenizer))

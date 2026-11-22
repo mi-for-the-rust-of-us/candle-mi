@@ -47,8 +47,8 @@ fn apply_llama3_scaling(
             // smooth interpolation between scaled and unscaled.  Kept as two
             // separate products plus an add (NOT a fused `mul_add`): PyTorch
             // computes this non-fused, so fusing would diverge — and splitting
-            // also sidesteps `clippy::suboptimal_flops`, which fires on the
-            // MSRV (1.91) toolchain but not on current stable.
+            // also sidesteps `clippy::suboptimal_flops`, which fired on the
+            // then-MSRV 1.91 toolchain but not on stable.
             let smooth =
                 (orig_max / wavelen - low_freq_factor) / (high_freq_factor - low_freq_factor);
             let scaled = (1.0 - smooth) * *freq / factor;
