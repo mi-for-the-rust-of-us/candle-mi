@@ -32,7 +32,7 @@ sampled. `n/a` = not measurable on this platform (Linux/macOS have no
 shared-residency counter). Mark an entry `Spill = $true` in the script, or
 pass `-SpillProbe` to sample every entry.
 
-- **Last run:** 2026-11-22 12:13 — tier **Default**
+- **Last run:** 2026-11-22 16:00 — tier **partial (11 of 23: llama32, gemma, gemma2, phi3, mistral7b, qwen3, qwen25coder, starcoder2, deepseek, bidirectional, patchat)**
 - **Toolchain:** rustc 1.100.0 (0ef1bc386 2026-11-09)
 - **GPU:** NVIDIA GeForce RTX 5060 Ti, driver 610.88
 
@@ -41,17 +41,17 @@ pass `-SpillProbe` to sample every entry.
 | clt_qwen3 (encoder parity) | bluelightai/clt-qwen3-1.7b-base-20k (~240 MiB) | CPU | 2026-11-22 | 5m04s ⚠️ | none | ✅ PASS |
 | plt_gemma (encoder parity) | google/gemma-scope-2b-pt-transcoders (~864 MiB, gated) | CPU | 2026-11-22 | 2m10s | none | ✅ PASS |
 | plt_llama (encoder parity) | mntss/transcoder-Llama-3.2-1B (~16 GiB) | CPU | 2026-11-22 | 1m37s | — | ✅ PASS |
-| llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-11-22 | 1m46s | — | ✅ PASS |
-| gemma forward | google/gemma-2b (gated) | CPU+GPU | 2026-11-22 | 84.4s | — | ✅ PASS |
-| gemma2 forward | google/gemma-2-2b (gated) | CPU+GPU | 2026-11-22 | 1m31s | — | ✅ PASS |
-| phi3-mini forward | microsoft/Phi-3-mini-4k-instruct | CPU+GPU | 2026-11-22 | 1m35s | — | ✅ PASS |
-| mistral-7b forward | mistralai/Mistral-7B-v0.1 (gated) | CPU+GPU | 2026-11-22 | 2m14s | — | ✅ PASS |
-| qwen3 forward | Qwen/Qwen3-1.7B-Base | CPU+GPU | 2026-11-22 | 82.5s | — | ✅ PASS |
-| qwen2.5-coder forward | Qwen/Qwen2.5-Coder-3B-Instruct | CPU+GPU | 2026-11-22 | 1m31s | — | ✅ PASS |
-| starcoder2 forward | bigcode/starcoder2-3b (gated) | CPU+GPU | 2026-11-22 | 1m37s | — | ✅ PASS |
-| deepseek forward | deepseek-ai/deepseek-coder-1.3b-base | CPU+GPU | 2026-11-22 | 2m25s | — | ✅ PASS |
+| llama32 forward | meta-llama/Llama-3.2-1B (gated) | CPU+GPU | 2026-11-22 | 1m52s | — | ✅ PASS |
+| gemma forward | google/gemma-2b (gated) | CPU+GPU | 2026-11-22 | 80.3s | — | ✅ PASS |
+| gemma2 forward | google/gemma-2-2b (gated) | CPU+GPU | 2026-11-22 | 85.7s | — | ✅ PASS |
+| phi3-mini forward | microsoft/Phi-3-mini-4k-instruct | CPU+GPU | 2026-11-22 | 1m31s | — | ✅ PASS |
+| mistral-7b forward | mistralai/Mistral-7B-v0.1 (gated) | CPU+GPU | 2026-11-22 | 2m09s | — | ✅ PASS |
+| qwen3 forward | Qwen/Qwen3-1.7B-Base | CPU+GPU | 2026-11-22 | 79.5s | — | ✅ PASS |
+| qwen2.5-coder forward | Qwen/Qwen2.5-Coder-3B-Instruct | CPU+GPU | 2026-11-22 | 84.8s | — | ✅ PASS |
+| starcoder2 forward | bigcode/starcoder2-3b (gated) | CPU+GPU | 2026-11-22 | 89.5s | — | ✅ PASS |
+| deepseek forward | deepseek-ai/deepseek-coder-1.3b-base | CPU+GPU | 2026-11-22 | 2m15s | — | ✅ PASS |
 | longrope forward | microsoft/Phi-3.5-mini-instruct (~15 GiB) | GPU | 2026-11-22 | 13m19s ⚠️ | 6911 MiB / 10m57s / peak ~22.4 GiB | ✅ PASS |
-| bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-11-22 | 1m40s | — | ✅ PASS |
+| bidirectional (a2d-qwen2) | dllm-hub/Qwen2.5-Coder-0.5B-...-mdlm (~1.2 GiB) | CPU+GPU | 2026-11-22 | 1m37s | — | ✅ PASS |
 | mdlm + othello | TheQweaker/mdlm-owt-noflash; Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-11-22 | 89.3s | — | ✅ PASS |
 | quantized (bnb/AWQ/GPTQ) | medmekk/...-bnb-nf4; casperhansen/...-awq; shuyuej/...-GPTQ | GPU | 2026-11-22 | 2m59s | — | ✅ PASS |
 | clt (encode/inject/sweep) | gemma-2-2b + llama-3.2-1b + mntss CLTs (>=16 GiB VRAM) | GPU | 2026-11-22 | 3m54s | — | ✅ PASS |
@@ -59,5 +59,5 @@ pass `-SpillProbe` to sample every entry.
 | memory (VRAM probe) | (none - allocates a GPU tensor) | GPU | 2026-11-22 | 1m34s | — | ✅ PASS |
 | rwkv6 + rwkv7 | RWKV v6-Finch-1B6; RWKV7-Goose-1.5B | CPU+GPU | 2026-11-22 | 4m19s | — | ✅ PASS |
 | anacrousis (28x15 matrix) | meta-llama/Llama-3.2-1B (gated) | GPU | 2026-09-21 | 11m37s ⚠️ | none | ✅ PASS |
-| patch_at (CUDA offset-view guard) | (none - OthelloGpt::init from a seed) | GPU | 2026-11-22 | 2m10s | — | ✅ PASS |
+| patch_at (CUDA offset-view guard) | (none - OthelloGpt::init from a seed) | GPU | 2026-11-22 | 1m31s | — | ✅ PASS |
 | othello (fused-attn) | Othello fixtures (OTHELLO_MDLM_FIXTURES) | CPU+GPU | 2026-11-22 | 1m43s | — | ✅ PASS |
