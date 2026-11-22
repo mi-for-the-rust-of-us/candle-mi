@@ -323,7 +323,7 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Build (plain)" $Tc `
         @("build", "--no-default-features", "--features", "plain") -Lane 'plain'
     Invoke-Cargo "[$Tc] Tests (plain)" $Tc `
-        @("test", "--no-default-features", "--features", "plain", "--lib", "--test", "validate_plain_reference", "--test", "validate_plain_construction") -Lane 'plain'
+        @("test", "--no-default-features", "--features", "plain", "--lib", "--test", "validate_plain_reference", "--test", "validate_plain_construction", "--test", "validate_plain_tracr") -Lane 'plain'
     Invoke-Cargo "[$Tc] Build (plain + examples)" $Tc `
         @("build", "--no-default-features", "--features", "plain", "--examples") -Lane 'plain'
     Invoke-Cargo "[$Tc] Run example (plain_construction)" $Tc `

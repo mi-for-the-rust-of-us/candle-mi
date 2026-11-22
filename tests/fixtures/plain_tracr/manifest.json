@@ -1,0 +1,659 @@
+{
+ "generator": {
+  "script": "scripts/plain_tracr_validation.py",
+  "python": "3.11.14",
+  "tracr_commit": "9ce2b8c82b6ba10e62e86cf6f390e7536d4fd2cd",
+  "tracr": "1.0.0",
+  "jax": "0.10.2",
+  "jaxlib": "0.10.2",
+  "dm-haiku": "0.0.17",
+  "numpy": "2.4.6",
+  "safetensors": "0.8.0"
+ },
+ "tolerance": "max|delta| <= 1e-5 * max(1, max|x_layer|) per layer; same argmax (categorical, BOS position excluded); output value with the same tolerance (numerical)",
+ "programs": {
+  "length": {
+   "causal": false,
+   "output": "categorical",
+   "vocab_size": 5,
+   "output_size": 6,
+   "max_positions": 6,
+   "n_layer": 1,
+   "d_model": 18,
+   "n_head": 1,
+   "head_dim": 5,
+   "mlp_hidden": 12,
+   "cases": [
+    {
+     "tokens": [
+      "BOS",
+      "1",
+      "2",
+      "3"
+     ],
+     "ids": [
+      3,
+      0,
+      1,
+      2
+     ],
+     "decoded": [
+      "BOS",
+      "3",
+      "3",
+      "3"
+     ],
+     "argmax": [
+      0,
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "3",
+      "3",
+      "1",
+      "2",
+      "1"
+     ],
+     "ids": [
+      3,
+      2,
+      2,
+      0,
+      1,
+      0
+     ],
+     "decoded": [
+      "BOS",
+      "5",
+      "5",
+      "5",
+      "5",
+      "5"
+     ],
+     "argmax": [
+      0,
+      5,
+      5,
+      5,
+      5,
+      5
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "2"
+     ],
+     "ids": [
+      3,
+      1
+     ],
+     "decoded": [
+      "BOS",
+      "1"
+     ],
+     "argmax": [
+      0,
+      1
+     ]
+    }
+   ]
+  },
+  "length_causal": {
+   "causal": true,
+   "output": "categorical",
+   "vocab_size": 5,
+   "output_size": 6,
+   "max_positions": 6,
+   "n_layer": 1,
+   "d_model": 18,
+   "n_head": 1,
+   "head_dim": 5,
+   "mlp_hidden": 12,
+   "cases": [
+    {
+     "tokens": [
+      "BOS",
+      "1",
+      "2",
+      "3"
+     ],
+     "ids": [
+      3,
+      0,
+      1,
+      2
+     ],
+     "decoded": [
+      "BOS",
+      "1",
+      "2",
+      "3"
+     ],
+     "argmax": [
+      0,
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "3",
+      "3",
+      "1",
+      "2",
+      "1"
+     ],
+     "ids": [
+      3,
+      2,
+      2,
+      0,
+      1,
+      0
+     ],
+     "decoded": [
+      "BOS",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5"
+     ],
+     "argmax": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  },
+  "reverse": {
+   "causal": false,
+   "output": "categorical",
+   "vocab_size": 6,
+   "output_size": 4,
+   "max_positions": 6,
+   "n_layer": 4,
+   "d_model": 43,
+   "n_head": 1,
+   "head_dim": 12,
+   "mlp_hidden": 30,
+   "cases": [
+    {
+     "tokens": [
+      "BOS",
+      "a",
+      "b",
+      "c",
+      "d"
+     ],
+     "ids": [
+      0,
+      1,
+      2,
+      3,
+      5
+     ],
+     "decoded": [
+      "BOS",
+      "d",
+      "c",
+      "b",
+      "a"
+     ],
+     "argmax": [
+      0,
+      3,
+      2,
+      1,
+      0
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "d",
+      "c",
+      "b",
+      "a",
+      "a"
+     ],
+     "ids": [
+      0,
+      5,
+      3,
+      2,
+      1,
+      1
+     ],
+     "decoded": [
+      "BOS",
+      "a",
+      "a",
+      "b",
+      "c",
+      "d"
+     ],
+     "argmax": [
+      0,
+      0,
+      0,
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "b"
+     ],
+     "ids": [
+      0,
+      2
+     ],
+     "decoded": [
+      "BOS",
+      "b"
+     ],
+     "argmax": [
+      1,
+      1
+     ]
+    }
+   ]
+  },
+  "hist": {
+   "causal": false,
+   "output": "categorical",
+   "vocab_size": 5,
+   "output_size": 6,
+   "max_positions": 6,
+   "n_layer": 1,
+   "d_model": 18,
+   "n_head": 1,
+   "head_dim": 5,
+   "mlp_hidden": 12,
+   "cases": [
+    {
+     "tokens": [
+      "BOS",
+      "a",
+      "b",
+      "c",
+      "a",
+      "b"
+     ],
+     "ids": [
+      0,
+      1,
+      2,
+      3,
+      1,
+      2
+     ],
+     "decoded": [
+      "BOS",
+      "2",
+      "2",
+      "1",
+      "2",
+      "2"
+     ],
+     "argmax": [
+      0,
+      2,
+      2,
+      1,
+      2,
+      2
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "c",
+      "c",
+      "c"
+     ],
+     "ids": [
+      0,
+      3,
+      3,
+      3
+     ],
+     "decoded": [
+      "BOS",
+      "3",
+      "3",
+      "3"
+     ],
+     "argmax": [
+      0,
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "b",
+      "a"
+     ],
+     "ids": [
+      0,
+      2,
+      1
+     ],
+     "decoded": [
+      "BOS",
+      "1",
+      "1"
+     ],
+     "argmax": [
+      0,
+      1,
+      1
+     ]
+    }
+   ]
+  },
+  "sort_unique": {
+   "causal": false,
+   "output": "categorical",
+   "vocab_size": 7,
+   "output_size": 5,
+   "max_positions": 6,
+   "n_layer": 2,
+   "d_model": 25,
+   "n_head": 1,
+   "head_dim": 7,
+   "mlp_hidden": 12,
+   "cases": [
+    {
+     "tokens": [
+      "BOS",
+      "3",
+      "1",
+      "4",
+      "2"
+     ],
+     "ids": [
+      5,
+      2,
+      0,
+      3,
+      1
+     ],
+     "decoded": [
+      "BOS",
+      "1",
+      "2",
+      "3",
+      "4"
+     ],
+     "argmax": [
+      0,
+      0,
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "5",
+      "2",
+      "1"
+     ],
+     "ids": [
+      5,
+      4,
+      1,
+      0
+     ],
+     "decoded": [
+      "BOS",
+      "1",
+      "2",
+      "5"
+     ],
+     "argmax": [
+      0,
+      0,
+      1,
+      4
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "1"
+     ],
+     "ids": [
+      5,
+      0
+     ],
+     "decoded": [
+      "BOS",
+      "1"
+     ],
+     "argmax": [
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  "frac_prevs_causal": {
+   "causal": true,
+   "output": "numerical",
+   "vocab_size": 4,
+   "output_size": 1,
+   "max_positions": 6,
+   "n_layer": 2,
+   "d_model": 12,
+   "n_head": 1,
+   "head_dim": 7,
+   "mlp_hidden": 1,
+   "cases": [
+    {
+     "tokens": [
+      "BOS",
+      "x",
+      "y",
+      "x",
+      "x"
+     ],
+     "ids": [
+      0,
+      2,
+      3,
+      2,
+      2
+     ],
+     "decoded": [
+      "BOS",
+      "1.0",
+      "0.5",
+      "0.6666666865348816",
+      "0.75"
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "y",
+      "y",
+      "x"
+     ],
+     "ids": [
+      0,
+      3,
+      3,
+      2
+     ],
+     "decoded": [
+      "BOS",
+      "0.0",
+      "0.0",
+      "0.3333333432674408"
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "x"
+     ],
+     "ids": [
+      0,
+      2
+     ],
+     "decoded": [
+      "BOS",
+      "1.0"
+     ]
+    }
+   ]
+  },
+  "shuffle_dyck": {
+   "causal": false,
+   "output": "categorical",
+   "vocab_size": 4,
+   "output_size": 2,
+   "max_positions": 7,
+   "n_layer": 6,
+   "d_model": 41,
+   "n_head": 2,
+   "head_dim": 9,
+   "mlp_hidden": 146,
+   "cases": [
+    {
+     "tokens": [
+      "BOS",
+      "(",
+      ")",
+      "(",
+      ")"
+     ],
+     "ids": [
+      2,
+      0,
+      1,
+      0,
+      1
+     ],
+     "decoded": [
+      "BOS",
+      "True",
+      "True",
+      "True",
+      "True"
+     ],
+     "argmax": [
+      1,
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "(",
+      "(",
+      ")",
+      ")"
+     ],
+     "ids": [
+      2,
+      0,
+      0,
+      1,
+      1
+     ],
+     "decoded": [
+      "BOS",
+      "True",
+      "True",
+      "True",
+      "True"
+     ],
+     "argmax": [
+      1,
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "(",
+      ")",
+      ")",
+      "("
+     ],
+     "ids": [
+      2,
+      0,
+      1,
+      1,
+      0
+     ],
+     "decoded": [
+      "BOS",
+      "False",
+      "False",
+      "False",
+      "False"
+     ],
+     "argmax": [
+      1,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "tokens": [
+      "BOS",
+      "(",
+      "("
+     ],
+     "ids": [
+      2,
+      0,
+      0
+     ],
+     "decoded": [
+      "BOS",
+      "False",
+      "False"
+     ],
+     "argmax": [
+      1,
+      0,
+      0
+     ]
+    }
+   ]
+  }
+ }
+}

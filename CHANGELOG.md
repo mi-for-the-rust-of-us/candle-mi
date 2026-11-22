@@ -25,6 +25,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   one projection. The full hook surface, including the new `MlpAct`. No padding mask: with
   bidirectional attention, batch only sequences of the same length. Separate from `OthelloGpt` by
   design, so its trained checkpoints are untouched.
+
+  Validated four independent ways, each run in CI on CPU and each checked against planted errors
+  (a check that cannot fail certifies nothing):
+  - **`Tracr`** (`tests/validate_plain_tracr.rs`, fixture by `scripts/plain_tracr_validation.py`):
+    seven RASP programs compiled by `Tracr` (categorical and numerical outputs, bidirectional and
+    causal, up to six layers, two heads in a layer, a discretising numerical MLP) are loaded
+    through the strict loader and reproduce `Tracr`'s embeddings, every per-layer residual and the
+    outputs. The bound, fixed in advance, is `max |Δ| <= 1e-5 * max(1, max |x_layer|)`; the
+    measured difference is **exactly zero** everywhere. A 0.1 % change to one layer's weights
+    fails at that layer.
+  - **`OthelloGpt`** (`tests/validate_plain_othello_parity.rs`): configured as `OthelloGpt`, on the
+    same weights, **bit-identical** at every hook and the logits, at `head_dim` 64 and 96, causal
+    and not, on CPU (and, not promised, on CUDA). A scale computed in `f32` instead of `f64` is
+    caught and named at `AttnScores`.
+  - **An independent reference** (`tests/validate_plain_reference.rs`): a forward written in `f64`
+    plain loops, sharing no code with candle, over all 96 combinations of norm, activation,
+    causal, bias and positions; worst relative difference `5.9e-7` against a `1e-5` bound.
+  - **A hand construction** (`tests/validate_plain_construction.rs`, and the runnable example
+    `plain_construction`): an SNLP "establish" head with exactly known readings, including an
+    exact `0.5 / 0.5` tie whose two scores are checked equal to the bit first.
 - **`HookPoint::MlpAct(i)`: the MLP neurons**, `[batch, seq, mlp_hidden]`, after the activation
   and before the down projection (display name `blocks.{i}.mlp.hook_act`). Capturable, and it
   accepts `Intervention::PatchAt` (dim 1 is the position). No backbone could expose the hidden

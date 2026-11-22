@@ -323,6 +323,10 @@ required-features = ["plain", "diffusion"]
 name = "validate_plain_construction"
 required-features = ["plain"]
 
+[[test]]
+name = "validate_plain_tracr"
+required-features = ["plain"]
+
 # Examples — gated behind features to avoid compilation errors when
 # features are not enabled.
 [[example]]

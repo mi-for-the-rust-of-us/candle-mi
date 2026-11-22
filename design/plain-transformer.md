@@ -326,8 +326,23 @@ pins the exact versions it was run with. Verified 2026-11-22: it compiles and
 runs, non-causal and causal.
 
 **The oracle runs in CI**, not as an `#[ignore]`d resurrection entry: the
-fixture is a few kilobytes in `tests/fixtures/`, needs no model download and
-runs in milliseconds on CPU. Python is needed only to regenerate it.
+fixture is in `tests/fixtures/plain_tracr/` (585 KB of weights and expected
+tensors plus an 8.6 KB manifest), needs no model download and runs in
+milliseconds on CPU. Python is needed only to regenerate it, and regeneration
+is byte-identical (checked by hash).
+
+**Result (2026-11-22).** Seven programs: `length` (bidirectional and causal),
+`reverse` (4 layers), `hist`, `sort_unique`, `frac_prevs` (causal, numerical
+output) and `shuffle_dyck` (6 layers, two heads in a layer, a discretising
+numerical MLP of width 146). All load through the strict loader and reproduce
+`Tracr` with a measured difference of **exactly zero**, at every layer and in
+every output, against the `1e-5` relative bound. That is not vacuous: the
+residuals hold non-integer values, and a planted error of `1e-3` in the token
+embedding, in a first-layer MLP bias, or a `0.1 %` change to layer 3's value
+weights each fails at exactly the layer it enters. Exact agreement is plausible
+here (weights are mostly `0` / `1`, attention is sharp enough that losers
+underflow, the rest is the same few `F32` operations), but it is a measured
+outcome, not a promise: the criterion stays the relative bound.
 
 ## 8. Wiring
 

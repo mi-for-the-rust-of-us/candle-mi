@@ -226,7 +226,7 @@ jobs:
         run: cargo clippy --locked --all-targets --no-default-features --features plain -- -W clippy::pedantic
 
       - name: Tests (plain)
-        run: cargo test --locked --no-default-features --features plain --lib --test validate_plain_reference --test validate_plain_construction
+        run: cargo test --locked --no-default-features --features plain --lib --test validate_plain_reference --test validate_plain_construction --test validate_plain_tracr
 
       - name: Build (plain + examples)
         run: cargo build --locked --no-default-features --features plain --examples
