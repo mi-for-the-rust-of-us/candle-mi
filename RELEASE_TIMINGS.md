@@ -106,6 +106,7 @@ vulnerable to anything that starts mid-run.
 | 0.1.23 | 2026-08-24 | AMD Ryzen 9 5950X (16/32) | rustc 1.98.0 | RTX 5060 Ti 16 GiB | -0.9% (3.11s → 3.08s, 10 runs) | +8.5% (32.96ms → 35.76ms, 10 runs) | 0.0% / 0.0% / 100.0% |
 | 0.1.24 | 2026-09-02 | AMD Ryzen 9 5950X (16/32) | rustc 1.98.0 | RTX 5060 Ti 16 GiB | +0.3% / +0.1% (3.13s → 3.14s; 3.01s → 3.01s, two 10-run samples) | +11.1% / +7.8% (32.14ms → 35.69ms; 33.43ms → 36.05ms, two 10-run samples) | 2.6% / 5.3% / 92.2% (GPU); degenerate on CPU |
 | 0.2.0 | 2026-09-21 | AMD Ryzen 9 5950X (16/32) | rustc 1.98.0 | RTX 5060 Ti 16 GiB | +1.3% (3.04s → 3.08s, 10 runs) | +8.0% (33.12ms → 35.77ms, 10 runs) | 2.6% / 5.2% / 92.2% (GPU); degenerate on CPU by construction (see note above); CPU diagnostic not cleanly measured this run |
+| 0.2.3 | 2026-11-22 | AMD Ryzen 9 5950X (16/32) | rustc 1.100.0 | RTX 5060 Ti 16 GiB | +0.9% (363.89ms → 367.08ms, 10 runs) | +9.6% (14.31ms → 15.69ms, 10 runs) | 1.1% / 2.9% / 95.9% (GPU, delta 319.06us over 100 runs); CPU half skipped (`-- --skip _cpu`, as recommended above) |
 
 CPU overhead is within noise (negative, i.e. "full capture" measured
 *faster* than "no hooks" — expected at ~3s/forward where hook bookkeeping is
@@ -188,3 +189,34 @@ teardown. If you want to skip it, skip it deliberately with `-- --skip _cpu`,
 which this file now recommends anyway. The teardown delay may well be real for
 `bench_hook_overhead`, where the measured work genuinely is short; it is not what
 dominates the diagnostic.
+
+**0.2.3 refresh: the hook overhead did not move, the forward got much faster.**
+Run because the release moved `candle-core` / `candle-nn` from 0.11.0 to 0.11.1
+and refreshed the whole lockfile (182 packages, `cudarc` 0.19.8 to 0.19.10
+among them) under the forward pass. The overhead columns sit where they always
+have: +0.9% on CPU, +9.6% on CUDA (inside the "roughly 8 to 11 percent" band of
+the 0.1.24 note), and the diagnostic's 100-run GPU delta is 319.06 us, about 2%
+of the new forward, with lookup and capture at 1.1% and 2.9% of it.
+
+The forward itself is the news: 363.89 ms on CPU F32 against 3.04 s at 0.2.0
+(about 8.4x), and 14.31 ms on CUDA BF16 against 33.12 ms (about 2.3x). Three
+things changed at once since 0.2.0 (compiler, candle, lockfile), so the jump was
+checked with an A/B on the same machine and the same rustc 1.100.0, varying only
+the commit: on `6ad1232`, the commit just before the dependency move (candle
+0.11.0, old lockfile), the same bench gave **2.64 s** (CPU) and **33.41 ms**
+(CUDA); on `5d6b440`, after it, 363.89 ms and 14.31 ms. So the speedup comes
+from the dependency move, not from Rust 1.100. candle's CPU matrix-multiply
+crate is `gemm` 0.19.0 in both lockfiles, so it is not a `gemm` upgrade; the
+likeliest sources are candle 0.11.1's own CPU and CUDA changes (among them "avoid
+copying a rank-2 rhs in `broadcast_matmul`"), not attributed further here.
+Correctness is unaffected: the full default resurrection tier passed on the same
+commit (`RESURRECTION.md`, 22/22), and the diagnostic's sanity check still
+predicts `" Paris"`.
+
+**The cost estimates earlier in this file were measured at 0.2.0** (a ~3.1 s CPU
+forward). At 0.2.3's ~0.36 s, `bench_hook_overhead`'s CPU half is about 10 s
+(this run: `finished in 11.23s` for both halves), and `bench_hook_diagnostic`'s
+CPU half would be roughly 1,105 x 0.36 s, about 7 minutes rather than 57. It is
+still skipped, for the reason given above: on CPU its attribution is degenerate
+by construction, and the speedup does not change that (the ~12 us of host-side
+work is still about 0.003% of a 364 ms forward).

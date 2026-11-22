@@ -79,7 +79,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   on `zip` 9 (see Security). A `^0.11` floor would have let a consumer's lockfile keep 0.11.0, and
   zip 8 with it, while candle-mi is tested against 0.11.1 only. 0.11.1 changes several CPU and
   CUDA kernels (`where_cond`, `broadcast_matmul`, argsort, conv `im2col` offsets, in-place ops);
-  the oracle suite was re-run against it before release (`RESURRECTION.md`).
+  the oracle suite was re-run against it before release (`RESURRECTION.md`, 22/22). **The
+  forward pass got much faster with it**: `Llama-3.2-1B`, 6-token prompt, `--release`, Ryzen 9
+  5950X + RTX 5060 Ti, 363.89 ms on CPU F32 against 2.64 s on the commit just before the move
+  (about 7x), and 14.31 ms against 33.41 ms on CUDA BF16 (about 2.3x), same machine and the same
+  rustc 1.100.0, so the dependency move is the cause, not the compiler (`RELEASE_TIMINGS.md`,
+  0.2.3 row and note). Hook overhead is unchanged (+0.9% CPU, +9.6% CUDA).
 - **`tokenizers` `0.22` -> `0.23`**, following candle-core 0.11.1's own requirement (`^0.23.1`),
   so the tree again has a single `tokenizers`. **Possibly breaking for one call:**
   `tokenizers::Tokenizer` is public in `MITokenizer::HuggingFace` and `MITokenizer::from_hf`, so a
