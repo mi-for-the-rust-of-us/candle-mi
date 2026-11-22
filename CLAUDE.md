@@ -37,6 +37,8 @@ Preflight is **tiered** — CI runs an MSRV (`1.95`) + `stable` matrix, and the 
 
 **The MSRV is declared once**, as `rust-version` in `Cargo.toml`. Preflight and `scripts/msrv-probe.ps1` read it from there, and `lane-parity.ps1` fails if `ci.yml`'s MSRV matrix lane names a different version, so moving the MSRV means editing `Cargo.toml` and `ci.yml` (plus the prose in README.md and `src/lib.rs`), nothing else.
 
+**Every cargo lane builds our own `Cargo.lock`, which is not what a new user gets.** `scripts/msrv-probe.ps1` (run by every unfiltered preflight and by CI's `msrv-probe` job, weekly canary included) builds a fresh resolve of candle-mi, without our lockfile, on the MSRV toolchain. It exists because two dependencies that declare no `rust-version` raised the real floor invisibly to every lane: `candle-core` 0.11.1 (1.94) and `hf-xet` >= 1.7 via `sysinfo` 0.39 (1.95), found 2026-11-22. When it fails, the MSRV has to move (or the offending release be avoided); it is never a flake.
+
 ## Releasing
 
 Cutting a release (a `vMAJOR.MINOR.PATCH` tag → crates.io publish):

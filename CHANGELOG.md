@@ -55,6 +55,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   export reloaded by `CrossLayerTranscoder::open_local`. It asserts its own invariants and exits
   non-zero if one fails, and the weights are random, so its numbers show the mechanics, not a
   finding. Runs in about 5 s on CPU.
+- **An MSRV probe that builds candle-mi the way a new user gets it** (`scripts/msrv-probe.ps1`,
+  CI job "MSRV probe (fresh resolve)", every unfiltered `scripts/preflight.ps1`). Every cargo
+  lane builds candle-mi's own `Cargo.lock`; the probe resolves candle-mi as a fresh dependency,
+  without that lockfile, and builds it on the MSRV toolchain. It runs in the weekly scheduled CI
+  canary too, so an upstream release that raises the real floor without declaring a
+  `rust-version` fails CI instead of failing a user's first build. It found the 1.95 floor below.
+
 ### Changed
 
 - **MSRV 1.91 -> 1.95.** Two dependencies that declare no `rust-version` raised the floor, so

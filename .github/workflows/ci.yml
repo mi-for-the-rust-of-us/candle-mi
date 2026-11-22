@@ -273,6 +273,33 @@ jobs:
         shell: pwsh
         run: ./scripts/lane-parity.ps1
 
+  # Every lane above builds candle-mi's own Cargo.lock (`--locked`). This job
+  # builds what a NEW USER gets instead: a fresh resolve, without our lockfile,
+  # on the MSRV toolchain. It catches a dependency that needs a newer Rust
+  # without declaring a `rust-version`, which the MSRV-aware resolver cannot see
+  # (candle-core 0.11.1 at 1.94, hf-xet's sysinfo 0.39 at 1.95 both did). It
+  # also runs in the weekly scheduled canary, where it notices an upstream
+  # release that raises the floor between pushes. See scripts/msrv-probe.ps1.
+  msrv-probe:
+    name: "MSRV probe (fresh resolve)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read the MSRV from Cargo.toml
+        id: msrv
+        run: echo "version=$(sed -n 's/^rust-version = "\(.*\)"/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
+
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master (v1)
+        with:
+          toolchain: ${{ steps.msrv.outputs.version }}
+
+      - name: Build a fresh resolve on the MSRV
+        shell: pwsh
+        run: ./scripts/msrv-probe.ps1
+
   # Dependency supply chain, per `deny.toml`. Build scripts and
   # proc-macros run arbitrary code at build time, so a compromised or yanked
   # dependency is worth failing the build over.

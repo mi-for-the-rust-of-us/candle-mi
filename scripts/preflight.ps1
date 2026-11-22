@@ -350,6 +350,9 @@ if (-not $filtered) {
     & rustc "+$Msrv" --version
 
     Invoke-Step "Pick up latest hf-fetch-model patch" { cargo update -p hf-fetch-model }
+    # Every lane below builds our Cargo.lock; this builds what a new user gets
+    # (a fresh resolve) on the MSRV. Mirrors ci.yml's `msrv-probe` job.
+    Invoke-Step "MSRV probe: fresh resolve built on $Msrv" { & (Join-Path $PSScriptRoot 'msrv-probe.ps1') }
 }
 else {
     Write-Host "Filtered run: skipping toolchain freshening and the hf-fetch-model bump." -ForegroundColor Yellow
