@@ -96,6 +96,12 @@ pub enum Activation {
     /// Used by Gemma 2, `StarCoder2`, and other models that specify
     /// `hidden_act: "gelu_pytorch_tanh"` in their `HuggingFace` config.
     GeluApprox,
+    /// Rectified Linear Unit, `max(0, x)`.
+    ///
+    /// The activation of constructed (`Tracr`-style) models, where an MLP
+    /// computes a lookup and every neuron must be exactly zero or linear; and
+    /// of `HuggingFace` models with `hidden_act: "relu"`.
+    Relu,
 }
 
 impl fmt::Display for Activation {
@@ -104,6 +110,7 @@ impl fmt::Display for Activation {
             Self::Silu => write!(f, "SiLU"),
             Self::Gelu => write!(f, "GELU"),
             Self::GeluApprox => write!(f, "GELU (tanh approx)"),
+            Self::Relu => write!(f, "ReLU"),
         }
     }
 }
@@ -1168,6 +1175,9 @@ fn parse_activation_str(config: &Value) -> Activation {
     match act_str {
         Some("gelu_pytorch_tanh") => Activation::GeluApprox,
         Some("gelu") => Activation::Gelu,
+        // Before `Relu` existed, "relu" fell through to the SiLU default and a
+        // ReLU model ran with the wrong activation, silently.
+        Some("relu") => Activation::Relu,
         _ => Activation::Silu,
     }
 }
@@ -2748,6 +2758,42 @@ mod tests {
     /// Taking the config string at face value here is the bug `transformers`
     /// shipped in v4.48.0 (PR #35235), measured at ~1e-2 per logit in
     /// `tests/validate_gemma_forward.rs`.
+    /// Every activation string the parser recognises, and the default.
+    ///
+    /// `"relu"` is the case that motivated the test: before `Activation::Relu`
+    /// existed it fell through to the `SiLU` default, so a `ReLU` model ran with
+    /// the wrong activation and nothing said so.
+    #[test]
+    fn parse_activation_str_recognises_relu_and_keeps_the_silu_default() {
+        let cases = [
+            (
+                serde_json::json!({ "hidden_act": "relu" }),
+                Activation::Relu,
+            ),
+            (
+                serde_json::json!({ "hidden_act": "gelu" }),
+                Activation::Gelu,
+            ),
+            (
+                serde_json::json!({ "hidden_act": "gelu_pytorch_tanh" }),
+                Activation::GeluApprox,
+            ),
+            (
+                serde_json::json!({ "hidden_act": "silu" }),
+                Activation::Silu,
+            ),
+            (serde_json::json!({}), Activation::Silu),
+            // `hidden_activation` wins over `hidden_act` (Gemma 2's override).
+            (
+                serde_json::json!({ "hidden_activation": "relu", "hidden_act": "gelu" }),
+                Activation::Relu,
+            ),
+        ];
+        for (json, expected) in cases {
+            assert_eq!(parse_activation_str(&json), expected, "for {json}");
+        }
+    }
+
     #[test]
     fn auto_config_matches_gemma_1_legacy_activation() {
         // google/gemma-2b, verbatim from its config.json at revision 9cf48e52.

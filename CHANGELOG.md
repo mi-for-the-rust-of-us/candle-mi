@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`HookPoint::MlpAct(i)`: the MLP neurons**, `[batch, seq, mlp_hidden]`, after the activation
+  and before the down projection (display name `blocks.{i}.mlp.hook_act`). Capturable, and it
+  accepts `Intervention::PatchAt` (dim 1 is the position). No backbone could expose the hidden
+  layer before: `MlpPre` is the MLP input and `MlpPost` its output. Fired by the new `plain`
+  backend; the existing backends do not fire it yet.
+- **`Activation::Relu`**, `max(0, x)`, also wired into `GenericTransformer`'s MLP.
+
+### Fixed
+
+- **A `HuggingFace` config with `hidden_act: "relu"` ran with `SiLU`.** The activation parser fell
+  through to its `SiLU` default for any string it did not know, `"relu"` included, so such a model
+  computed the wrong activation with no warning. It now parses as `Activation::Relu`. (No model in
+  the validated roster uses `ReLU`, so no published number changes.)
+- **`HookPoint::MlpPost`'s doc said "MLP post-activation"**, but in candle-mi it has always been the
+  MLP *output* (`HOOKS.md` had it right). The doc now says so and points to `MlpAct` for the
+  neurons. Its display name, `blocks.{i}.mlp.hook_post`, is unchanged so existing captures keep
+  working, though in `TransformerLens` that name means the post-activation.
+
 ## [0.2.3] - 2026-11-22
 
 ### Added

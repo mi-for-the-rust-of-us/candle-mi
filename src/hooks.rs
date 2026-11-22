@@ -82,9 +82,25 @@ pub enum HookPoint {
     /// Residual stream between attention and MLP in layer `i`
     /// (`blocks.{i}.hook_resid_mid`).
     ResidMid(usize),
-    /// MLP pre-activation in layer `i` (`blocks.{i}.mlp.hook_pre`).
+    /// MLP input in layer `i`, after the pre-MLP norm if there is one
+    /// (`blocks.{i}.mlp.hook_pre`); `[batch, seq, hidden]`.
     MlpPre(usize),
-    /// MLP post-activation in layer `i` (`blocks.{i}.mlp.hook_post`).
+    /// MLP neurons in layer `i`: the hidden layer after the activation, before
+    /// the down projection (`blocks.{i}.mlp.hook_act`);
+    /// `[batch, seq, mlp_hidden]`.
+    ///
+    /// This is what `TransformerLens` calls `mlp.hook_post`. In candle-mi that
+    /// name belongs to [`MlpPost`](Self::MlpPost), which is the MLP *output*,
+    /// so the neurons have their own variant. Fired by the `plain` backend
+    /// (`PlainTransformer`); other backends do not fire it yet.
+    MlpAct(usize),
+    /// MLP output in layer `i`, before any post-MLP norm
+    /// (`blocks.{i}.mlp.hook_post`); `[batch, seq, hidden]`.
+    ///
+    /// **Not the post-activation neurons**, despite the `TransformerLens`-style
+    /// name it displays as: in candle-mi this has always been the output of the
+    /// down projection. The neurons are [`MlpAct`](Self::MlpAct). The display
+    /// name is kept so existing captures keep working.
     MlpPost(usize),
     /// MLP output in layer `i` (`blocks.{i}.hook_mlp_out`).
     MlpOut(usize),
@@ -123,12 +139,14 @@ impl HookPoint {
     /// Whether [`Intervention::PatchAt`] can be applied at this hook point.
     ///
     /// True for exactly the hook points whose activation is
-    /// `[batch, seq_len, hidden]`, so that the sequence is dim 1 and a single
+    /// `[batch, seq_len, width]`, so that the sequence is dim 1 and a single
     /// position names one row unambiguously: [`Embed`](Self::Embed),
     /// [`ResidPre`](Self::ResidPre), [`AttnOut`](Self::AttnOut),
     /// [`ResidMid`](Self::ResidMid), [`MlpPre`](Self::MlpPre),
-    /// [`MlpPost`](Self::MlpPost), [`MlpOut`](Self::MlpOut),
-    /// [`ResidPost`](Self::ResidPost) and [`FinalNorm`](Self::FinalNorm).
+    /// [`MlpAct`](Self::MlpAct), [`MlpPost`](Self::MlpPost),
+    /// [`MlpOut`](Self::MlpOut), [`ResidPost`](Self::ResidPost) and
+    /// [`FinalNorm`](Self::FinalNorm). `width` is `hidden` for all of them but
+    /// [`MlpAct`](Self::MlpAct), whose last dimension is the MLP width.
     ///
     /// # Why the others are excluded
     ///
@@ -167,6 +185,7 @@ impl HookPoint {
                 | Self::AttnOut(_)
                 | Self::ResidMid(_)
                 | Self::MlpPre(_)
+                | Self::MlpAct(_)
                 | Self::MlpPost(_)
                 | Self::MlpOut(_)
                 | Self::ResidPost(_)
@@ -188,6 +207,7 @@ impl fmt::Display for HookPoint {
             Self::AttnOut(i) => write!(f, "blocks.{i}.hook_attn_out"),
             Self::ResidMid(i) => write!(f, "blocks.{i}.hook_resid_mid"),
             Self::MlpPre(i) => write!(f, "blocks.{i}.mlp.hook_pre"),
+            Self::MlpAct(i) => write!(f, "blocks.{i}.mlp.hook_act"),
             Self::MlpPost(i) => write!(f, "blocks.{i}.mlp.hook_post"),
             Self::MlpOut(i) => write!(f, "blocks.{i}.hook_mlp_out"),
             Self::ResidPost(i) => write!(f, "blocks.{i}.hook_resid_post"),
@@ -241,6 +261,7 @@ fn parse_hook_string(s: &str) -> HookPoint {
             "hook_attn_out" => HookPoint::AttnOut(layer),
             "hook_resid_mid" => HookPoint::ResidMid(layer),
             "mlp.hook_pre" => HookPoint::MlpPre(layer),
+            "mlp.hook_act" => HookPoint::MlpAct(layer),
             "mlp.hook_post" => HookPoint::MlpPost(layer),
             "hook_mlp_out" => HookPoint::MlpOut(layer),
             "hook_resid_post" => HookPoint::ResidPost(layer),
@@ -1062,6 +1083,7 @@ mod tests {
             (HookPoint::AttnOut(2), "blocks.2.hook_attn_out"),
             (HookPoint::ResidMid(11), "blocks.11.hook_resid_mid"),
             (HookPoint::MlpPre(1), "blocks.1.mlp.hook_pre"),
+            (HookPoint::MlpAct(1), "blocks.1.mlp.hook_act"),
             (HookPoint::MlpPost(1), "blocks.1.mlp.hook_post"),
             (HookPoint::MlpOut(4), "blocks.4.hook_mlp_out"),
             (HookPoint::ResidPost(9), "blocks.9.hook_resid_post"),
@@ -1111,6 +1133,7 @@ mod tests {
             HookPoint::AttnOut(3),
             HookPoint::ResidMid(3),
             HookPoint::MlpPre(4),
+            HookPoint::MlpAct(4),
             HookPoint::MlpPost(4),
             HookPoint::MlpOut(5),
             HookPoint::ResidPost(5),
@@ -1141,14 +1164,15 @@ mod tests {
             HookPoint::AttnOut(_) => 7,
             HookPoint::ResidMid(_) => 8,
             HookPoint::MlpPre(_) => 9,
-            HookPoint::MlpPost(_) => 10,
-            HookPoint::MlpOut(_) => 11,
-            HookPoint::ResidPost(_) => 12,
-            HookPoint::FinalNorm => 13,
-            HookPoint::RwkvState(_) => 14,
-            HookPoint::RwkvDecay(_) => 15,
-            HookPoint::RwkvEffectiveAttn(_) => 16,
-            HookPoint::Custom(_) => 17,
+            HookPoint::MlpAct(_) => 10,
+            HookPoint::MlpPost(_) => 11,
+            HookPoint::MlpOut(_) => 12,
+            HookPoint::ResidPost(_) => 13,
+            HookPoint::FinalNorm => 14,
+            HookPoint::RwkvState(_) => 15,
+            HookPoint::RwkvDecay(_) => 16,
+            HookPoint::RwkvEffectiveAttn(_) => 17,
+            HookPoint::Custom(_) => 18,
         }
     }
 
@@ -1391,6 +1415,7 @@ mod tests {
             (HookPoint::AttnOut(3), true),
             (HookPoint::ResidMid(3), true),
             (HookPoint::MlpPre(4), true),
+            (HookPoint::MlpAct(4), true),
             (HookPoint::MlpPost(4), true),
             (HookPoint::MlpOut(5), true),
             (HookPoint::ResidPost(5), true),
