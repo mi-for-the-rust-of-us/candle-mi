@@ -142,6 +142,7 @@ $lanes = @(
     @{ Id = 'memory-debug'; Features = 'memory-debug' }
     @{ Id = 'training';     Features = 'training' }
     @{ Id = 'plain';        Features = 'plain' }
+    @{ Id = 'plain-parity'; Features = 'plain,diffusion' }
 )
 $allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,training"
 
@@ -322,7 +323,9 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Build (plain)" $Tc `
         @("build", "--no-default-features", "--features", "plain") -Lane 'plain'
     Invoke-Cargo "[$Tc] Tests (plain)" $Tc `
-        @("test", "--no-default-features", "--features", "plain", "--lib") -Lane 'plain'
+        @("test", "--no-default-features", "--features", "plain", "--lib", "--test", "validate_plain_reference") -Lane 'plain'
+    Invoke-Cargo "[$Tc] Tests (plain + diffusion, OthelloGpt parity)" $Tc `
+        @("test", "--no-default-features", "--features", "plain,diffusion", "--test", "validate_plain_othello_parity") -Lane 'plain-parity'
 
     # Doctest every feature-gated public example in one pass (clt/sae/rwkv were
     # uncovered by the old transformer+memory-only lane). Mirrors ci.yml §1.10.

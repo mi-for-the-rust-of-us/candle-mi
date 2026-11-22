@@ -199,12 +199,21 @@ It runs on four configurations, so neither a scale nor a mask difference can
 hide:
 
 - `head_dim = 64` (`n_embd = 512, n_head = 8`, `OthelloGpt`'s own width:
-  scale `0.125`, exact in every precision) and `head_dim = 48` (`n_embd = 384,
-  n_head = 8`, since `OthelloGpt` derives `head_dim = n_embd / n_head`: scale
-  `1/sqrt(48)`, irrational, so an `f32` scale or a different computation of it
-  shows up in `AttnScores`). Real widths rather than toy ones: wider matrices
-  take more of the matmul's blocking paths, which makes bit-identity a stricter
-  test, and two layers at these widths still run in milliseconds on CPU;
+  scale `0.125`, exact in every precision) and `head_dim = 96` (`n_embd = 768,
+  n_head = 8`, since `OthelloGpt` derives `head_dim = n_embd / n_head`). Real
+  widths rather than toy ones: wider matrices take more of the matmul's
+  blocking paths, which makes bit-identity a stricter test, and two layers at
+  these widths still run in well under a second on CPU;
+
+  **Why 96, not the 48 first planned (found while implementing).** candle
+  multiplies an `F32` tensor by a scalar after casting the scalar to `f32`
+  (`T::from_f64` in the CPU `affine` kernel), so `OthelloGpt`'s `f64` scale is
+  applied as an `f32` anyway. A scale computed in `f32` instead of `f64` is
+  therefore visible only where the two round to *different* `f32` values: true
+  for 54 of the head sizes 1 to 256, `96` among them, but **not** for `48` (nor
+  `64`). Planting exactly that mutation, the test passed unseen at `48`; at
+  `96` it fails at `blocks.0.attn.hook_scores` (max `|Δ|` `7e-7`) and names
+  it. The irrationality of the scale was necessary but not sufficient;
 - each with `causal = false` and `causal = true`. The causal path reuses
   `crate::util::masks::create_causal_mask`, the function `OthelloGpt` calls,
   so the comparison is of the same code, not of equivalent code.
@@ -369,3 +378,11 @@ A third pass, also taken, with one tightening:
     (§7.3).
 12. A failed tie-equality check points at the kernel before the construction;
     the tie test keeps `seq <= 4` (§7.3).
+
+Found while implementing:
+
+13. The second parity width is `n_embd = 768` (`head_dim = 96`), not `384`
+    (`48`): candle casts a scalar multiplier to `f32` before applying it, so an
+    `f32`-computed scale differs from the `f64` one only where they round to
+    different `f32` values, which `48` does not and `96` does. Shown by
+    planting the mutation: unseen at `48`, caught and named at `96` (§7.2).

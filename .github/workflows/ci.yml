@@ -226,7 +226,15 @@ jobs:
         run: cargo clippy --locked --all-targets --no-default-features --features plain -- -W clippy::pedantic
 
       - name: Tests (plain)
-        run: cargo test --locked --no-default-features --features plain --lib
+        run: cargo test --locked --no-default-features --features plain --lib --test validate_plain_reference
+
+      # The OthelloGpt parity test compiles only with both features, so it needs
+      # its own lane: without one, clippy would never lint it.
+      - name: Clippy (plain + diffusion, pedantic)
+        run: cargo clippy --locked --all-targets --no-default-features --features "plain,diffusion" -- -W clippy::pedantic
+
+      - name: Tests (plain + diffusion, OthelloGpt parity)
+        run: cargo test --locked --no-default-features --features "plain,diffusion" --test validate_plain_othello_parity
 
       # Doctests for every feature-gated public example in ONE pass. The previous
       # `transformer,memory`-only lane left the clt, sae, and rwkv doc examples
@@ -252,7 +260,7 @@ jobs:
           set -e
           for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" "clt,diffusion,training" \
                    "quantized,transformer" "sae,transformer" "mmap,transformer" \
-                   "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" "plain" \
+                   "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" "plain" "plain,diffusion" \
                    "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,memory,training"; do
             echo "::group::cargo doc --features '$f'"
             cargo doc --locked --no-default-features ${f:+--features "$f"} --no-deps

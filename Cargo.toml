@@ -311,6 +311,14 @@ required-features = ["clt", "training"]
 name = "validate_optim_parity"
 required-features = ["training"]
 
+[[test]]
+name = "validate_plain_reference"
+required-features = ["plain"]
+
+[[test]]
+name = "validate_plain_othello_parity"
+required-features = ["plain", "diffusion"]
+
 # Examples — gated behind features to avoid compilation errors when
 # features are not enabled.
 [[example]]
