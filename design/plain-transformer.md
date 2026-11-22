@@ -339,8 +339,10 @@ is byte-identical (checked by hash).
 `reverse` (4 layers), `hist`, `sort_unique`, `frac_prevs` (causal, numerical
 output) and `shuffle_dyck` (6 layers, two heads in a layer, a discretising
 numerical MLP of width 146). All load through the strict loader and reproduce
-`Tracr` with a measured difference of **exactly zero**, at every layer and in
-every output, against the `1e-5` relative bound. That is not vacuous: the
+`Tracr` within the agreed relative tolerance; measured on Windows with
+`--nocapture`, the difference was **exactly zero** at every layer and in every
+output. CI (Linux) captures the test's output, so there only the tolerance is
+established. That is not vacuous: the
 residuals hold non-integer values, and a planted error of `1e-3` in the token
 embedding, in a first-layer MLP bias, or a `0.1 %` change to layer 3's value
 weights each fails at exactly the layer it enters. Exact agreement is plausible

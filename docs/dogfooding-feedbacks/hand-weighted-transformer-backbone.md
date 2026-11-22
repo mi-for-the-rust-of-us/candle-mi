@@ -10,8 +10,10 @@
 > strict about names, shapes and dtype; `StoicheiaTransformer` is unchanged. Ask 3 holds by
 > construction (logits at every position). Beyond the asks: `HookPoint::MlpAct`, the MLP neurons,
 > which no backbone exposed (`MlpPost` is the MLP output in candle-mi, not the post-activation).
-> Validated four ways, all in CI: seven `Tracr`-compiled programs reproduced exactly, bit-identity
-> with `OthelloGpt` configured as it, an independent `f64` reference over 96 option combinations,
+> Validated four ways, all in CI: seven `Tracr`-compiled programs reproduced within the agreed
+> relative tolerance `1e-5 * max(1, max |x|)` (`JAX` against candle; zero difference was measured
+> on Windows, which is an observation, not a guarantee), bit-identity with `OthelloGpt` configured
+> as it (the only bit-identity check, candle against candle), an independent `f64` reference over 96 option combinations,
 > and a hand construction of the "establish" step with an exact 0.5 / 0.5 tie (also the example
 > `plain_construction`). **Limitation to know before the exhaustive check:** there is no padding
 > mask, so with bidirectional attention batch only partial plans of the same length.

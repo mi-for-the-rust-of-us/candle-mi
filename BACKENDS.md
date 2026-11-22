@@ -546,7 +546,9 @@ tensors, concatenated at load into one projection, so the forward runs exactly
 
 It fires the full hook surface plus `HookPoint::MlpAct`, the MLP neurons
 (see `HOOKS.md`). Four independent validations run in CI: seven `Tracr`-compiled
-programs reproduced exactly (`tests/validate_plain_tracr.rs`), bit-identity with
+programs reproduced within a `1e-5` relative tolerance
+(`tests/validate_plain_tracr.rs`; `JAX` against candle, so a tolerance, not
+bit-identity), bit-identity with
 `OthelloGpt` on the same weights (`tests/validate_plain_othello_parity.rs`), an
 `f64` plain-loop reference over 96 option combinations
 (`tests/validate_plain_reference.rs`), and a hand construction with exact

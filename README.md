@@ -22,7 +22,7 @@
 | Masked diffusion (plain GPT-2 backbone) | `OthelloGpt` (learned absolute positions, full `LayerNorm`, exact-`GELU`) | OthelloMDLM world model (25M) | `diffusion` |
 | Masked diffusion (decoder-style) | Dream (←Qwen2.5), `a2d-qwen2`/`a2d-qwen3` | `a2d-qwen2` 0.5B (forward-parity oracle) | `transformer` |
 | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models | Single-layer ReLU RNN, attention-only transformer (8–1,408 params) | M₂,₂ (10 params), M₁₆,₁₀ (432 params), transformer h4n4 (176 params) | `stoicheia` |
-| Hand-weighted (constructed) transformer | `PlainTransformer`: weights set by construction, every component explicit (norm-free, `ReLU` by default) | Seven Tracr-compiled RASP programs (exact match), `OthelloGpt` (bit-identical), an independent plain-loop reference (96 configurations) | `plain` |
+| Hand-weighted (constructed) transformer | `PlainTransformer`: weights set by construction, every component explicit (norm-free, `ReLU` by default) | Seven Tracr-compiled RASP programs (within a 1e-5 relative tolerance), `OthelloGpt` (bit-identical), an independent plain-loop reference (96 configurations) | `plain` |
 
 Most HuggingFace transformer models work out of the box via **auto-config** — no code changes needed. See [BACKENDS.md](BACKENDS.md) for details and how to add new architectures.
 
