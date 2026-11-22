@@ -141,8 +141,9 @@ $lanes = @(
     @{ Id = 'memory';       Features = 'memory' }
     @{ Id = 'memory-debug'; Features = 'memory-debug' }
     @{ Id = 'training';     Features = 'training' }
+    @{ Id = 'plain';        Features = 'plain' }
 )
-$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
+$allSoftware = "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,training"
 
 # Slugs that are not per-feature lanes: the formatting check, the bare
 # (no-features) builds, and the all-software builds/doctests.
@@ -315,6 +316,13 @@ function Invoke-Lanes {
         @("build", "--no-default-features", "--features", "training") -Lane 'training'
     Invoke-Cargo "[$Tc] Tests (training)" $Tc `
         @("test", "--no-default-features", "--features", "training", "--lib", "--test", "validate_optim_parity") -Lane 'training'
+
+    # PlainTransformer (`plain`, default-off). Clippy and rustdoc come from the
+    # $lanes entry; build and test here. Mirrors ci.yml's "Tests (plain)".
+    Invoke-Cargo "[$Tc] Build (plain)" $Tc `
+        @("build", "--no-default-features", "--features", "plain") -Lane 'plain'
+    Invoke-Cargo "[$Tc] Tests (plain)" $Tc `
+        @("test", "--no-default-features", "--features", "plain", "--lib") -Lane 'plain'
 
     # Doctest every feature-gated public example in one pass (clt/sae/rwkv were
     # uncovered by the old transformer+memory-only lane). Mirrors ci.yml §1.10.

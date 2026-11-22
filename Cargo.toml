@@ -512,6 +512,11 @@ rwkv-tokenizer = []
 # Diffusion-LM backend (MDLM masked-diffusion DiT). Standalone — does not
 # require `transformer`. See `src/diffusion/`.
 diffusion = []
+# `PlainTransformer`: a minimal backbone for hand-weighted (constructed,
+# Tracr-style) models, where norm, activation, positions, biases and every
+# dimension are explicit. Standalone. See `src/plain/` and
+# `design/plain-transformer.md`.
+plain = []
 clt = ["dep:safetensors"]
 sae = ["dep:anamnesis", "anamnesis/npz", "dep:safetensors"]
 stoicheia = ["dep:anamnesis", "anamnesis/pth"]
@@ -581,7 +586,7 @@ must_use_candidate        = "warn"      # Rule 17
 # CPU-safe features so the generated docs cover the full public API surface.
 [package.metadata.docs.rs]
 no-default-features = true
-features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "memory-debug", "stoicheia", "training", "fused-attn"]
+features = ["transformer", "rwkv", "rwkv-tokenizer", "diffusion", "clt", "sae", "quantized", "mmap", "memory", "memory-debug", "stoicheia", "training", "fused-attn", "plain"]
 
 # Read by `scripts/lane-parity.ps1`; cargo and docs.rs ignore it. Every feature
 # in `[features]` must be in the docs.rs list above and in at least one ci.yml

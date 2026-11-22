@@ -41,6 +41,7 @@
 //! | `GenericMdlm` | MDLM masked-diffusion `DiT` (bidirectional) | `diffusion` |
 //! | `OthelloGpt` | Plain GPT-2-style backbone (learned absolute positions, full `LayerNorm`, exact-`GELU`); the `OthelloMDLM` world model | `diffusion` |
 //! | `StoicheiaRnn` / `StoicheiaTransformer` | `AlgZoo` `ReLU` RNN, attention-only transformer (8–1,408 params) | `stoicheia` |
+//! | `PlainTransformer` | Hand-weighted (constructed, `Tracr`-style) models: every component explicit, norm-free and `ReLU` by default | `plain` |
 //!
 //! See [`BACKENDS.md`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/BACKENDS.md)
 //! for how to add a new model architecture.
@@ -63,6 +64,7 @@
 //! | `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |
 //! | `stoicheia` | no | `AlgZoo` tiny-model backends + MI analysis tools; agnostic `.safetensors`/`.pth` loading via `anamnesis` |
 //! | `training` | no | Checkpointable `AdamW` (`optim::AdamW`) so a run staged across processes resumes with its moments and step counter intact; still no training loop, schedule or data loader |
+//! | `plain` | no | `PlainTransformer`, a backbone for hand-weighted (constructed, `Tracr`-style) models: norm, activation, positions, biases, head dimension, MLP width and attention scale all explicit; a strict in-memory loader; the MLP neurons as `HookPoint::MlpAct` |
 //! | `metal` | no | Apple Metal GPU acceleration |
 //!
 //! ## Quick start
@@ -330,6 +332,8 @@ pub mod memory;
 pub mod nn_ops;
 #[cfg(feature = "training")]
 pub mod optim;
+#[cfg(feature = "plain")]
+pub mod plain;
 #[cfg(feature = "rwkv")]
 pub mod rwkv;
 #[cfg(feature = "sae")]
@@ -349,7 +353,8 @@ pub mod sparse;
     feature = "transformer",
     feature = "rwkv",
     feature = "diffusion",
-    feature = "stoicheia"
+    feature = "stoicheia",
+    feature = "plain"
 ))]
 pub mod steering;
 #[cfg(feature = "stoicheia")]
@@ -395,6 +400,10 @@ pub use diffusion::{
     DiffusionSamplingConfig, GenericMdlm, MdlmConfig, OthelloGpt, OthelloGptConfig,
     SUPPORTED_DIFFUSION_MODEL_TYPES,
 };
+
+// Plain backend (hand-weighted / constructed models)
+#[cfg(feature = "plain")]
+pub use plain::{PlainTransformer, PlainTransformerConfig};
 
 // Stoicheia (AlgZoo) backends — Phase A
 #[cfg(feature = "stoicheia")]
@@ -458,7 +467,8 @@ pub use interp::steering::{DoseResponseCurve, DoseResponsePoint, SteeringCalibra
     feature = "transformer",
     feature = "rwkv",
     feature = "diffusion",
-    feature = "stoicheia"
+    feature = "stoicheia",
+    feature = "plain"
 ))]
 pub use steering::contrastive::{
     ContrastiveDirection, PositionStrategy, build_contrastive_direction, contrastive_intervention,

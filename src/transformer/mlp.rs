@@ -151,14 +151,10 @@ impl Mlp {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Apply the selected activation function.
+/// Apply the selected activation function (the dispatch shared with every
+/// backbone, in `crate::nn_ops`).
 fn apply_activation(x: &Tensor, activation: Activation) -> Result<Tensor> {
-    match activation {
-        Activation::Silu => Ok(candle_nn::ops::silu(x)?),
-        Activation::Gelu => Ok(x.gelu_erf()?),
-        Activation::GeluApprox => Ok(x.gelu()?),
-        Activation::Relu => Ok(x.relu()?),
-    }
+    crate::nn_ops::activation(x, activation)
 }
 
 /// Load a linear layer with or without bias.

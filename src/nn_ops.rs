@@ -22,6 +22,8 @@ use std::sync::OnceLock;
 use candle_core::{D, DType, Module, Tensor, Var};
 use candle_nn::{LayerNorm, RmsNorm};
 
+#[cfg(any(feature = "transformer", feature = "plain"))]
+use crate::config::Activation;
 use crate::error::Result;
 
 /// Whether the installed `candle-nn`'s fused `softmax_last_dim` records a backward op.
@@ -188,6 +190,32 @@ pub fn rms_norm(norm: &RmsNorm, xs: &Tensor) -> Result<Tensor> {
         Ok(norm.forward_diff(xs)?)
     } else {
         Ok(norm.forward(xs)?)
+    }
+}
+
+/// Apply an MLP activation, the one dispatch every backbone shares.
+///
+/// `GenericTransformer` (requires `transformer`) and `PlainTransformer`
+/// (requires `plain`) both call this, so a given [`Activation`] runs the same
+/// candle op in each. All four are candle unary ops that record a backward, so
+/// there is no fused-kernel barrier to route around here. `Gelu` is the exact
+/// (erf) form, `PyTorch`'s `nn.GELU()` default; `GeluApprox` is the tanh form
+/// (`Tensor::gelu`), which must not stand in for it.
+///
+/// # Shapes
+/// - `xs`: any shape (element-wise)
+/// - returns: same shape as `xs`
+///
+/// # Errors
+///
+/// Returns [`MIError::Model`](crate::MIError::Model) on tensor failures.
+#[cfg(any(feature = "transformer", feature = "plain"))]
+pub(crate) fn activation(xs: &Tensor, activation: Activation) -> Result<Tensor> {
+    match activation {
+        Activation::Silu => Ok(candle_nn::ops::silu(xs)?),
+        Activation::Gelu => Ok(xs.gelu_erf()?),
+        Activation::GeluApprox => Ok(xs.gelu()?),
+        Activation::Relu => Ok(xs.relu()?),
     }
 }
 

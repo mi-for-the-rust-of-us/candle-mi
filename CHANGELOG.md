@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`PlainTransformer`, a backbone for hand-weighted (constructed) models** (`plain` feature,
+  default off; `design/plain-transformer.md`). Asked for by the askesis "attention-SNLP by
+  construction" line (`docs/dogfooding-feedbacks/hand-weighted-transformer-backbone.md`): a
+  `Tracr`-style model, whose weights are set by construction, needs a backbone where every number
+  is explained. Every component is explicit: norm (none by default, or `LayerNorm` / `RmsNorm`),
+  activation (`ReLU` by default), learned positions (optional), biases (optional), `head_dim` (so
+  `n_head * head_dim` need not equal `d_model`), MLP width, attention scale (`f64`, default
+  `1 / sqrt(head_dim)`), causal or bidirectional (bidirectional by default), and a logit width
+  `output_size` separate from the input vocabulary. Logits at every position.
+  `PlainTransformer::from_tensors` builds one from tensors in memory and is **strict**: a missing,
+  unexpected, mis-shaped or non-`F32` tensor is an error listing every offending name, so a typo in
+  a hand-written key cannot silently leave a head at zero; `PlainTransformerConfig::weight_shapes`
+  lists the expected names and shapes. Q, K and V are three named tensors, concatenated at load into
+  one projection. The full hook surface, including the new `MlpAct`. No padding mask: with
+  bidirectional attention, batch only sequences of the same length. Separate from `OthelloGpt` by
+  design, so its trained checkpoints are untouched.
 - **`HookPoint::MlpAct(i)`: the MLP neurons**, `[batch, seq, mlp_hidden]`, after the activation
   and before the down projection (display name `blocks.{i}.mlp.hook_act`). Capturable, and it
   accepts `Intervention::PatchAt` (dim 1 is the position). No backbone could expose the hidden

@@ -215,11 +215,23 @@ jobs:
       - name: Tests (training)
         run: cargo test --locked --no-default-features --features training --lib --test validate_optim_parity
 
+      # PlainTransformer (`plain`, default-off): the backbone for hand-weighted
+      # models. Its numerical checks (plain-loop reference, the Tracr oracle) are
+      # CPU-only and committed fixtures, so they run here, not in the oracle suite.
+      - name: Build (plain)
+        run: cargo build --locked --no-default-features --features plain
+
+      - name: Clippy (plain, pedantic)
+        run: cargo clippy --locked --all-targets --no-default-features --features plain -- -W clippy::pedantic
+
+      - name: Tests (plain)
+        run: cargo test --locked --no-default-features --features plain --lib
+
       # Doctests for every feature-gated public example in one pass (audit §1.10);
       # the old transformer+memory-only lane left clt/sae/rwkv doc examples
       # uncovered. Mirrors ci.yml so publish can't ship a broken doctest.
       - name: Doctests (all software features)
-        run: cargo test --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training" --doc
+        run: cargo test --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,memory,training" --doc
 
       # Rustdoc, per feature set. Mirrors ci.yml, and matters more here: what
       # docs.rs renders after a publish is the crate's public face, and a broken
@@ -232,8 +244,8 @@ jobs:
           set -e
           for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" "clt,diffusion,training" \
                    "quantized,transformer" "sae,transformer" "mmap,transformer" \
-                   "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" \
-                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training"; do
+                   "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" "plain" \
+                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,memory,training"; do
             echo "::group::cargo doc --features '$f'"
             cargo doc --locked --no-default-features ${f:+--features "$f"} --no-deps
             echo "::endgroup::"
@@ -243,7 +255,7 @@ jobs:
         run: cargo build --locked --no-default-features
 
       - name: Build (all software features)
-        run: cargo build --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
+        run: cargo build --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,training"
 
       # The verification build `cargo publish` would otherwise run in the job
       # that holds `id-token: write`.

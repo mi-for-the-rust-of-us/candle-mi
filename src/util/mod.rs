@@ -11,6 +11,7 @@
     feature = "rwkv",
     feature = "diffusion",
     feature = "stoicheia",
+    feature = "plain",
     feature = "clt",
     feature = "sae"
 ))]

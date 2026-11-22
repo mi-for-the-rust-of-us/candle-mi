@@ -398,7 +398,8 @@ pub enum Intervention {
     feature = "transformer",
     feature = "rwkv",
     feature = "diffusion",
-    feature = "stoicheia"
+    feature = "stoicheia",
+    feature = "plain"
 ))]
 pub(crate) fn apply_intervention(
     tensor: &Tensor,
@@ -458,7 +459,8 @@ pub(crate) fn apply_intervention(
     feature = "transformer",
     feature = "rwkv",
     feature = "diffusion",
-    feature = "stoicheia"
+    feature = "stoicheia",
+    feature = "plain"
 ))]
 #[allow(clippy::needless_pass_by_value)]
 pub(crate) fn hook_point(
@@ -567,7 +569,8 @@ pub(crate) fn reject_intervention_at(
     feature = "transformer",
     feature = "rwkv",
     feature = "diffusion",
-    feature = "stoicheia"
+    feature = "stoicheia",
+    feature = "plain"
 ))]
 fn patch_at(tensor: &Tensor, point: &HookPoint, position: usize, value: &Tensor) -> Result<Tensor> {
     if !point.accepts_positional_patch() {
@@ -1448,7 +1451,8 @@ mod tests {
         feature = "transformer",
         feature = "rwkv",
         feature = "diffusion",
-        feature = "stoicheia"
+        feature = "stoicheia",
+        feature = "plain"
     ))]
     #[allow(clippy::unwrap_used, clippy::expect_used)]
     mod patch_at {

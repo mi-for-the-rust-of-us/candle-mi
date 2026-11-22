@@ -22,6 +22,7 @@
 | Masked diffusion (plain GPT-2 backbone) | `OthelloGpt` (learned absolute positions, full `LayerNorm`, exact-`GELU`) | OthelloMDLM world model (25M) | `diffusion` |
 | Masked diffusion (decoder-style) | Dream (←Qwen2.5), `a2d-qwen2`/`a2d-qwen3` | `a2d-qwen2` 0.5B (forward-parity oracle) | `transformer` |
 | [AlgZoo](https://www.alignment.org/blog/algzoo-uninterpreted-models-with-fewer-than-1-500-parameters/) tiny models | Single-layer ReLU RNN, attention-only transformer (8–1,408 params) | M₂,₂ (10 params), M₁₆,₁₀ (432 params), transformer h4n4 (176 params) | `stoicheia` |
+| Hand-weighted (constructed) transformer | `PlainTransformer`: weights set by construction, every component explicit (norm-free, `ReLU` by default) | Validation in progress (plain-loop reference, `OthelloGpt` parity, Tracr oracle) | `plain` |
 
 Most HuggingFace transformer models work out of the box via **auto-config** — no code changes needed. See [BACKENDS.md](BACKENDS.md) for details and how to add new architectures.
 
@@ -261,6 +262,7 @@ This is a research-first design: MI analyses need to see everything, and the per
 | `memory` | no | RAM/VRAM reporting (delegated to the [`hypomnesis`](https://crates.io/crates/hypomnesis) crate) |
 | `memory-debug` | no | Raw GPU-backend measurement values on stderr (via `hypomnesis`; implies `memory`) |
 | `training` | no | Checkpointable `AdamW` (`optim::AdamW`) so a run staged across processes resumes with its moments and step counter intact. candle's update rule, with the state reachable; still no training loop, schedule or data loader |
+| `plain` | no | `PlainTransformer`, a backbone for hand-weighted (constructed, Tracr-style) models: norm, activation, positions, biases, head dimension, MLP width and attention scale all explicit; a strict in-memory loader; the MLP neurons as `HookPoint::MlpAct` |
 | `metal` | no | Apple Metal GPU acceleration |
 
 ## Documentation

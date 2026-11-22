@@ -216,6 +216,18 @@ jobs:
       - name: Tests (training)
         run: cargo test --locked --no-default-features --features training --lib --test validate_optim_parity
 
+      # PlainTransformer (`plain`, default-off): the backbone for hand-weighted
+      # models. Its numerical checks (plain-loop reference, the Tracr oracle) are
+      # CPU-only and committed fixtures, so they run here, not in the oracle suite.
+      - name: Build (plain)
+        run: cargo build --locked --no-default-features --features plain
+
+      - name: Clippy (plain, pedantic)
+        run: cargo clippy --locked --all-targets --no-default-features --features plain -- -W clippy::pedantic
+
+      - name: Tests (plain)
+        run: cargo test --locked --no-default-features --features plain --lib
+
       # Doctests for every feature-gated public example in ONE pass. The previous
       # `transformer,memory`-only lane left the clt, sae, and rwkv doc examples
       # uncovered (audit §1.10): a public-signature change (e.g. on
@@ -224,7 +236,7 @@ jobs:
       # below but runs the doctests; transformer is included so the memory and
       # crate-level examples (MIModel::from_pretrained) still compile.
       - name: Doctests (all software features)
-        run: cargo test --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training" --doc
+        run: cargo test --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,memory,training" --doc
 
       # Rustdoc, per feature set. `#![deny(warnings)]` promotes
       # rustdoc::broken_intra_doc_links (and friends) to errors, but only for the
@@ -240,8 +252,8 @@ jobs:
           set -e
           for f in "" "transformer" "rwkv,rwkv-tokenizer" "stoicheia" "clt,transformer" "clt,diffusion,training" \
                    "quantized,transformer" "sae,transformer" "mmap,transformer" \
-                   "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" \
-                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,memory,training"; do
+                   "diffusion" "diffusion,fused-attn" "memory" "memory-debug" "training" "plain" \
+                   "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,memory,training"; do
             echo "::group::cargo doc --features '$f'"
             cargo doc --locked --no-default-features ${f:+--features "$f"} --no-deps
             echo "::endgroup::"
@@ -254,7 +266,7 @@ jobs:
       # Check 6 (Rule 15): All software features build
       # Note: cuda/metal features require hardware; test all software features instead
       - name: Build (all software features)
-        run: cargo build --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,training"
+        run: cargo build --locked --no-default-features --features "transformer,rwkv,rwkv-tokenizer,diffusion,clt,sae,stoicheia,quantized,plain,training"
 
   # The lane list is hand-maintained in four places (this file, publish.yml,
   # scripts/preflight.ps1 and Cargo.toml's docs.rs list), the feature list in
