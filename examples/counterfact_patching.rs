@@ -466,8 +466,7 @@ fn run() -> candle_mi::Result<()> {
                     layer: block.clone(),
                     orig_pos,
                     cf_pos,
-                    // BORROW: clone for JSON serialization
-                    ablated_continuation: ablated_continuation.clone(),
+                    ablated_continuation,
                     is_different,
                     kl_from_original: kl,
                     token_type: ttype.clone(),
