@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-22
+
 ### Added
 
 - **`clt::train`: a trainable cross-layer transcoder** (`src/clt/train.rs`, `clt`
