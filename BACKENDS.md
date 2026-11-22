@@ -24,6 +24,10 @@
   - [Implementing forward()](#implementing-forward)
   - [Hook Integration Checklist](#hook-integration-checklist)
   - [Registering with MIModel::from_pretrained()](#registering-with-mimodelfrom_pretrained)
+  - [Stoicheia: A Worked Example](#stoicheia-a-worked-example)
+  - [MDLM: A Bidirectional Masked-Diffusion Backend](#mdlm-a-bidirectional-masked-diffusion-backend)
+  - [OthelloGpt: A Plain GPT-2-Style Backbone](#othellogpt-a-plain-gpt-2-style-backbone)
+  - [PlainTransformer: A Backbone for Constructed Models](#plaintransformer-a-backbone-for-constructed-models)
 - [TransformerConfig Reference](#transformerconfig-reference)
   - [Configuration Axes](#configuration-axes)
   - [Existing Parsers as Templates](#existing-parsers-as-templates)
@@ -520,6 +524,37 @@ The recurring traps when porting any PyTorch backbone (the GELU variant, bias
 presence, norm type, positional scheme, conditioning) are written up in
 [`docs/adding-a-model.md`](docs/adding-a-model.md).
 
+### PlainTransformer: A Backbone for Constructed Models
+
+The `plain` feature implements `PlainTransformer`, the backbone for models whose
+weights are **set by construction** rather than trained (a `Tracr`-compiled RASP
+program, or a circuit written by hand). Such a model needs every number to be
+explained, so nothing is derived behind the caller's back: the norm (none by
+default), the activation (`ReLU` by default), learned positions, biases,
+`head_dim` (independent of `d_model`), the MLP width, the attention scale
+(`f64`), causal or bidirectional attention, and a logit width (`output_size`)
+separate from the input vocabulary. It is a separate backbone from `OthelloGpt`
+on purpose, so that trained checkpoints' numbers are untouched.
+
+It is built from tensors in memory with `PlainTransformer::from_tensors`, which
+is **strict**: a missing, unexpected, mis-shaped or non-`F32` tensor is an error
+listing every offending name, so a typo in a hand-written key can never leave a
+head silently at zero. `PlainTransformerConfig::weight_shapes()` lists the
+expected names (`nn.Linear` layout, `[out, in]`). Q, K and V are three named
+tensors, concatenated at load into one projection, so the forward runs exactly
+`OthelloGpt`'s operations in its order.
+
+It fires the full hook surface plus `HookPoint::MlpAct`, the MLP neurons
+(see `HOOKS.md`). Four independent validations run in CI: seven `Tracr`-compiled
+programs reproduced exactly (`tests/validate_plain_tracr.rs`), bit-identity with
+`OthelloGpt` on the same weights (`tests/validate_plain_othello_parity.rs`), an
+`f64` plain-loop reference over 96 option combinations
+(`tests/validate_plain_reference.rs`), and a hand construction with exact
+readings (`tests/validate_plain_construction.rs`, also the example
+`plain_construction`). The design, and why each check is built the way it is, is
+`design/plain-transformer.md`. Like `OthelloGpt`, it is constructed directly,
+not dispatched from `from_pretrained`.
+
 ---
 
 ## TransformerConfig Reference
@@ -582,6 +617,13 @@ When adding a new model family, verify:
 - [ ] **Logit lens**: `project_to_vocab()` produces meaningful predictions at intermediate layers
 - [ ] **Rank preservation**: `project_to_vocab()` accepts both `[batch, hidden_size]` and `[batch, seq, hidden_size]`, and each position of the rank-3 result equals the rank-2 projection of that position
 - [ ] **No regression**: existing model tests still pass (`cargo test --features transformer`)
+- [ ] **Feature predicates** (custom backends with a new feature): add the feature to the backend
+  `#[cfg(any(feature = "transformer", feature = "rwkv", ...))]` predicate, which is written out by
+  hand in seven places: `src/hooks.rs` (four: `apply_intervention`, `hook_point`, `patch_at`, and the
+  `patch_at` tests), `src/lib.rs` (two: the `steering` module and its re-exports) and
+  `src/util/mod.rs` (one: `inject`). A missing one in `hooks.rs` is a compile error; a missing one
+  in `lib.rs` or `util/mod.rs` silently leaves the steering builders out of a build that enables
+  only the new backend
 
 For GPU testing, run with `--test-threads=1` to avoid OOM on 3B+ models.
 

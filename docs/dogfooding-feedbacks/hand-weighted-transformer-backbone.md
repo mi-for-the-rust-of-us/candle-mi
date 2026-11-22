@@ -1,6 +1,21 @@
-> **Status: ASKED** (2026-11-22), from the causal-links line of askesis (canvas leg). No
-> registration yet: the design note for "attention-SNLP by construction" comes first and will cite
-> this report for its choice between candle-mi and Tracr.
+> **Status: IMPLEMENTED on `main`, unreleased** (2026-11-22, commits `22d56b0` to `edd6964`), from
+> the causal-links line of askesis (canvas leg). Design: `design/plain-transformer.md`, reviewed three
+> times by the askesis side before code. Ask 1 shipped as **the second option the report offered, a
+> separate backbone**: `PlainTransformer` behind a new `plain` feature, with every component
+> explicit (norm none / `LayerNorm` / `RmsNorm`, activation including the new `Activation::Relu`,
+> `mlp_hidden`, `head_dim` independent of `d_model`, plus an `f64` `attn_scale`, a causal flag,
+> optional positions and biases, and an `output_size` separate from the input vocabulary), so
+> `OthelloGpt` and its trained checkpoints are untouched rather than bit-identical by contract.
+> Ask 2 shipped **for the new backbone only** (the maintainer's call): `PlainTransformer::from_tensors`,
+> strict about names, shapes and dtype; `StoicheiaTransformer` is unchanged. Ask 3 holds by
+> construction (logits at every position). Beyond the asks: `HookPoint::MlpAct`, the MLP neurons,
+> which no backbone exposed (`MlpPost` is the MLP output in candle-mi, not the post-activation).
+> Validated four ways, all in CI: seven `Tracr`-compiled programs reproduced exactly, bit-identity
+> with `OthelloGpt` configured as it, an independent `f64` reference over 96 option combinations,
+> and a hand construction of the "establish" step with an exact 0.5 / 0.5 tie (also the example
+> `plain_construction`). **Limitation to know before the exhaustive check:** there is no padding
+> mask, so with bidirectional attention batch only partial plans of the same length.
+> The original report follows unchanged.
 
 # A hand-weighted transformer has no backbone to land on: `StoicheiaTransformer` is norm-free but MLP-less, single-head and last-position-only, `OthelloGpt` has MLPs but forces `LayerNorm` and `GELU`
 

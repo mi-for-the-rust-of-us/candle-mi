@@ -1,6 +1,6 @@
 # `PlainTransformer`: a backbone for hand-weighted (constructed) models
 
-**Status:** design, 2026-11-22, revised three times after review the same day (§9). Answers
+**Status:** implemented on `main` (2026-11-22, commits `22d56b0` to `edd6964`), after three reviews (§9). Answers
 [`docs/dogfooding-feedbacks/hand-weighted-transformer-backbone.md`](../docs/dogfooding-feedbacks/hand-weighted-transformer-backbone.md).
 **Feature:** `plain` (default off). **Module:** `src/plain/`.
 

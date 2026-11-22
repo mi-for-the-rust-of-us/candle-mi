@@ -15,6 +15,8 @@
   - [Ordering and Map Keys](#ordering-and-map-keys)
   - [Transformer Hook Points](#transformer-hook-points)
   - [RWKV Hook Points](#rwkv-hook-points)
+  - [Stoicheia Hook Points](#stoicheia-hook-points)
+  - [PlainTransformer Hook Points](#plaintransformer-hook-points)
 - [HookSpec: Declaring Captures and Interventions](#hookspec-declaring-captures-and-interventions)
   - [Captures](#captures)
   - [Interventions](#interventions)
@@ -169,6 +171,12 @@ pass, in execution order.  All hook points support both **capture** and
 - `MlpOut` differs from `MlpPost` only for Gemma 2, which has a
   post-feedforward layernorm.  For all other architectures the tensors are
   identical.
+- **`MlpPost` is the MLP *output*, not the post-activation neurons**, despite
+  its display string: in `TransformerLens`, `mlp.hook_post` is the
+  post-activation, but in candle-mi `MlpPost` has always been the output of the
+  down projection.  The neurons are `MlpAct` (`blocks.{i}.mlp.hook_act`,
+  `[batch, seq, mlp_hidden]`), which only `PlainTransformer` fires so far; see
+  [PlainTransformer Hook Points](#plaintransformer-hook-points).
 
 ### RWKV Hook Points
 
@@ -254,6 +262,39 @@ had already consumed.
 `StoicheiaRnn`'s per-timestep `Custom` points honour interventions too. An edit
 at `rnn.hook_hidden.{t}` propagates into later timesteps through the recurrence,
 which is the point of steering an RNN.
+
+### PlainTransformer Hook Points
+
+`PlainTransformer` (`plain` feature), the backbone for hand-weighted
+(constructed, `Tracr`-style) models, fires the transformer hook points at the
+same places as `OthelloGpt`, plus the MLP neurons:
+
+| Hook Point | String | Shape | Description |
+|------------|--------|-------|-------------|
+| `Embed` | `hook_embed` | `[batch, seq, d_model]` | Token embedding (plus the positional one, if configured) |
+| `ResidPre(i)` | `blocks.{i}.hook_resid_pre` | `[batch, seq, d_model]` | Residual stream before layer `i` |
+| `AttnQ(i)` / `AttnK(i)` / `AttnV(i)` | `blocks.{i}.attn.hook_q` / `_k` / `_v` | `[batch, n_head, seq, head_dim]` | Queries, keys, values; `AttnQ` is captured **before** the `attn_scale` multiplication |
+| `AttnScores(i)` | `blocks.{i}.attn.hook_scores` | `[batch, n_head, seq, seq]` | Scaled scores, after the causal mask if any, before softmax |
+| `AttnPattern(i)` | `blocks.{i}.attn.hook_pattern` | `[batch, n_head, seq, seq]` | Attention probabilities |
+| `AttnOut(i)` | `blocks.{i}.hook_attn_out` | `[batch, seq, d_model]` | After the output projection |
+| `ResidMid(i)` | `blocks.{i}.hook_resid_mid` | `[batch, seq, d_model]` | After the attention residual add |
+| `MlpPre(i)` | `blocks.{i}.mlp.hook_pre` | `[batch, seq, d_model]` | MLP input (after the norm, if any) |
+| `MlpAct(i)` | `blocks.{i}.mlp.hook_act` | `[batch, seq, mlp_hidden]` | **The neurons**: after the activation, before the down projection |
+| `MlpPost(i)` / `MlpOut(i)` | `blocks.{i}.mlp.hook_post` / `blocks.{i}.hook_mlp_out` | `[batch, seq, d_model]` | MLP output (the two are the same tensor: no post-MLP norm) |
+| `ResidPost(i)` | `blocks.{i}.hook_resid_post` | `[batch, seq, d_model]` | After the MLP residual add |
+| `FinalNorm` | `hook_final_norm` | `[batch, seq, d_model]` | After the final norm; the identity when the config has no norm |
+
+Every point honours interventions. `MlpAct` accepts `Intervention::PatchAt`
+(dim 1 is the position; the patched row has `mlp_hidden` entries), so one
+position's neurons can be overwritten, and `Intervention::Zero` there removes
+the MLP's contribution exactly when the MLP has no biases. The logits are
+computed at **every** position. There is **no padding mask**: with
+bidirectional attention (the default), real tokens attend to padding, so batch
+only sequences of the same length.
+
+`n_head * head_dim` need not equal `d_model`, and `MIBackend::vocab_size()` is
+the logit width (`output_size`), which can differ from the input vocabulary
+(`config().vocab_size`); see `design/plain-transformer.md`.
 
 ---
 
@@ -346,6 +387,14 @@ let mut hooks = HookSpec::new();
 hooks.capture(HookPoint::AttnPattern(5));
 hooks.intervene(HookPoint::AttnScores(5), Intervention::Knockout(mask));
 ```
+
+**A capture at the point being intervened on holds the value *before* the
+intervention.** At every hook point the activation is captured first, then the
+registered interventions are applied, and only the rest of the forward pass
+sees the intervened value. So `capture(X)` plus `intervene(X, ...)` gives back
+the clean `X`; read the effect downstream (here, the knockout is visible in the
+captured `AttnPattern`, after the softmax, not in `AttnScores`). The same holds
+for a patch at `MlpAct`: its effect shows at `MlpOut`.
 
 ### Merging Specs
 
