@@ -350,6 +350,14 @@ here (weights are mostly `0` / `1`, attention is sharp enough that losers
 underflow, the rest is the same few `F32` operations), but it is a measured
 outcome, not a promise: the criterion stays the relative bound.
 
+**On CUDA (RTX 5060 Ti, by hand; the variants are `#[ignore]`d since CI has no
+GPU).** The fixture stays within the tolerance but is not zero everywhere:
+`shuffle_dyck` differs by `1.2e-7` relative (about one `F32` ulp at magnitude
+1) and `reverse` by `1.1e-13`, the other five by zero. That is the tolerance
+doing its job. The hand construction's exact readings (§7.3) hold on CUDA,
+the bit-equal tie included, and the reference sweep (§7.1) stays within its
+bound (worst `9.8e-7`, against `5.9e-7` on CPU).
+
 ## 8. Wiring
 
 New lane `plain` in `ci.yml`, `publish.yml`, `scripts/preflight.ps1` and the

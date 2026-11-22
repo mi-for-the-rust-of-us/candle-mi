@@ -90,7 +90,7 @@ fn matrix(rows: usize, cols: usize, entries: &[(usize, usize, f32)]) -> Tensor {
     Tensor::from_vec(data, (rows, cols), &Device::Cpu).unwrap()
 }
 
-fn construction(attn_scale: f64) -> PlainTransformer {
+fn construction(attn_scale: f64, device: &Device) -> PlainTransformer {
     // 6 input tokens (A, B, D, C0, C1, C2), 1 layer, 1 head of 3 dims, 3 neurons,
     // 4 logits. No norm, no positions, no biases: the defaults.
     let config = PlainTransformerConfig::new(6, 1, D_MODEL, 1, 3, 3)
@@ -140,7 +140,7 @@ fn construction(attn_scale: f64) -> PlainTransformer {
     unembed.push((3, EVIDENCE, 1.0));
     tensors.insert("unembed.weight".into(), matrix(4, D_MODEL, &unembed));
 
-    PlainTransformer::from_tensors(config, tensors, &Device::Cpu).unwrap()
+    PlainTransformer::from_tensors(config, tensors, device).unwrap()
 }
 
 struct Reading {
@@ -151,12 +151,9 @@ struct Reading {
 }
 
 /// Run `ids` and read everything at the last position (the condition).
-fn read(model: &PlainTransformer, ids: &[u32]) -> Reading {
+fn read(model: &PlainTransformer, ids: &[u32], device: &Device) -> Reading {
     let q = ids.len() - 1;
-    let input = Tensor::new(ids, &Device::Cpu)
-        .unwrap()
-        .unsqueeze(0)
-        .unwrap();
+    let input = Tensor::new(ids, device).unwrap().unsqueeze(0).unwrap();
     let mut spec = HookSpec::new();
     spec.capture(HookPoint::AttnScores(0))
         .capture(HookPoint::AttnPattern(0))
@@ -185,10 +182,19 @@ fn read(model: &PlainTransformer, ids: &[u32]) -> Reading {
     }
 }
 
-#[test]
-fn one_establisher_gives_an_exact_one_hot_and_known_neurons() {
+/// The CUDA device, if this build has `cuda` and a device is present.
+fn cuda_device() -> Option<Device> {
+    let device = Device::cuda_if_available(0).unwrap();
+    device.is_cuda().then_some(device)
+}
+
+fn one_establisher(device: &Device) {
     // [A, B, C1]: only B adds p1.
-    let r = read(&construction(200.0), &[TOK_A, TOK_B, TOK_C1]);
+    let r = read(
+        &construction(200.0, device),
+        &[TOK_A, TOK_B, TOK_C1],
+        device,
+    );
     assert_eq!(r.scores, vec![0.0, 200.0, 0.0], "score = scale * [adds p1]");
     // Gap 200 > ~104 (F32 exp underflow): the losers are exact zeros.
     assert_eq!(r.pattern, vec![0.0, 1.0, 0.0]);
@@ -198,10 +204,13 @@ fn one_establisher_gives_an_exact_one_hot_and_known_neurons() {
     assert_eq!(r.logits, vec![0.0, 1.0, 0.0, 0.75]);
 }
 
-#[test]
-fn a_tie_gives_an_exact_half_half_and_known_neurons() {
+fn tie(device: &Device) {
     // [A, B, D, C0]: A and D both add p0. seq = 4, so both key rows sit in one tile.
-    let r = read(&construction(200.0), &[TOK_A, TOK_B, TOK_D, TOK_C0]);
+    let r = read(
+        &construction(200.0, device),
+        &[TOK_A, TOK_B, TOK_D, TOK_C0],
+        device,
+    );
     // The tie is checked exact BEFORE the pattern is read. If this fails, suspect
     // the kernel first: the two products are the same terms in the same order.
     assert_eq!(
@@ -219,10 +228,9 @@ fn a_tie_gives_an_exact_half_half_and_known_neurons() {
     assert_eq!(r.logits, vec![0.5, 0.0, 0.5, 0.5]);
 }
 
-#[test]
-fn below_underflow_the_winner_is_exactly_one_and_the_losers_are_tiny_but_not_zero() {
+fn below_underflow(device: &Device) {
     // Gap 30: above the exactness bound 24 ln 2 + ln 3 ~ 17.7, below ~104.
-    let r = read(&construction(30.0), &[TOK_A, TOK_B, TOK_C1]);
+    let r = read(&construction(30.0, device), &[TOK_A, TOK_B, TOK_C1], device);
     assert_eq!(r.pattern[1], 1.0, "winner exactly 1.0");
     let half_ulp_of_one = f32::EPSILON / 2.0; // 2^-24
     for loser in [r.pattern[0], r.pattern[2]] {
@@ -238,4 +246,36 @@ fn below_underflow_the_winner_is_exactly_one_and_the_losers_are_tiny_but_not_zer
     // threshold in the MLP is what turns a not-quite-one-hot pattern back into
     // exact readings.
     assert_eq!(r.neurons, vec![0.0, 0.75, 0.0]);
+}
+
+#[test]
+fn one_establisher_gives_an_exact_one_hot_and_known_neurons() {
+    one_establisher(&Device::Cpu);
+}
+
+#[test]
+fn a_tie_gives_an_exact_half_half_and_known_neurons() {
+    tie(&Device::Cpu);
+}
+
+#[test]
+fn below_underflow_the_winner_is_exactly_one_and_the_losers_are_tiny_but_not_zero() {
+    below_underflow(&Device::Cpu);
+}
+
+/// The same three cases, the same exact values, on CUDA: whether the exactness
+/// argument (exact products, `exp` underflowing to `0`, a bit-equal tie) holds
+/// on the GPU too. Not part of CI (no GPU there): run with `--include-ignored`
+/// on a CUDA machine.
+#[test]
+#[ignore = "CUDA: run by hand on a GPU"]
+fn exact_readings_on_cuda() {
+    let Some(device) = cuda_device() else {
+        eprintln!("no CUDA device: nothing to report");
+        return;
+    };
+    one_establisher(&device);
+    tie(&device);
+    below_underflow(&device);
+    eprintln!("CUDA: one establisher, tie and below-underflow readings all exact");
 }

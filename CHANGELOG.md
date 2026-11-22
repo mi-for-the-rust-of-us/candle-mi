@@ -48,6 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - **A hand construction** (`tests/validate_plain_construction.rs`, and the runnable example
     `plain_construction`): an SNLP "establish" head with exactly known readings, including an
     exact `0.5 / 0.5` tie whose two scores are checked equal to the bit first.
+
+  The three CPU-only checks also have `#[ignore]`d CUDA variants (CI has no GPU), run by hand on an
+  RTX 5060 Ti: the hand construction's exact readings hold on CUDA, tie included; the reference
+  sweep stays within its bound (worst `9.8e-7`); the `Tracr` fixture stays within its tolerance
+  but is not zero everywhere there (`shuffle_dyck` `1.2e-7`, about one `F32` ulp; `reverse`
+  `1.1e-13`), which is why its guarantee is the tolerance and not exactness.
 - **`HookPoint::MlpAct(i)`: the MLP neurons**, `[batch, seq, mlp_hidden]`, after the activation
   and before the down projection (display name `blocks.{i}.mlp.hook_act`). Capturable, and it
   accepts `Intervention::PatchAt` (dim 1 is the position). No backbone could expose the hidden

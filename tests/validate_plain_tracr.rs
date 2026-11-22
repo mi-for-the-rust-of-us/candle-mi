@@ -95,6 +95,7 @@ struct Fixture<'a> {
     n_layer: usize,
     categorical: bool,
     all: &'a HashMap<String, Tensor>,
+    device: &'a Device,
 }
 
 /// Run one input through `model` and compare it with `Tracr`: every layer's
@@ -108,7 +109,7 @@ fn check_case(model: &PlainTransformer, fx: &Fixture<'_>) -> f64 {
         .map(|v| u32::try_from(v.as_u64().unwrap()).unwrap())
         .collect();
     assert_eq!(ids.len(), case["tokens"].as_array().unwrap().len());
-    let input = Tensor::new(ids.as_slice(), &Device::Cpu)
+    let input = Tensor::new(ids.as_slice(), fx.device)
         .unwrap()
         .unsqueeze(0)
         .unwrap();
@@ -169,8 +170,14 @@ fn check_case(model: &PlainTransformer, fx: &Fixture<'_>) -> f64 {
     worst
 }
 
-#[test]
-fn reproduces_every_tracr_fixture() {
+/// The CUDA device, if this build has `cuda` and a device is present.
+fn cuda_device() -> Option<Device> {
+    let device = Device::cuda_if_available(0).unwrap();
+    device.is_cuda().then_some(device)
+}
+
+/// Every program and case of the fixture, on `device`.
+fn reproduce(device: &Device) {
     let dir = fixture_dir();
     let manifest: Value =
         serde_json::from_str(&std::fs::read_to_string(dir.join("manifest.json")).unwrap()).unwrap();
@@ -206,7 +213,7 @@ fn reproduces_every_tracr_fixture() {
                 (!rest.starts_with("case")).then(|| (rest.to_string(), t.clone()))
             })
             .collect();
-        let model = PlainTransformer::from_tensors(config, weights, &Device::Cpu)
+        let model = PlainTransformer::from_tensors(config, weights, device)
             .unwrap_or_else(|e| panic!("{name}: the strict loader rejected the export: {e}"));
 
         let mut worst = 0.0_f64;
@@ -218,13 +225,31 @@ fn reproduces_every_tracr_fixture() {
                 n_layer,
                 categorical,
                 all: &all,
+                device,
             };
             worst = worst.max(check_case(&model, &fixture));
         }
         report.push(format!("{name}: worst relative {worst:.3e}"));
     }
     eprintln!(
-        "Tracr oracle, max |Δ| <= 1e-5 * max(1, max |x_layer|) per layer:\n  {}",
+        "Tracr oracle on {device:?}, max |Δ| <= 1e-5 * max(1, max |x_layer|) per layer:\n  {}",
         report.join("\n  ")
     );
+}
+
+#[test]
+fn reproduces_every_tracr_fixture() {
+    reproduce(&Device::Cpu);
+}
+
+/// The same fixture and the same bound on CUDA. Not part of CI (no GPU there):
+/// run with `--include-ignored` on a CUDA machine.
+#[test]
+#[ignore = "CUDA: run by hand on a GPU"]
+fn reproduces_every_tracr_fixture_on_cuda() {
+    let Some(device) = cuda_device() else {
+        eprintln!("no CUDA device: nothing to report");
+        return;
+    };
+    reproduce(&device);
 }

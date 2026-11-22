@@ -391,11 +391,11 @@ fn check(what: &str, label: &str, candle: &Tensor, reference: &[f64]) -> f64 {
     max_diff / scale
 }
 
-fn run_case(cfg: &PlainTransformerConfig, label: &str, seed: u64) -> f64 {
+fn run_case(cfg: &PlainTransformerConfig, label: &str, seed: u64, device: &Device) -> f64 {
     let (tensors, plain) = weights(cfg, seed);
-    let model = PlainTransformer::from_tensors(cfg.clone(), tensors, &Device::Cpu).unwrap();
+    let model = PlainTransformer::from_tensors(cfg.clone(), tensors, device).unwrap();
     let ids_vec: Vec<u32> = vec![0, 3, 6, 1, 4];
-    let ids = Tensor::new(ids_vec.as_slice(), &Device::Cpu)
+    let ids = Tensor::new(ids_vec.as_slice(), device)
         .unwrap()
         .unsqueeze(0)
         .unwrap();
@@ -457,8 +457,14 @@ fn base() -> PlainTransformerConfig {
         .with_output_size(5)
 }
 
-#[test]
-fn matches_the_reference_on_every_option_combination() {
+/// The CUDA device, if this build has `cuda` and a device is present.
+fn cuda_device() -> Option<Device> {
+    let device = Device::cuda_if_available(0).unwrap();
+    device.is_cuda().then_some(device)
+}
+
+/// The 96-configuration sweep on `device`.
+fn sweep(device: &Device) {
     let norms = [None, Some(NormType::LayerNorm), Some(NormType::RmsNorm)];
     let activations = [
         Activation::Relu,
@@ -484,7 +490,7 @@ fn matches_the_reference_on_every_option_combination() {
                         let label = format!(
                             "[norm {norm:?}, {activation:?}, causal {causal}, bias {bias}, positions {positions}]"
                         );
-                        let r = run_case(&cfg, &label, u64::from(cases) + 1);
+                        let r = run_case(&cfg, &label, u64::from(cases) + 1, device);
                         if r > worst.0 {
                             worst = (r, label);
                         }
@@ -496,20 +502,43 @@ fn matches_the_reference_on_every_option_combination() {
     }
     assert_eq!(cases, 96, "the sweep must cover every combination");
     eprintln!(
-        "plain reference sweep: {cases} configurations within max |Δ| <= 1e-5 * max(1, max |x|); \
-         worst relative {:.3e} at {}",
+        "plain reference sweep on {device:?}: {cases} configurations within \
+         max |Δ| <= 1e-5 * max(1, max |x|); worst relative {:.3e} at {}",
         worst.0, worst.1
     );
 }
 
-#[test]
-fn matches_the_reference_with_a_non_default_attn_scale() {
+/// The non-default `attn_scale` case on `device`.
+fn non_default_scale(device: &Device) {
     let cfg = base()
         .with_norm(NormType::LayerNorm)
         .with_activation(Activation::Gelu)
         .with_bias(true)
         .with_positions(5)
         .with_attn_scale(2.0);
-    let r = run_case(&cfg, "[attn_scale 2.0]", 777);
-    eprintln!("plain reference, attn_scale 2.0: worst relative {r:.3e}");
+    let r = run_case(&cfg, "[attn_scale 2.0]", 777, device);
+    eprintln!("plain reference on {device:?}, attn_scale 2.0: worst relative {r:.3e}");
+}
+
+#[test]
+fn matches_the_reference_on_every_option_combination() {
+    sweep(&Device::Cpu);
+}
+
+#[test]
+fn matches_the_reference_with_a_non_default_attn_scale() {
+    non_default_scale(&Device::Cpu);
+}
+
+/// The same sweep and the same bound on CUDA. Not part of CI (no GPU there):
+/// run with `--include-ignored` on a CUDA machine.
+#[test]
+#[ignore = "CUDA: run by hand on a GPU"]
+fn matches_the_reference_on_cuda() {
+    let Some(device) = cuda_device() else {
+        eprintln!("no CUDA device: nothing to report");
+        return;
+    };
+    sweep(&device);
+    non_default_scale(&device);
 }
