@@ -320,10 +320,14 @@ candle-mi adds `-inf`; both give an exact zero after softmax, so the residuals
 are comparable. Fixtures are compiled with the same `causal` setting the test
 gives `PlainTransformer`.
 
-Environment: Python 3.11 venv (uv-managed), `tracr` at `9ce2b8c`, which
-resolves today to jax 0.10.2, dm-haiku 0.0.17, numpy 2.4.6; the script header
-pins the exact versions it was run with. Verified 2026-11-22: it compiles and
-runs, non-causal and causal.
+Environment: Python 3.11 venv (uv-managed), `tracr` at `9ce2b8c` (jax 0.10.2,
+dm-haiku 0.0.17, numpy 2.4.6). Pinning only the top-level versions would let
+jax's and haiku's own dependencies drift, so the whole environment is locked:
+`scripts/plain_tracr_requirements.txt` (every package, with hashes, from
+`uv pip compile --universal --generate-hashes`; Tracr pinned by commit, since a
+git source cannot carry a hash). The environment itself stays out of the
+repository. Verified 2026-11-22 by following only the script header's steps in
+a fresh folder: it regenerates the committed fixture byte for byte.
 
 **The oracle runs in CI**, not as an `#[ignore]`d resurrection entry: the
 fixture is in `tests/fixtures/plain_tracr/` (585 KB of weights and expected

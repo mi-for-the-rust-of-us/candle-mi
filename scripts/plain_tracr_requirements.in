@@ -1,0 +1,4 @@
+# Input for scripts/plain_tracr_requirements.txt (the lock). Regenerate the lock with:
+#   uv pip compile scripts/plain_tracr_requirements.in --universal --python-version 3.11 --generate-hashes -o scripts/plain_tracr_requirements.txt
+tracr @ git+https://github.com/google-deepmind/tracr@9ce2b8c82b6ba10e62e86cf6f390e7536d4fd2cd
+safetensors
