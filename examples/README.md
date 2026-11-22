@@ -25,7 +25,8 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
   [figure13_planning_poems](#example-output-figure13_planning_poems) |
   [steering_convergence](#example-output-steering_convergence) |
   [attention_routing](#example-output-attention_routing) |
-  [clt_train_tiny](#example-output-clt_train_tiny)
+  [clt_train_tiny](#example-output-clt_train_tiny) |
+  [plain_construction](#example-output-plain_construction)
 - [Prerequisites](#prerequisites)
 
 ## Available Examples
@@ -72,6 +73,7 @@ See also: [HOOKS.md](../HOOKS.md) for hook point reference, [BACKENDS.md](../BAC
 | `stoicheia_analysis` | `stoicheia` | Full Phase B MI pipeline: standardize weights, ablate neurons, probe roles, enumerate regions, run surprise accounting |
 | `quick_start_mdlm` | `diffusion` | MDLM masked-diffusion fill-in-the-blank: mask `" Paris"`, run a bidirectional forward, apply `SUBS`, print the fill |
 | `quick_start_othello` | `diffusion` | Quick start: `OthelloGpt` masked-diffusion fill-in (plain GPT-2 backbone, learned absolute positions) |
+| `plain_construction` | `plain` | A hand-weighted `PlainTransformer`: one SNLP "establish" step written as attention, every weight set by construction (no download, CPU, milliseconds). Shows an exact one-hot, an exact 0.5 / 0.5 tie and the MLP neurons (`MlpAct`). CI runs it |
 | `clt_train_tiny` | `clt`, `diffusion`, `training` | Train a cross-layer transcoder end to end on a tiny seeded `OthelloGpt` (no download, CPU, seconds): capture, scale, fit with `AdamW`, held-out FVU and dead features, the closed-loop replacement model, export and reload. CI runs it |
 | `diffusion_logit_lens` | `diffusion` | Diffusion-time logit lens — the `(layer × denoising-step)` slice of the `(k, ℓ, π)` object at a masked target position; watch the prediction crystallize over denoising time |
 | `diffusion_decoding_order` | `diffusion` | Decoding-order analysis — fill a masked completion under random / confidence / entropy unmasking orders; report per-order reveal-confidence and prediction-stability |
@@ -189,6 +191,10 @@ cargo run --release --features diffusion,mmap --example diffusion_logit_lens
 
 # Decoding-order analysis — random / confidence / entropy unmasking orders
 cargo run --release --features diffusion,mmap --example diffusion_decoding_order
+
+# A hand-weighted PlainTransformer: one SNLP "establish" step as attention (offline, CPU,
+# milliseconds; the command CI runs)
+cargo run --no-default-features --features plain --example plain_construction
 
 # CLT training recipe on a tiny seeded OthelloGpt (offline, CPU, seconds; the command CI runs;
 # no --release needed, though it works)
@@ -725,8 +731,55 @@ anything. The dead-feature share is over only 600 held-out positions, so it over
 features. The example asserts its own invariants (the 12 `[ok]` lines) and exits non-zero if
 one fails, which is what lets CI run it.
 
+### Example output: `plain_construction`
+
+A transformer whose every weight is written by hand, in `Tracr`'s discipline:
+named one-hot subspaces of the residual stream, no norm, and a constant `one`
+direction in place of biases. One head is the SNLP "establish" step: the query
+is an open condition `p`, the keys are step effects, so the head attends to the
+steps that add `p`. An MLP turns "which step was attended" into evidence.
+Steps `A` and `D` both add `p0`, which makes case 2 a tie.
+
+```
+1. One establisher: [A, B, C1], only B adds p1 (attn_scale 200)
+   keys:            ["A", "B", "C1"]
+   AttnScores:      [0.0, 200.0, 0.0]
+   AttnPattern:     [0.0, 1.0, 0.0]
+   MlpAct ["A", "B", "D"]: [0.0, 0.75, 0.0]
+   logits (o_A, o_B, o_D, evidence): [0.0, 1.0, 0.0, 0.75]
+
+2. A tie: [A, B, D, C0], A and D both add p0 (attn_scale 200)
+   keys:            ["A", "B", "D", "C0"]
+   AttnScores:      [200.0, 0.0, 200.0, 0.0]
+   AttnPattern:     [0.5, 0.0, 0.5, 0.0]
+   MlpAct ["A", "B", "D"]: [0.25, 0.0, 0.25]
+   logits (o_A, o_B, o_D, evidence): [0.5, 0.0, 0.5, 0.5]
+
+3. One establisher at attn_scale 30: gap above the exactness bound, below underflow
+   keys:            ["A", "B", "C1"]
+   AttnScores:      [0.0, 30.0, 0.0]
+   AttnPattern:     [9.357623e-14, 1.0, 9.357623e-14]
+   MlpAct ["A", "B", "D"]: [0.0, 0.75, 0.0]
+   logits (o_A, o_B, o_D, evidence): [9.357623e-14, 1.0, 0.0, 0.75]
+
+All 10 self-checks passed.
+```
+
+Every value is exact by construction, which is why the example can compare
+bits. In cases 1 and 2 the losing keys score 200 below the winners, past the
+point where `F32` `exp` underflows (about 104), so they get exactly 0, and the
+tie is exactly 0.5 / 0.5 (its two scores are checked equal to the bit first).
+In case 3 the gap is 30: the winner is still exactly 1.0, but the losers are
+`exp(-30)`, tiny and **not** zero, and they reach the logit `o_A`; the `ReLU`
+threshold in the MLP erases them from the neurons. A tie under a large scale is
+a knife-edge: any difference between the two scores picks a winner, so a
+construction that relies on one has to make it exact by design
+(`design/plain-transformer.md` §7.3).
+
 ## Prerequisites
 
+- **plain_construction** needs no model, no download and no GPU: every weight
+  is written in the example. Requires `--features plain`.
 - **clt_train_tiny** needs no model, no download and no GPU: it builds its own
   random-weight backbone and runs on CPU in seconds. Requires
   `--features clt,diffusion,training`.

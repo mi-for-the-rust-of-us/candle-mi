@@ -323,7 +323,11 @@ function Invoke-Lanes {
     Invoke-Cargo "[$Tc] Build (plain)" $Tc `
         @("build", "--no-default-features", "--features", "plain") -Lane 'plain'
     Invoke-Cargo "[$Tc] Tests (plain)" $Tc `
-        @("test", "--no-default-features", "--features", "plain", "--lib", "--test", "validate_plain_reference") -Lane 'plain'
+        @("test", "--no-default-features", "--features", "plain", "--lib", "--test", "validate_plain_reference", "--test", "validate_plain_construction") -Lane 'plain'
+    Invoke-Cargo "[$Tc] Build (plain + examples)" $Tc `
+        @("build", "--no-default-features", "--features", "plain", "--examples") -Lane 'plain'
+    Invoke-Cargo "[$Tc] Run example (plain_construction)" $Tc `
+        @("run", "--no-default-features", "--features", "plain", "--example", "plain_construction") -Lane 'plain'
     Invoke-Cargo "[$Tc] Tests (plain + diffusion, OthelloGpt parity)" $Tc `
         @("test", "--no-default-features", "--features", "plain,diffusion", "--test", "validate_plain_othello_parity") -Lane 'plain-parity'
 

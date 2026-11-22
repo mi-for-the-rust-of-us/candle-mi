@@ -263,7 +263,7 @@
 //!   how to add a new model architecture (auto-config, config parser, or
 //!   custom `MIBackend`).
 //! - [`examples/README.md`](https://github.com/mi-for-the-rust-of-us/candle-mi/blob/main/examples/README.md) —
-//!   43 runnable examples covering inference, logit lens, attention patterns,
+//!   44 runnable examples covering inference, logit lens, attention patterns,
 //!   knockout, steering, activation patching, `CounterFact` replication,
 //!   CLT circuits, SAE encoding, RWKV inference, `AlgZoo` analysis, and more.
 

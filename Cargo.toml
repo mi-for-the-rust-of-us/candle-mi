@@ -319,6 +319,10 @@ required-features = ["plain"]
 name = "validate_plain_othello_parity"
 required-features = ["plain", "diffusion"]
 
+[[test]]
+name = "validate_plain_construction"
+required-features = ["plain"]
+
 # Examples — gated behind features to avoid compilation errors when
 # features are not enabled.
 [[example]]
@@ -451,6 +455,10 @@ required-features = ["diffusion"]
 [[example]]
 name = "clt_train_tiny"
 required-features = ["clt", "diffusion", "training"]
+
+[[example]]
+name = "plain_construction"
+required-features = ["plain"]
 
 [[example]]
 name = "diffusion_logit_lens"

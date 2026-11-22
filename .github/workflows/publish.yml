@@ -225,7 +225,15 @@ jobs:
         run: cargo clippy --locked --all-targets --no-default-features --features plain -- -W clippy::pedantic
 
       - name: Tests (plain)
-        run: cargo test --locked --no-default-features --features plain --lib --test validate_plain_reference
+        run: cargo test --locked --no-default-features --features plain --lib --test validate_plain_reference --test validate_plain_construction
+
+      - name: Build (plain + examples)
+        run: cargo build --locked --no-default-features --features plain --examples
+
+      # The hand construction asserts its own invariants and exits non-zero if one
+      # fails, so running it is a test, not a smoke check.
+      - name: Run example (plain_construction)
+        run: cargo run --locked --no-default-features --features plain --example plain_construction
 
       # The OthelloGpt parity test compiles only with both features, so it needs
       # its own lane: without one, clippy would never lint it.
